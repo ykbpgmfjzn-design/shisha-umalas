@@ -51,9 +51,22 @@ const HeroSection = () => {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <h1 className="font-display text-6xl md:text-8xl lg:text-9xl font-light tracking-wider mb-6">
-            <span className="text-gradient-golden">{t("hero.title")}</span>
+            <span 
+              className="text-gradient-golden"
+              style={{
+                textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.9), 0 0 60px rgba(212,175,55,0.4)',
+                filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.5))'
+              }}
+            >
+              {t("hero.title")}
+            </span>
           </h1>
-          <p className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4">
+          <p 
+            className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4"
+            style={{
+              textShadow: '0 2px 15px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)'
+            }}
+          >
             {t("hero.subtitle")}
           </p>
           <div className="w-24 h-px bg-gradient-golden mx-auto mb-8" />
