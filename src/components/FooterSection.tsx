@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import shishaImage from "@/assets/shisha-smoke.jpg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const FooterSection = () => {
+  const { t } = useLanguage();
+
   return (
     <footer className="relative py-24 bg-background overflow-hidden">
       {/* Background Image with Overlay */}
@@ -30,18 +33,17 @@ const FooterSection = () => {
           </div>
 
           <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
-            Inhale the <span className="text-gradient-golden">Moment</span>
+            {t("footer.inhale")} <span className="text-gradient-golden">{t("footer.moment")}</span>
           </h3>
           
           <p className="font-body text-muted-foreground max-w-md mx-auto mb-8 text-sm md:text-base leading-relaxed">
-            Each puff tells a story. Let the smoke carry your thoughts 
-            as the sunset paints the sky in shades of gold.
+            {t("footer.description")}
           </p>
 
           <div className="w-16 h-px bg-gradient-golden mx-auto mb-8" />
           
           <p className="font-body text-xs text-muted-foreground tracking-[0.2em] uppercase">
-            Premium Shisha Experience
+            {t("footer.tagline")}
           </p>
         </motion.div>
       </div>

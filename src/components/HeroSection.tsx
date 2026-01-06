@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import heroImage from "@/assets/hero-shisha.jpg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -48,14 +51,14 @@ const HeroSection = () => {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <h1 className="font-display text-6xl md:text-8xl lg:text-9xl font-light tracking-wider mb-6">
-            <span className="text-gradient-golden">SHISHA</span>
+            <span className="text-gradient-golden">{t("hero.title")}</span>
           </h1>
           <p className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4">
-            MENU
+            {t("hero.subtitle")}
           </p>
           <div className="w-24 h-px bg-gradient-golden mx-auto mb-8" />
           <p className="font-body text-sm md:text-base text-muted-foreground tracking-widest uppercase">
-            Experience the Art of Smoke
+            {t("hero.tagline")}
           </p>
         </motion.div>
 
