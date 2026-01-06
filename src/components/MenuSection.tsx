@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MenuItemProps {
   name: string;
@@ -10,6 +11,8 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ name, description, price, isSignature, delay = 0 }: MenuItemProps) => {
+  const { t } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,7 +29,7 @@ const MenuItem = ({ name, description, price, isSignature, delay = 0 }: MenuItem
             </h4>
             {isSignature && (
               <span className="text-[10px] uppercase tracking-widest text-sunset border border-sunset/40 px-2 py-0.5 rounded-full">
-                Signature
+                {t("menu.signature")}
               </span>
             )}
           </div>
@@ -66,7 +69,16 @@ const strengthBadge = {
   "bold": "bg-sunset/20 text-sunset",
 };
 
+const strengthLabels: Record<string, string> = {
+  "ultra-light": "strength.ultraLight",
+  "light": "strength.light",
+  "medium": "strength.medium",
+  "bold": "strength.boldStrong",
+};
+
 const MenuCategory = ({ title, subtitle, strength, children, delay = 0 }: MenuCategoryProps) => {
+  const { t } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -89,7 +101,7 @@ const MenuCategory = ({ title, subtitle, strength, children, delay = 0 }: MenuCa
             )}
           </div>
           <span className={`${strengthBadge[strength]} text-xs uppercase tracking-widest px-4 py-2 rounded-full font-body`}>
-            {strength.replace("-", " ")}
+            {t(strengthLabels[strength])}
           </span>
         </div>
 
@@ -103,6 +115,8 @@ const MenuCategory = ({ title, subtitle, strength, children, delay = 0 }: MenuCa
 };
 
 const MenuSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative py-24 md:py-32 bg-background">
       {/* Background decoration */}
@@ -121,10 +135,10 @@ const MenuSection = () => {
           className="text-center mb-20"
         >
           <p className="text-sm text-golden tracking-[0.3em] uppercase mb-4 font-body">
-            Our Selection
+            {t("menu.ourSelection")}
           </p>
           <h2 className="font-display text-4xl md:text-6xl text-foreground mb-6">
-            Curated Flavors
+            {t("menu.curatedFlavors")}
           </h2>
           <div className="w-16 h-px bg-gradient-golden mx-auto" />
         </motion.div>
@@ -132,13 +146,13 @@ const MenuSection = () => {
         {/* Menu Categories */}
         <div className="space-y-12">
           {/* Ultra Light */}
-          <MenuCategory title="Ultra Light" strength="ultra-light" delay={0}>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">Single Flavor</p>
+          <MenuCategory title={t("strength.ultraLight")} strength="ultra-light" delay={0}>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">{t("menu.singleFlavor")}</p>
             <MenuItem name="Whiteline Vanilla" price="IDR 280K" delay={0.1} />
             <MenuItem name="Whiteline Oolong Tea" price="IDR 280K" delay={0.15} />
             <MenuItem name="Herbaline Watermelon" price="IDR 280K" delay={0.2} />
             
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">Signature Mixes</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">{t("menu.signatureMixes")}</p>
             <MenuItem 
               name="Vanilla Breeze" 
               description="Whiteline Vanilla & Whiteline Ice" 
@@ -156,12 +170,12 @@ const MenuSection = () => {
           </MenuCategory>
 
           {/* Light */}
-          <MenuCategory title="Light" strength="light" delay={0.1}>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">Single Flavor</p>
+          <MenuCategory title={t("strength.light")} strength="light" delay={0.1}>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">{t("menu.singleFlavor")}</p>
             <MenuItem name="Whiteline Mint" price="IDR 295K" delay={0.1} />
             <MenuItem name="Al Fakher Two Apple" price="IDR 295K" delay={0.15} />
             
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">Signature Mixes</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">{t("menu.signatureMixes")}</p>
             <MenuItem 
               name="Minty Grapes" 
               description="Sweet grape & cooling mint" 
@@ -179,14 +193,14 @@ const MenuSection = () => {
           </MenuCategory>
 
           {/* Medium */}
-          <MenuCategory title="Medium" strength="medium" delay={0.2}>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">Single Flavor</p>
+          <MenuCategory title={t("strength.medium")} strength="medium" delay={0.2}>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">{t("menu.singleFlavor")}</p>
             <MenuItem name="Blackline African Queen" price="IDR 325K" delay={0.1} />
             <MenuItem name="Blackline Spicey Lime" price="IDR 325K" delay={0.15} />
             <MenuItem name="Blackline Booster" price="IDR 325K" delay={0.2} />
             <MenuItem name="Adalya Moscow Evening" price="IDR 325K" delay={0.25} />
             
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">Signature Mixes</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">{t("menu.signatureMixes")}</p>
             <MenuItem 
               name="Tipsy Lime" 
               description="Blackline African Queen & Blackline Spicey Lime" 
@@ -204,14 +218,14 @@ const MenuSection = () => {
           </MenuCategory>
 
           {/* Bold Strong */}
-          <MenuCategory title="Bold Strong" strength="bold" delay={0.3}>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">Single Flavor</p>
+          <MenuCategory title={t("strength.boldStrong")} strength="bold" delay={0.3}>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4 font-body">{t("menu.singleFlavor")}</p>
             <MenuItem name="Tangiers Cooling" price="IDR 380K" delay={0.1} />
             <MenuItem name="Tangiers Schnozzberry" price="IDR 380K" delay={0.15} />
             <MenuItem name="Darkside Polar Cream" price="IDR 345K" delay={0.2} />
             <MenuItem name="Darkside Supernova" price="IDR 345K" delay={0.25} />
             
-            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">Signature Mixes</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-widest mt-8 mb-4 font-body">{t("menu.signatureMixes")}</p>
             <MenuItem 
               name="Berry Kiss" 
               description="Darkside Polar Cream & Tangiers Schnozzberry" 
