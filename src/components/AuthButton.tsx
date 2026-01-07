@@ -1,32 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { useProfile } from "@/hooks/useProfile";
+import ProfileModal from "@/components/ProfileModal";
 
 const AuthButton = () => {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, profile, loading } = useProfile();
+  const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -48,15 +33,26 @@ const AuthButton = () => {
 
   if (user) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleLogout}
-        className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-      >
-        <LogOut className="w-4 h-4 mr-2" />
-        Выйти
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setProfileOpen(true)}
+          className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
+        >
+          <Crown className="w-4 h-4 mr-2 text-golden" />
+          {profile?.loyalty_level ? `Ур. ${profile.loyalty_level}` : "Профиль"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
+        >
+          <LogOut className="w-4 h-4" />
+        </Button>
+        <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
+      </div>
     );
   }
 
