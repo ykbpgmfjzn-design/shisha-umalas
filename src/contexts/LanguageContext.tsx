@@ -43,6 +43,9 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.orderError": "Failed to place order",
     "cart.loginToOrder": "Please login to place an order",
     "cart.login": "Login",
+    "cart.payNow": "Pay Now",
+    "cart.payLater": "Pay Later",
+    "cart.paymentError": "Payment failed. Please try again.",
     
     // Order Confirmation
     "order.confirmed": "Order Confirmed!",
@@ -109,6 +112,9 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.orderError": "Ошибка оформления заказа",
     "cart.loginToOrder": "Войдите, чтобы оформить заказ",
     "cart.login": "Войти",
+    "cart.payNow": "Оплатить сейчас",
+    "cart.payLater": "Оплатить позже",
+    "cart.paymentError": "Ошибка оплаты. Попробуйте ещё раз.",
     "order.confirmed": "Заказ подтверждён!",
     "order.thankYou": "Спасибо за ваш заказ",
     "order.orderNumber": "Номер заказа",

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, X, Plus, Minus, Trash2, Send } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, Trash2, Send, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -14,6 +14,7 @@ const Cart = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -43,12 +44,12 @@ const Cart = () => {
     try {
       const orderNotes = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
       
-      
       const { data, error } = await supabase.from("purchases").insert({
         user_id: user.id,
         hookah_count: hookahCount,
         amount: totalPrice,
         notes: orderNotes,
+        payment_status: 'pending',
       }).select().single();
 
       if (error) throw error;
@@ -69,6 +70,70 @@ const Cart = () => {
       toast.error(t("cart.orderError"));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!user) {
+      toast.error(t("cart.loginRequired"));
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error(t("cart.emptyCart"));
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      const orderNotes = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
+      
+      // First create the order
+      const { data: orderData, error: orderError } = await supabase.from("purchases").insert({
+        user_id: user.id,
+        hookah_count: hookahCount,
+        amount: totalPrice,
+        notes: orderNotes,
+        payment_status: 'pending',
+      }).select().single();
+
+      if (orderError) throw orderError;
+
+      // Get user email for payment
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      // Create Xendit invoice
+      const { data: invoiceData, error: invoiceError } = await supabase.functions.invoke('create-xendit-invoice', {
+        body: {
+          purchaseId: orderData.id,
+          amount: totalPrice,
+          description: `Hookah Lounge Order: ${orderNotes}`,
+          payerEmail: profileData?.email || user.email,
+          successRedirectUrl: `${window.location.origin}/order-confirmation?id=${orderData.id}&total=${(totalPrice / 1000).toFixed(0)}&items=${encodeURIComponent(orderNotes)}&count=${hookahCount}&paid=true`,
+          failureRedirectUrl: `${window.location.origin}/?payment=failed`,
+        },
+      });
+
+      if (invoiceError) throw invoiceError;
+
+      if (invoiceData.invoice_url) {
+        clearCart();
+        setIsOpen(false);
+        // Redirect to Xendit payment page
+        window.location.href = invoiceData.invoice_url;
+      } else {
+        throw new Error('No invoice URL received');
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error(t("cart.paymentError") || "Payment failed. Please try again.");
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -221,24 +286,45 @@ const Cart = () => {
                       </Button>
                     </div>
                   ) : (
-                    <Button
-                      onClick={handleSubmitOrder}
-                      disabled={isSubmitting}
-                      className="w-full bg-golden hover:bg-golden/90 text-background h-14 text-lg font-display"
-                    >
-                      {isSubmitting ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ repeat: Infinity, duration: 1 }}
-                          className="w-5 h-5 border-2 border-background border-t-transparent rounded-full"
-                        />
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2" />
-                          {t("cart.placeOrder")}
-                        </>
-                      )}
-                    </Button>
+                    <div className="space-y-3">
+                      <Button
+                        onClick={handlePayment}
+                        disabled={isProcessingPayment || isSubmitting}
+                        className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-14 text-lg font-display"
+                      >
+                        {isProcessingPayment ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="w-5 h-5 border-2 border-accent-foreground border-t-transparent rounded-full"
+                          />
+                        ) : (
+                          <>
+                            <CreditCard className="w-5 h-5 mr-2" />
+                            {t("cart.payNow")}
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleSubmitOrder}
+                        disabled={isSubmitting || isProcessingPayment}
+                        variant="outline"
+                        className="w-full border-golden text-golden hover:bg-golden/10 h-12 font-display"
+                      >
+                        {isSubmitting ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="w-5 h-5 border-2 border-golden border-t-transparent rounded-full"
+                          />
+                        ) : (
+                          <>
+                            <Send className="w-5 h-5 mr-2" />
+                            {t("cart.payLater")}
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
 
                   <button
