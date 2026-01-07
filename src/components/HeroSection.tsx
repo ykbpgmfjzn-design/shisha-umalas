@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import rooftopBg from "@/assets/rooftop-shisha-bg.jpg";
+import heroVideo from "@/assets/hero-video.mp4";
+import logo from "@/assets/logo-shisha-cool.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const HeroSection = () => {
@@ -7,15 +8,19 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="absolute inset-0">
-        <img
-          src={rooftopBg}
-          alt="Rooftop shisha lounge"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
           className="w-full h-full object-cover"
-        />
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-smoke" />
-        <div className="absolute inset-0 bg-background/40" />
+        <div className="absolute inset-0 bg-background/60" />
       </div>
 
       {/* Floating smoke particles */}
@@ -50,17 +55,16 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          <h1 className="font-display text-6xl md:text-8xl lg:text-9xl font-light tracking-wider mb-6">
-            <span 
-              className="text-gradient-golden"
+          <div className="mb-6 flex justify-center">
+            <img 
+              src={logo} 
+              alt="Shisha Cool" 
+              className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl"
               style={{
-                textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.9), 0 0 60px rgba(212,175,55,0.4)',
-                filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.5))'
+                filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.5))'
               }}
-            >
-              {t("hero.title")}
-            </span>
-          </h1>
+            />
+          </div>
           <p 
             className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4"
             style={{
