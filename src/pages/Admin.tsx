@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import OrderNotifications from "@/components/OrderNotifications";
 import type { Profile } from "@/hooks/useProfile";
 import type { Purchase } from "@/hooks/usePurchases";
 
@@ -150,9 +151,14 @@ const Admin = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             На главную
           </Button>
-          <div className="flex items-center gap-2 text-golden">
-            <Shield className="w-5 h-5" />
-            <span className="font-medium">Админ панель</span>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <OrderNotifications />
+            </div>
+            <div className="flex items-center gap-2 text-golden">
+              <Shield className="w-5 h-5" />
+              <span className="font-medium">Админ панель</span>
+            </div>
           </div>
         </div>
 
