@@ -33,15 +33,37 @@ export const useProfile = () => {
   const [loyaltyLevels, setLoyaltyLevels] = useState<LoyaltyLevel[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, userEmail?: string) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (!error && data) {
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return;
+    }
+
+    if (data) {
       setProfile(data as Profile);
+    } else {
+      // Profile doesn't exist, create it
+      console.log("Profile not found, creating...");
+      const { data: newProfile, error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          email: userEmail || null,
+        })
+        .select()
+        .single();
+
+      if (!insertError && newProfile) {
+        setProfile(newProfile as Profile);
+      } else {
+        console.error("Error creating profile:", insertError);
+      }
     }
   }, []);
 
@@ -64,7 +86,7 @@ export const useProfile = () => {
 
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            fetchProfile(session.user.id, session.user.email);
           }, 0);
         } else {
           setProfile(null);
@@ -77,7 +99,7 @@ export const useProfile = () => {
       setLoading(false);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       }
     });
 
