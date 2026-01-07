@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { User, Crown, Shield } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AuthButton = () => {
   const { user, profile, loading } = useProfile();
   const { isAdmin } = useAdmin();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   if (loading) return null;
@@ -22,7 +24,7 @@ const AuthButton = () => {
             className="text-golden hover:text-golden hover:bg-golden/10"
           >
             <Shield className="w-4 h-4 mr-2" />
-            Админ
+            {t("auth.admin")}
           </Button>
         )}
         <Button
@@ -32,7 +34,7 @@ const AuthButton = () => {
           className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
         >
           <Crown className="w-4 h-4 mr-2 text-golden" />
-          {profile?.loyalty_level ? `Ур. ${profile.loyalty_level}` : "Профиль"}
+          {profile?.loyalty_level ? `${t("auth.level")} ${profile.loyalty_level}` : t("auth.profile")}
         </Button>
       </div>
     );
@@ -46,7 +48,7 @@ const AuthButton = () => {
       className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
     >
       <User className="w-4 h-4 mr-2" />
-      Войти
+      {t("auth.login")}
     </Button>
   );
 };

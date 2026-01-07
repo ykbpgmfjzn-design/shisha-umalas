@@ -68,6 +68,12 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "Moment",
     "footer.description": "Each puff tells a story. Let the smoke carry your thoughts as the sunset paints the sky in shades of gold.",
     "footer.tagline": "Premium Shisha Experience",
+    
+    // Auth
+    "auth.login": "Login",
+    "auth.profile": "Profile",
+    "auth.level": "Lvl.",
+    "auth.admin": "Admin",
   },
   ru: {
     "hero.title": "КАЛЬЯН",
@@ -117,6 +123,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "Момент",
     "footer.description": "Каждая затяжка рассказывает историю. Пусть дым унесёт твои мысли, пока закат окрашивает небо в золотые оттенки.",
     "footer.tagline": "Премиум кальянный опыт",
+    "auth.login": "Войти",
+    "auth.profile": "Профиль",
+    "auth.level": "Ур.",
+    "auth.admin": "Админ",
   },
   id: {
     "hero.title": "SHISHA",
@@ -135,6 +145,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "Momen",
     "footer.description": "Setiap hisapan menceritakan sebuah kisah. Biarkan asap membawa pikiranmu saat matahari terbenam melukis langit dengan warna emas.",
     "footer.tagline": "Pengalaman Shisha Premium",
+    "auth.login": "Masuk",
+    "auth.profile": "Profil",
+    "auth.level": "Lvl.",
+    "auth.admin": "Admin",
   },
   uk: {
     "hero.title": "КАЛЬЯН",
@@ -153,6 +167,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "Мить",
     "footer.description": "Кожна затяжка розповідає історію. Нехай дим несе твої думки, поки захід сонця малює небо золотими відтінками.",
     "footer.tagline": "Преміум кальянний досвід",
+    "auth.login": "Увійти",
+    "auth.profile": "Профіль",
+    "auth.level": "Рів.",
+    "auth.admin": "Адмін",
   },
   fr: {
     "hero.title": "CHICHA",
@@ -171,6 +189,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "Moment",
     "footer.description": "Chaque bouffée raconte une histoire. Laissez la fumée emporter vos pensées tandis que le coucher de soleil peint le ciel de nuances dorées.",
     "footer.tagline": "Expérience Chicha Premium",
+    "auth.login": "Connexion",
+    "auth.profile": "Profil",
+    "auth.level": "Niv.",
+    "auth.admin": "Admin",
   },
   hi: {
     "hero.title": "हुक्का",
@@ -189,6 +211,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "महसूस करें",
     "footer.description": "हर कश एक कहानी कहता है। धुएं को अपने विचारों को ले जाने दें जब सूर्यास्त आकाश को सुनहरे रंगों में रंग देता है।",
     "footer.tagline": "प्रीमियम हुक्का अनुभव",
+    "auth.login": "लॉगिन",
+    "auth.profile": "प्रोफ़ाइल",
+    "auth.level": "स्तर",
+    "auth.admin": "एडमिन",
   },
   zh: {
     "hero.title": "水烟",
@@ -207,6 +233,10 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.moment": "一刻",
     "footer.description": "每一口都讲述一个故事。让烟雾带走你的思绪，当夕阳将天空染成金色。",
     "footer.tagline": "高端水烟体验",
+    "auth.login": "登录",
+    "auth.profile": "个人资料",
+    "auth.level": "等级",
+    "auth.admin": "管理",
   },
 };
 
