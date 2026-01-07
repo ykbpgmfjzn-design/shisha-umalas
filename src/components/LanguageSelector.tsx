@@ -21,7 +21,7 @@ const LanguageSelector = () => {
   const currentLang = languages.find((l) => l.code === language);
 
   return (
-    <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+    <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-end gap-3 px-6 py-4 bg-background/60 backdrop-blur-md border-b border-border/20">
       <AuthButton />
       
       <motion.button
