@@ -2,7 +2,10 @@ import HeroSection from "@/components/HeroSection";
 import MenuSection from "@/components/MenuSection";
 import FooterSection from "@/components/FooterSection";
 import LanguageSelector from "@/components/LanguageSelector";
+import VoiceAgent from "@/components/VoiceAgent";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+
+const ELEVENLABS_AGENT_ID = "your-agent-id-here"; // Replace with your ElevenLabs agent ID
 
 const Index = () => {
   return (
@@ -12,6 +15,7 @@ const Index = () => {
         <HeroSection />
         <MenuSection />
         <FooterSection />
+        <VoiceAgent agentId={ELEVENLABS_AGENT_ID} />
       </main>
     </LanguageProvider>
   );
