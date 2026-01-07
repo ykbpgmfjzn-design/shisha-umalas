@@ -5,11 +5,13 @@ import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isOpen, setIsOpen } = useCart();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,21 +41,29 @@ const Cart = () => {
     setIsSubmitting(true);
 
     try {
-      // Create a purchase record for each hookah in the order
       const hookahCount = items.reduce((sum, item) => sum + item.quantity, 0);
+      const orderNotes = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
       
-      const { error } = await supabase.from("purchases").insert({
+      const { data, error } = await supabase.from("purchases").insert({
         user_id: user.id,
         hookah_count: hookahCount,
         amount: totalPrice,
-        notes: items.map(item => `${item.quantity}x ${item.name}`).join(", "),
-      });
+        notes: orderNotes,
+      }).select().single();
 
       if (error) throw error;
 
-      toast.success(t("cart.orderSuccess"));
+      // Navigate to confirmation page with order details
+      const params = new URLSearchParams({
+        id: data.id,
+        total: (totalPrice / 1000).toFixed(0),
+        items: orderNotes,
+        count: hookahCount.toString(),
+      });
+      
       clearCart();
       setIsOpen(false);
+      navigate(`/order-confirmation?${params.toString()}`);
     } catch (error) {
       console.error("Order error:", error);
       toast.error(t("cart.orderError"));
