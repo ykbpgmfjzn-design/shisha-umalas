@@ -5,13 +5,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getMenuDescription } from "@/data/menuTranslations";
 
 import { ItemType } from "@/hooks/useCart";
 
 interface MenuItemProps {
   id: string;
   name: string;
-  description?: string;
   price: number;
   priceDisplay: string;
   isSignature?: boolean;
@@ -20,9 +20,12 @@ interface MenuItemProps {
   itemType?: ItemType;
 }
 
-const MenuItem = ({ id, name, description, price, priceDisplay, isSignature, delay = 0, strength, itemType = "hookah" }: MenuItemProps) => {
-  const { t } = useLanguage();
+const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, strength, itemType = "hookah" }: MenuItemProps) => {
+  const { t, language } = useLanguage();
   const { addItem } = useCart();
+  
+  // Get localized description
+  const description = getMenuDescription(id, language);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -259,31 +262,24 @@ const MenuSection = () => {
           {/* Ultra Light */}
           <MenuCategory title={t("strength.ultraLight")} strength="ultra-light" delay={0}>
             <SubCategory title={t("menu.singleFlavor")}>
-              {/* Whiteline Vanilla - Нежный сливочный аромат ванили с мягким послевкусием. Идеален для новичков и ценителей деликатных вкусов */}
-              <MenuItem id="wl-vanilla" name="Whiteline Vanilla" description="Creamy vanilla with a silky smooth finish" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.1} />
-              {/* Whiteline Oolong Tea - Изысканный чайный букет с цветочными нотками. Расслабляющий и освежающий */}
-              <MenuItem id="wl-oolong" name="Whiteline Oolong Tea" description="Elegant floral tea notes, deeply relaxing" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.15} />
-              {/* Herbaline Watermelon - Сочный летний арбуз. Освежающая сладость без приторности */}
-              <MenuItem id="hl-watermelon" name="Herbaline Watermelon" description="Juicy summer watermelon, refreshingly sweet" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.2} />
+              <MenuItem id="wl-vanilla" name="Whiteline Vanilla" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.1} />
+              <MenuItem id="wl-oolong" name="Whiteline Oolong Tea" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.15} />
+              <MenuItem id="hl-watermelon" name="Herbaline Watermelon" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.2} />
             </SubCategory>
             
             <SubCategory title={t("menu.signatureMixes")}>
-              {/* Vanilla Breeze - Ванильная нежность с ледяной свежестью. Идеальный баланс сладости и прохлады */}
               <MenuItem 
                 id="vanilla-breeze"
                 name="Vanilla Breeze" 
-                description="Whiteline Vanilla & Whiteline Ice • Silky vanilla kissed with arctic freshness" 
                 price={320000}
                 priceDisplay="IDR 320K" 
                 isSignature 
                 strength="Ultra Light"
                 delay={0.25} 
               />
-              {/* Watermelon Wave - Сочный арбуз с утонченным чайным послевкусием. Волна свежести */}
               <MenuItem 
                 id="watermelon-wave"
                 name="Watermelon Wave" 
-                description="Herbaline Watermelon & Whiteline Oolong Tea • Summer sweetness meets elegant tea" 
                 price={320000}
                 priceDisplay="IDR 320K" 
                 isSignature 
@@ -296,29 +292,23 @@ const MenuSection = () => {
           {/* Light */}
           <MenuCategory title={t("strength.light")} strength="light" delay={0.1}>
             <SubCategory title={t("menu.singleFlavor")}>
-              {/* Whiteline Mint - Классическая освежающая мята. Чистый, бодрящий вкус */}
-              <MenuItem id="wl-mint" name="Whiteline Mint" description="Crisp cooling mint, pure & invigorating" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.1} />
-              {/* Al Fakher Two Apple - Легендарный двойной яблочный вкус. Классика Ближнего Востока */}
-              <MenuItem id="af-two-apple" name="Al Fakher Two Apple" description="Legendary double apple, Middle Eastern classic" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.15} />
+              <MenuItem id="wl-mint" name="Whiteline Mint" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.1} />
+              <MenuItem id="af-two-apple" name="Al Fakher Two Apple" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.15} />
             </SubCategory>
             
             <SubCategory title={t("menu.signatureMixes")}>
-              {/* Minty Grapes - Сладкий виноград с прохладой мяты. Сочетание, проверенное временем */}
               <MenuItem 
                 id="minty-grapes"
                 name="Minty Grapes" 
-                description="Sweet grape & cooling mint • A timeless refreshing blend" 
                 price={335000}
                 priceDisplay="IDR 335K" 
                 isSignature 
                 strength="Light"
                 delay={0.2} 
               />
-              {/* Minty Gum - Сладкая жвачка с мятной свежестью. Ностальгия и удовольствие */}
               <MenuItem 
                 id="minty-gum"
                 name="Minty Gum" 
-                description="Sweet minty aroma & soft flavor • Nostalgic bubblegum bliss" 
                 price={335000}
                 priceDisplay="IDR 335K" 
                 isSignature 
@@ -331,31 +321,24 @@ const MenuSection = () => {
           {/* Medium */}
           <MenuCategory title={t("strength.medium")} strength="medium" delay={0.2}>
             <SubCategory title={t("menu.singleFlavor")}>
-              {/* Blackline African Queen - Экзотический микс тропических фруктов. Королевский вкус Африки */}
-              <MenuItem id="bl-african" name="Blackline African Queen" description="Exotic tropical royalty, bold & fruity" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.1} />
-              {/* Blackline Spicey Lime - Пикантный лайм с острой ноткой. Бодрит и будоражит */}
-              <MenuItem id="bl-spicy-lime" name="Blackline Spicey Lime" description="Zesty lime with a spicy kick, electrifying" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.15} />
-              {/* Blackline Booster - Энергетический микс для активных. Заряд бодрости */}
-              <MenuItem id="bl-booster" name="Blackline Booster" description="Energizing blend, powerful & awakening" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.2} />
+              <MenuItem id="bl-african" name="Blackline African Queen" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.1} />
+              <MenuItem id="bl-spicy-lime" name="Blackline Spicey Lime" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.15} />
+              <MenuItem id="bl-booster" name="Blackline Booster" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.2} />
             </SubCategory>
             
             <SubCategory title={t("menu.signatureMixes")}>
-              {/* Tipsy Lime - Дерзкий коктейль африканской экзотики и пряного лайма. Для смелых */}
               <MenuItem 
                 id="tipsy-lime"
                 name="Tipsy Lime" 
-                description="Blackline African Queen & Blackline Spicey Lime • Bold exotic cocktail vibes" 
                 price={405000}
                 priceDisplay="IDR 405K" 
                 isSignature 
                 strength="Medium"
                 delay={0.25} 
               />
-              {/* Evening Moscow - Вечерняя Москва с энергетическим бустом. Атмосфера столичных ночей */}
               <MenuItem 
                 id="evening-moscow"
                 name="Evening Moscow" 
-                description="Adalya Moscow Evening & Blackline Booster • Vibrant metropolitan nightlife essence" 
                 price={405000}
                 priceDisplay="IDR 405K" 
                 isSignature 
@@ -368,31 +351,24 @@ const MenuSection = () => {
           {/* Bold Strong */}
           <MenuCategory title={t("strength.boldStrong")} strength="bold" delay={0.3}>
             <SubCategory title={t("menu.singleFlavor")}>
-              {/* Tangiers Cooling - Премиальный охлаждающий табак. Интенсивная арктическая свежесть */}
-              <MenuItem id="tangiers-cooling" name="Tangiers Cooling" description="Premium arctic intensity, deeply refreshing" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.1} />
-              {/* Tangiers Schnozzberry - Таинственный ягодный микс. Уникальный и незабываемый */}
-              <MenuItem id="tangiers-schnozz" name="Tangiers Schnozzberry" description="Mysterious berry magic, unforgettable taste" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.15} />
-              {/* Darkside Polar Cream - Сливочный крем с полярной свежестью. Роскошная прохлада */}
-              <MenuItem id="darkside-polar" name="Darkside Polar Cream" description="Luxurious cream with polar chill, decadent" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.2} />
+              <MenuItem id="tangiers-cooling" name="Tangiers Cooling" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.1} />
+              <MenuItem id="tangiers-schnozz" name="Tangiers Schnozzberry" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.15} />
+              <MenuItem id="darkside-polar" name="Darkside Polar Cream" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.2} />
             </SubCategory>
             
             <SubCategory title={t("menu.signatureMixes")}>
-              {/* Berry Kiss - Сливочные ягоды с нежным поцелуем прохлады. Романтика в каждом вдохе */}
               <MenuItem 
                 id="berry-kiss"
                 name="Berry Kiss" 
-                description="Darkside Polar Cream & Tangiers Schnozzberry • Creamy berry romance, seductively smooth" 
                 price={485000}
                 priceDisplay="IDR 485K" 
                 isSignature 
                 strength="Bold Strong"
                 delay={0.25} 
               />
-              {/* Wild Heart - Взрывная комбинация холода и космической энергии. Для настоящих искателей приключений */}
               <MenuItem 
                 id="wild-heart"
                 name="Wild Heart" 
-                description="Tangiers Cooling & Darkside Supernova • Explosive arctic supernova, untamed adventure" 
                 price={485000}
                 priceDisplay="IDR 485K" 
                 isSignature 
@@ -438,7 +414,7 @@ const MenuSection = () => {
                 </SubCategory>
 
                 <SubCategory title={t("menu.addons")}>
-                  <MenuItem id="addon-coal" name="Extra Coals" description="Additional coal refill" price={25000} priceDisplay="IDR 25K" itemType="extra" delay={0.5} />
+                  <MenuItem id="addon-coal" name="Extra Coals" price={25000} priceDisplay="IDR 25K" itemType="extra" delay={0.5} />
                   <MenuItem id="addon-ice" name="Ice Bucket" price={20000} priceDisplay="IDR 20K" itemType="extra" delay={0.55} />
                 </SubCategory>
               </div>
