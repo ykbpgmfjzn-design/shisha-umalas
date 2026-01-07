@@ -7,13 +7,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
-const authSchema = z.object({
-  email: z.string().trim().email({ message: "Неверный формат email" }),
-  password: z.string().min(6, { message: "Пароль должен содержать минимум 6 символов" }),
-});
-
-const Auth = () => {
+const AuthContent = () => {
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,6 +19,11 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const authSchema = z.object({
+    email: z.string().trim().email({ message: t("auth.invalidEmail") }),
+    password: z.string().min(6, { message: t("auth.passwordMinLength") }),
+  });
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,13 +79,13 @@ const Auth = () => {
           if (error.message.includes("Invalid login credentials")) {
             toast({
               variant: "destructive",
-              title: "Ошибка входа",
-              description: "Неверный email или пароль",
+              title: t("auth.loginError"),
+              description: t("auth.invalidCredentials"),
             });
           } else {
             toast({
               variant: "destructive",
-              title: "Ошибка",
+              title: t("auth.error"),
               description: error.message,
             });
           }
@@ -90,8 +93,8 @@ const Auth = () => {
         }
 
         toast({
-          title: "Добро пожаловать!",
-          description: "Вы успешно вошли в систему",
+          title: t("auth.welcome"),
+          description: t("auth.loginSuccess"),
         });
       } else {
         const redirectUrl = `${window.location.origin}/`;
@@ -108,13 +111,13 @@ const Auth = () => {
           if (error.message.includes("already registered")) {
             toast({
               variant: "destructive",
-              title: "Ошибка регистрации",
-              description: "Пользователь с таким email уже существует",
+              title: t("auth.signupError"),
+              description: t("auth.userExists"),
             });
           } else {
             toast({
               variant: "destructive",
-              title: "Ошибка",
+              title: t("auth.error"),
               description: error.message,
             });
           }
@@ -122,15 +125,15 @@ const Auth = () => {
         }
 
         toast({
-          title: "Регистрация успешна!",
-          description: "Проверьте вашу почту для подтверждения аккаунта",
+          title: t("auth.signupSuccess"),
+          description: t("auth.checkEmail"),
         });
       }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Что-то пошло не так. Попробуйте позже.",
+        title: t("auth.error"),
+        description: t("auth.somethingWrong"),
       });
     } finally {
       setLoading(false);
@@ -143,6 +146,11 @@ const Auth = () => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-64 h-64 bg-golden/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sunset/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Language Selector */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSelector />
       </div>
 
       <motion.div
@@ -158,19 +166,19 @@ const Auth = () => {
           className="mb-6 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          На главную
+          {t("auth.backToHome")}
         </Button>
 
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl text-foreground mb-2">
-              {isLogin ? "Вход" : "Регистрация"}
+              {isLogin ? t("auth.loginTitle") : t("auth.signupTitle")}
             </h1>
             <p className="text-muted-foreground">
               {isLogin
-                ? "Войдите в свой аккаунт"
-                : "Создайте новый аккаунт"}
+                ? t("auth.loginSubtitle")
+                : t("auth.signupSubtitle")}
             </p>
           </div>
 
@@ -179,7 +187,7 @@ const Auth = () => {
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                Email
+                {t("auth.email")}
               </label>
               <Input
                 type="email"
@@ -196,7 +204,7 @@ const Auth = () => {
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Пароль
+                {t("auth.password")}
               </label>
               <Input
                 type="password"
@@ -222,9 +230,9 @@ const Auth = () => {
                   className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
                 />
               ) : isLogin ? (
-                "Войти"
+                t("auth.loginButton")
               ) : (
-                "Зарегистрироваться"
+                t("auth.signupButton")
               )}
             </Button>
           </form>
@@ -232,7 +240,7 @@ const Auth = () => {
           {/* Toggle */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {isLogin ? "Нет аккаунта?" : "Уже есть аккаунт?"}{" "}
+              {isLogin ? t("auth.noAccount") : t("auth.haveAccount")}{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -241,7 +249,7 @@ const Auth = () => {
                 }}
                 className="text-golden hover:text-sunset transition-colors font-medium"
               >
-                {isLogin ? "Зарегистрироваться" : "Войти"}
+                {isLogin ? t("auth.signupButton") : t("auth.loginButton")}
               </button>
             </p>
           </div>
@@ -249,10 +257,18 @@ const Auth = () => {
 
         {/* Note */}
         <p className="text-xs text-center text-muted-foreground mt-4">
-          Нажимая кнопку, вы соглашаетесь с условиями использования
+          {t("auth.terms")}
         </p>
       </motion.div>
     </div>
+  );
+};
+
+const Auth = () => {
+  return (
+    <LanguageProvider>
+      <AuthContent />
+    </LanguageProvider>
   );
 };
 
