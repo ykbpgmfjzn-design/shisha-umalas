@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { Globe } from "lucide-react";
+import AuthButton from "./AuthButton";
 
 const languages: { code: Language; name: string; flag: string }[] = [
   { code: "en", name: "English", flag: "🇬🇧" },
@@ -20,7 +21,9 @@ const LanguageSelector = () => {
   const currentLang = languages.find((l) => l.code === language);
 
   return (
-    <div className="fixed top-6 right-6 z-50">
+    <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+      <AuthButton />
+      
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-md border border-border/40 rounded-full text-foreground hover:border-golden/50 transition-colors duration-300 shadow-card"
