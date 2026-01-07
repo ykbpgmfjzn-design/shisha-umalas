@@ -412,11 +412,6 @@ const MenuSection = () => {
                   <MenuItem id="snack-fruit" name="Fresh Fruit Plate" price={65000} priceDisplay="IDR 65K" itemType="snack" delay={0.4} />
                   <MenuItem id="snack-chips" name="Premium Chips" price={35000} priceDisplay="IDR 35K" itemType="snack" delay={0.45} />
                 </SubCategory>
-
-                <SubCategory title={t("menu.addons")}>
-                  <MenuItem id="addon-coal" name="Extra Coals" price={25000} priceDisplay="IDR 25K" itemType="extra" delay={0.5} />
-                  <MenuItem id="addon-ice" name="Ice Bucket" price={20000} priceDisplay="IDR 20K" itemType="extra" delay={0.55} />
-                </SubCategory>
               </div>
             </div>
           </motion.div>
