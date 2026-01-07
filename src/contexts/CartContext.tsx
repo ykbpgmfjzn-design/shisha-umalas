@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from "react";
-import { useCartState, CartItem } from "@/hooks/useCart";
+import { useCartState, CartItem, ItemType } from "@/hooks/useCart";
 
 interface CartContextType {
   items: CartItem[];
@@ -11,6 +11,7 @@ interface CartContextType {
   totalPrice: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  hookahCount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);

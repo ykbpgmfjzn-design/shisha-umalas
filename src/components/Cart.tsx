@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isOpen, setIsOpen } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen } = useCart();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -41,8 +41,8 @@ const Cart = () => {
     setIsSubmitting(true);
 
     try {
-      const hookahCount = items.reduce((sum, item) => sum + item.quantity, 0);
       const orderNotes = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
+      
       
       const { data, error } = await supabase.from("purchases").insert({
         user_id: user.id,
@@ -156,9 +156,16 @@ const Cart = () => {
                             {item.description && (
                               <p className="text-sm text-muted-foreground">{item.description}</p>
                             )}
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                              {item.strength}
-                            </span>
+                            {item.strength && (
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                                {item.strength}
+                              </span>
+                            )}
+                            {!item.strength && item.itemType && (
+                              <span className="text-xs text-accent uppercase tracking-wider">
+                                {item.itemType}
+                              </span>
+                            )}
                           </div>
                           <button
                             onClick={() => removeItem(item.id)}

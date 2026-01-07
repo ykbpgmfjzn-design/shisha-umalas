@@ -1,5 +1,7 @@
 import { useState, useCallback, createContext, useContext } from "react";
 
+export type ItemType = "hookah" | "drink" | "snack" | "extra";
+
 export interface CartItem {
   id: string;
   name: string;
@@ -7,8 +9,9 @@ export interface CartItem {
   price: number;
   priceDisplay: string;
   quantity: number;
-  strength: string;
+  strength?: string;
   isSignature?: boolean;
+  itemType: ItemType;
 }
 
 interface CartContextType {
@@ -19,6 +22,7 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  hookahCount: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
@@ -62,6 +66,9 @@ export const useCartState = (): CartContextType => {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const hookahCount = items
+    .filter((item) => item.itemType === "hookah")
+    .reduce((sum, item) => sum + item.quantity, 0);
 
   return {
     items,
@@ -71,6 +78,7 @@ export const useCartState = (): CartContextType => {
     clearCart,
     totalItems,
     totalPrice,
+    hookahCount,
     isOpen,
     setIsOpen,
   };
