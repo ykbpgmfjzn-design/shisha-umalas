@@ -99,7 +99,11 @@ export type Database = {
           hookah_count: number
           id: string
           notes: string | null
+          paid_at: string | null
+          payment_status: string | null
           user_id: string
+          xendit_invoice_id: string | null
+          xendit_invoice_url: string | null
         }
         Insert: {
           amount?: number | null
@@ -110,7 +114,11 @@ export type Database = {
           hookah_count?: number
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
           user_id: string
+          xendit_invoice_id?: string | null
+          xendit_invoice_url?: string | null
         }
         Update: {
           amount?: number | null
@@ -121,7 +129,11 @@ export type Database = {
           hookah_count?: number
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
           user_id?: string
+          xendit_invoice_id?: string | null
+          xendit_invoice_url?: string | null
         }
         Relationships: []
       }
