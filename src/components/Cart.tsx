@@ -114,7 +114,7 @@ const Cart = () => {
           amount: totalPrice,
           description: `Hookah Lounge Order: ${orderNotes}`,
           payerEmail: profileData?.email || user.email,
-          successRedirectUrl: `${window.location.origin}/order-confirmation?id=${orderData.id}&total=${(totalPrice / 1000).toFixed(0)}&items=${encodeURIComponent(orderNotes)}&count=${hookahCount}&paid=true`,
+          successRedirectUrl: `${window.location.origin}/?payment=success`,
           failureRedirectUrl: `${window.location.origin}/?payment=failed`,
         },
       });
