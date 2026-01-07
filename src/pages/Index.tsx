@@ -5,8 +5,6 @@ import LanguageSelector from "@/components/LanguageSelector";
 import VoiceAgent from "@/components/VoiceAgent";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
-const ELEVENLABS_AGENT_ID = "your-agent-id-here"; // Replace with your ElevenLabs agent ID
-
 const Index = () => {
   return (
     <LanguageProvider>
@@ -15,7 +13,7 @@ const Index = () => {
         <HeroSection />
         <MenuSection />
         <FooterSection />
-        <VoiceAgent agentId={ELEVENLABS_AGENT_ID} />
+        <VoiceAgent />
       </main>
     </LanguageProvider>
   );
