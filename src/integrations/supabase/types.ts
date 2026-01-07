@@ -14,16 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      loyalty_levels: {
+        Row: {
+          discount_percent: number
+          free_drink: boolean
+          free_snack: boolean
+          hookahs_required: number
+          level: number
+          name_en: string
+          name_ru: string
+          special_bonus: string | null
+        }
+        Insert: {
+          discount_percent: number
+          free_drink?: boolean
+          free_snack?: boolean
+          hookahs_required: number
+          level: number
+          name_en: string
+          name_ru: string
+          special_bonus?: string | null
+        }
+        Update: {
+          discount_percent?: number
+          free_drink?: boolean
+          free_snack?: boolean
+          hookahs_required?: number
+          level?: number
+          name_en?: string
+          name_ru?: string
+          special_bonus?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          guest_type: Database["public"]["Enums"]["guest_type"]
+          id: string
+          loyalty_level: number
+          loyalty_points: number
+          room_number: string | null
+          total_hookahs_ordered: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          guest_type?: Database["public"]["Enums"]["guest_type"]
+          id: string
+          loyalty_level?: number
+          loyalty_points?: number
+          room_number?: string | null
+          total_hookahs_ordered?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          guest_type?: Database["public"]["Enums"]["guest_type"]
+          id?: string
+          loyalty_level?: number
+          loyalty_points?: number
+          room_number?: string | null
+          total_hookahs_ordered?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number | null
+          created_at: string
+          discount_applied: number | null
+          free_drink_used: boolean | null
+          free_snack_used: boolean | null
+          hookah_count: number
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          discount_applied?: number | null
+          free_drink_used?: boolean | null
+          free_snack_used?: boolean | null
+          hookah_count?: number
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          discount_applied?: number | null
+          free_drink_used?: boolean | null
+          free_snack_used?: boolean | null
+          hookah_count?: number
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      guest_type: "guest" | "special"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +285,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      guest_type: ["guest", "special"],
+    },
   },
 } as const
