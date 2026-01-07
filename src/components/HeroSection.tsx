@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import heroVideo from "@/assets/hero-video.mp4";
+import rooftopBg from "@/assets/rooftop-shisha-bg.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const HeroSection = () => {
@@ -7,14 +7,11 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Video */}
+      {/* Background Image */}
       <div className="absolute inset-0">
-        <video
-          src={heroVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
+        <img
+          src={rooftopBg}
+          alt="Rooftop shisha lounge"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-smoke" />
