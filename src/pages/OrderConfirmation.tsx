@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 const OrderConfirmationContent = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,26 @@ const OrderConfirmationContent = () => {
   const estimatedMinutes = Math.max(15, hookahCount * 12);
   
   const [timeLeft, setTimeLeft] = useState(estimatedMinutes * 60);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("room_number")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        
+        setRoomNumber(data?.room_number || null);
+      }
+      setLoading(false);
+    };
+    
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -131,6 +152,62 @@ const OrderConfirmationContent = () => {
                   </p>
                 </div>
               </motion.div>
+
+              {/* Delivery Info */}
+              {!loading && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.65 }}
+                  className={`p-4 rounded-xl border ${
+                    roomNumber 
+                      ? 'bg-golden/10 border-golden/30' 
+                      : 'bg-sunset/10 border-sunset/30'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {roomNumber ? (
+                      <>
+                        <Building2 className="w-5 h-5 text-golden mt-0.5" />
+                        <div>
+                          <p className="text-foreground font-medium">
+                            {t("order.deliveryTo")} <span className="text-golden">#{roomNumber}</span>
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {t("order.wrongRoom")}
+                          </p>
+                          <Button
+                            variant="link"
+                            onClick={() => navigate("/profile")}
+                            className="text-golden p-0 h-auto mt-1"
+                          >
+                            {t("order.updateRoom")}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-5 h-5 text-sunset mt-0.5" />
+                        <div>
+                          <p className="text-foreground font-medium">
+                            {t("order.noRoom")}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {t("order.addRoomHint")}
+                          </p>
+                          <Button
+                            variant="link"
+                            onClick={() => navigate("/profile")}
+                            className="text-sunset p-0 h-auto mt-1"
+                          >
+                            {t("order.addRoom")}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Order Summary */}
               <motion.div
