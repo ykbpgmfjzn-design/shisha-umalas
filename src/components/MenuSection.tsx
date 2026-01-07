@@ -377,44 +377,6 @@ const MenuSection = () => {
               />
             </SubCategory>
           </MenuCategory>
-
-          {/* Extras Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="relative"
-          >
-            <div className="bg-gradient-to-br from-accent/20 to-primary/10 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-card border border-border/30">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/30">
-                <div>
-                  <h3 className="font-display text-2xl md:text-3xl text-foreground tracking-wide">
-                    {t("menu.extras")}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1 tracking-widest uppercase font-body">
-                    {t("menu.extrasSubtitle")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <SubCategory title={t("menu.drinks")}>
-                  <MenuItem id="drink-water" name="Mineral Water" price={25000} priceDisplay="IDR 25K" itemType="drink" delay={0.1} />
-                  <MenuItem id="drink-cola" name="Coca Cola" price={30000} priceDisplay="IDR 30K" itemType="drink" delay={0.15} />
-                  <MenuItem id="drink-sprite" name="Sprite" price={30000} priceDisplay="IDR 30K" itemType="drink" delay={0.2} />
-                  <MenuItem id="drink-tea" name="Iced Tea" price={35000} priceDisplay="IDR 35K" itemType="drink" delay={0.25} />
-                  <MenuItem id="drink-coffee" name="Espresso" price={40000} priceDisplay="IDR 40K" itemType="drink" delay={0.3} />
-                </SubCategory>
-
-                <SubCategory title={t("menu.snacks")}>
-                  <MenuItem id="snack-nuts" name="Mixed Nuts" price={45000} priceDisplay="IDR 45K" itemType="snack" delay={0.35} />
-                  <MenuItem id="snack-fruit" name="Fresh Fruit Plate" price={65000} priceDisplay="IDR 65K" itemType="snack" delay={0.4} />
-                  <MenuItem id="snack-chips" name="Premium Chips" price={35000} priceDisplay="IDR 35K" itemType="snack" delay={0.45} />
-                </SubCategory>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
