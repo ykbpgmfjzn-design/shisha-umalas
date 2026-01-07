@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Crown, Gift, Coffee, Cookie, Star, 
-  Building2, Users, Sparkles, X, LogOut
+  Building2, Users, Sparkles, X, LogOut, Calendar, Hash
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
+import { usePurchases } from "@/hooks/usePurchases";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,6 +25,7 @@ const Profile = () => {
     getNextLevelInfo,
     getHookahsToNextLevel 
   } = useProfile();
+  const { purchases, loading: purchasesLoading } = usePurchases(user?.id);
   
   const [roomInput, setRoomInput] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -102,6 +104,16 @@ const Profile = () => {
       });
       navigate("/");
     }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   if (loading) {
@@ -322,6 +334,72 @@ const Profile = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Purchase History */}
+          <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium">История заказов</p>
+              <span className="text-sm text-muted-foreground">{purchases.length} заказов</span>
+            </div>
+            
+            {purchasesLoading ? (
+              <div className="flex justify-center py-8">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  className="w-6 h-6 border-2 border-golden/30 border-t-golden rounded-full"
+                />
+              </div>
+            ) : purchases.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                {purchases.map((purchase) => (
+                  <div
+                    key={purchase.id}
+                    className="p-4 rounded-xl bg-muted/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{purchase.hookah_count} кальян(ов)</span>
+                      </div>
+                      {purchase.amount && (
+                        <span className="text-golden font-medium">
+                          {purchase.amount.toLocaleString()} ₽
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(purchase.created_at)}
+                      </div>
+                      {purchase.free_drink_used && (
+                        <div className="flex items-center gap-1 text-golden">
+                          <Coffee className="w-3 h-3" />
+                          Напиток
+                        </div>
+                      )}
+                      {purchase.free_snack_used && (
+                        <div className="flex items-center gap-1 text-golden">
+                          <Cookie className="w-3 h-3" />
+                          Снек
+                        </div>
+                      )}
+                    </div>
+                    {purchase.notes && (
+                      <p className="text-xs text-muted-foreground mt-2 italic">
+                        {purchase.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Пока нет заказов
+              </p>
+            )}
           </div>
 
           {/* All Levels Preview */}
