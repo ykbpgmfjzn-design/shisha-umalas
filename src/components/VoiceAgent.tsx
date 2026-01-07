@@ -3,20 +3,20 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Volume2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
-interface VoiceAgentProps {
-  agentId: string;
-}
-
-const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
+const VoiceAgent = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [agentId, setAgentId] = useState("");
+  const [hasStarted, setHasStarted] = useState(false);
   const { toast } = useToast();
 
   const conversation = useConversation({
     onConnect: () => {
       console.log("Connected to voice agent");
+      setHasStarted(true);
       toast({
         title: "Connected",
         description: "Voice agent is ready. Start speaking!",
@@ -24,6 +24,7 @@ const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
     },
     onDisconnect: () => {
       console.log("Disconnected from voice agent");
+      setHasStarted(false);
     },
     onMessage: (message) => {
       console.log("Message:", message);
@@ -33,44 +34,29 @@ const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
       toast({
         variant: "destructive",
         title: "Connection Error",
-        description: "Failed to connect to voice agent. Please try again.",
+        description: "Failed to connect to voice agent. Please check your Agent ID.",
       });
     },
   });
 
   const startConversation = useCallback(async () => {
+    if (!agentId.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Agent ID Required",
+        description: "Please enter your ElevenLabs Agent ID.",
+      });
+      return;
+    }
+
     setIsConnecting(true);
     try {
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Get token from edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ agentId }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to get conversation token");
-      }
-
-      const data = await response.json();
-
-      if (!data?.token) {
-        throw new Error("No token received");
-      }
-
-      // Start the conversation with WebRTC
+      // Start the conversation directly with the public agent ID (no token needed)
       await conversation.startSession({
-        conversationToken: data.token,
+        agentId: agentId.trim(),
         connectionType: "webrtc",
       });
     } catch (error) {
@@ -136,6 +122,20 @@ const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
 
             {/* Content */}
             <div className="p-6 flex flex-col items-center gap-4">
+              {/* Agent ID Input (only show when not connected) */}
+              {conversation.status === "disconnected" && !hasStarted && (
+                <div className="w-full space-y-2">
+                  <label className="text-xs text-muted-foreground">ElevenLabs Agent ID</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your Agent ID"
+                    value={agentId}
+                    onChange={(e) => setAgentId(e.target.value)}
+                    className="bg-background/50 border-border/50"
+                  />
+                </div>
+              )}
+
               {/* Status Indicator */}
               <div className="flex items-center gap-2 text-sm">
                 <div
@@ -171,8 +171,8 @@ const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
               {conversation.status === "disconnected" ? (
                 <Button
                   onClick={startConversation}
-                  disabled={isConnecting}
-                  className="w-full bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden"
+                  disabled={isConnecting || !agentId.trim()}
+                  className="w-full bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden disabled:opacity-50"
                 >
                   {isConnecting ? (
                     <span className="flex items-center gap-2">
@@ -203,7 +203,9 @@ const VoiceAgent = ({ agentId }: VoiceAgentProps) => {
 
               {/* Instructions */}
               <p className="text-xs text-center text-muted-foreground">
-                Ask about our shisha flavors, strengths, and signature mixes!
+                {conversation.status === "disconnected" 
+                  ? "Enter your public ElevenLabs Agent ID to start"
+                  : "Ask about our shisha flavors, strengths, and signature mixes!"}
               </p>
             </div>
           </motion.div>
