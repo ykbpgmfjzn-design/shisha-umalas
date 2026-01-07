@@ -1,25 +1,40 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { User, Crown } from "lucide-react";
+import { User, Crown, Shield } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const AuthButton = () => {
   const { user, profile, loading } = useProfile();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
 
   if (loading) return null;
 
   if (user) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate("/profile")}
-        className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-      >
-        <Crown className="w-4 h-4 mr-2 text-golden" />
-        {profile?.loyalty_level ? `Ур. ${profile.loyalty_level}` : "Профиль"}
-      </Button>
+      <div className="flex items-center gap-2">
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin")}
+            className="text-golden hover:text-golden hover:bg-golden/10"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Админ
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/profile")}
+          className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
+        >
+          <Crown className="w-4 h-4 mr-2 text-golden" />
+          {profile?.loyalty_level ? `Ур. ${profile.loyalty_level}` : "Профиль"}
+        </Button>
+      </div>
     );
   }
 
