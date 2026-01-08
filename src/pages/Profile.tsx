@@ -11,6 +11,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePurchases } from "@/hooks/usePurchases";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
+import UserReservations from "@/components/profile/UserReservations";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -266,6 +267,9 @@ const Profile = () => {
                 : "Укажите номер комнаты для получения статуса Special и дополнительных бонусов"}
             </p>
           </div>
+
+          {/* User Reservations */}
+          <UserReservations />
 
           {/* Loyalty Level */}
           <div className="bg-gradient-to-br from-golden/10 to-sunset/10 rounded-2xl border border-golden/20 p-6 space-y-5">

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.xendit-webhook]
 verify_jwt = false
+
+[functions.send-reservation-notification]
+verify_jwt = false

@@ -93,24 +93,50 @@ export default function ReservationsList() {
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
     
+    // Find the reservation to get user details for notification
+    const reservation = reservations.find(r => r.id === id);
+    
     const { error } = await supabase
       .from("reservations")
       .update({ status })
       .eq("id", id);
 
-    setUpdating(null);
-
     if (error) {
+      setUpdating(null);
       toast.error("Ошибка обновления статуса");
       console.error("Update error:", error);
-    } else {
-      toast.success(
-        status === "confirmed" ? t("admin.reservationConfirmed") :
-        status === "cancelled" ? t("admin.reservationCancelled") :
-        "Статус обновлён"
-      );
-      fetchReservations();
+      return;
     }
+
+    // Send notification
+    if (reservation?.profile?.email) {
+      try {
+        await supabase.functions.invoke("send-reservation-notification", {
+          body: {
+            reservation_id: id,
+            new_status: status,
+            user_email: reservation.profile.email,
+            user_name: reservation.profile.full_name || undefined,
+            reservation_date: format(new Date(reservation.reservation_date), "d MMMM yyyy", { locale: ru }),
+            reservation_time: reservation.reservation_time,
+            party_size: reservation.party_size,
+            hookah_count: reservation.hookah_count,
+          },
+        });
+        console.log("Notification sent successfully");
+      } catch (notifError) {
+        console.error("Notification error:", notifError);
+        // Don't fail the status update if notification fails
+      }
+    }
+
+    setUpdating(null);
+    toast.success(
+      status === "confirmed" ? t("admin.reservationConfirmed") :
+      status === "cancelled" ? t("admin.reservationCancelled") :
+      "Статус обновлён"
+    );
+    fetchReservations();
   };
 
   const isUpcoming = (dateStr: string) => {
