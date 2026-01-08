@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import { useLogout } from "@/hooks/useLogout";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OrderNotifications from "@/components/OrderNotifications";
@@ -50,6 +51,7 @@ const AdminContent = () => {
     updatePurchaseStatus,
     addPurchase 
   } = useAdmin();
+  const { logout } = useLogout();
 
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [showAddPurchase, setShowAddPurchase] = useState(false);
@@ -260,10 +262,7 @@ const AdminContent = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate("/");
-              }}
+              onClick={logout}
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut className="w-4 h-4 mr-2" />

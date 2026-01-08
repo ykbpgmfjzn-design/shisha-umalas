@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
 import { usePurchases } from "@/hooks/usePurchases";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useLogout } from "@/hooks/useLogout";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const Profile = () => {
     getHookahsToNextLevel 
   } = useProfile();
   const { purchases, loading: purchasesLoading } = usePurchases(user?.id);
+  const { logout } = useLogout();
   
   const [roomInput, setRoomInput] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -90,20 +91,11 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось выйти из системы",
-      });
-    } else {
-      toast({
-        title: "До свидания!",
-        description: "Вы вышли из системы",
-      });
-      navigate("/");
-    }
+    await logout();
+    toast({
+      title: "До свидания!",
+      description: "Вы вышли из системы",
+    });
   };
 
   const formatDate = (dateStr: string) => {
