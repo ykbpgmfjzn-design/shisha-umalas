@@ -150,7 +150,7 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
                     <span className="font-medium">{order.hookah_count} кальян(ов)</span>
                     {order.amount && (
                       <span className="text-golden font-medium">
-                        {order.amount.toLocaleString()} ₽
+                        IDR {order.amount.toLocaleString('id-ID')}
                       </span>
                     )}
                   </div>

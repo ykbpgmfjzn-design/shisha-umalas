@@ -98,7 +98,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
               </div>
               {purchase.amount && (
                 <span className="text-golden font-medium">
-                  {purchase.amount.toLocaleString()} ₽
+                  IDR {purchase.amount.toLocaleString('id-ID')}
                 </span>
               )}
             </div>
