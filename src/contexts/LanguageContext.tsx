@@ -222,6 +222,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "Enter cancellation reason...",
     "shishaMaster.orders.cancelReason": "Cancellation reason",
     "shishaMaster.orders.confirmCancel": "Confirm Cancel",
+    "shishaMaster.orders.history": "History",
+    "shishaMaster.orders.noHistory": "No completed orders yet",
+    "shishaMaster.orders.statusDelivered": "Delivered",
+    "shishaMaster.orders.statusCancelled": "Cancelled",
     
     // Payment
     "payment.methods": "Payment Methods",
@@ -433,6 +437,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "Введите причину отмены...",
     "shishaMaster.orders.cancelReason": "Причина отмены",
     "shishaMaster.orders.confirmCancel": "Подтвердить отмену",
+    "shishaMaster.orders.history": "История",
+    "shishaMaster.orders.noHistory": "Нет завершённых заказов",
+    "shishaMaster.orders.statusDelivered": "Доставлено",
+    "shishaMaster.orders.statusCancelled": "Отменено",
     
     // Payment
     "payment.methods": "Способы оплаты",
@@ -602,6 +610,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "Masukkan alasan pembatalan...",
     "shishaMaster.orders.cancelReason": "Alasan pembatalan",
     "shishaMaster.orders.confirmCancel": "Konfirmasi Batal",
+    "shishaMaster.orders.history": "Riwayat",
+    "shishaMaster.orders.noHistory": "Belum ada pesanan selesai",
+    "shishaMaster.orders.statusDelivered": "Terkirim",
+    "shishaMaster.orders.statusCancelled": "Dibatalkan",
     
     // Payment
     "payment.methods": "Metode Pembayaran",
@@ -753,6 +765,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "Введіть причину скасування...",
     "shishaMaster.orders.cancelReason": "Причина скасування",
     "shishaMaster.orders.confirmCancel": "Підтвердити скасування",
+    "shishaMaster.orders.history": "Історія",
+    "shishaMaster.orders.noHistory": "Немає завершених замовлень",
+    "shishaMaster.orders.statusDelivered": "Доставлено",
+    "shishaMaster.orders.statusCancelled": "Скасовано",
     
     // Payment
     "payment.methods": "Способи оплати",
@@ -904,6 +920,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "Entrez la raison...",
     "shishaMaster.orders.cancelReason": "Raison d'annulation",
     "shishaMaster.orders.confirmCancel": "Confirmer l'annulation",
+    "shishaMaster.orders.history": "Historique",
+    "shishaMaster.orders.noHistory": "Aucune commande terminée",
+    "shishaMaster.orders.statusDelivered": "Livré",
+    "shishaMaster.orders.statusCancelled": "Annulé",
     
     // Payment
     "payment.methods": "Modes de paiement",
@@ -1049,6 +1069,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "रद्द करने का कारण दर्ज करें...",
     "shishaMaster.orders.cancelReason": "रद्द करने का कारण",
     "shishaMaster.orders.confirmCancel": "रद्द की पुष्टि करें",
+    "shishaMaster.orders.history": "इतिहास",
+    "shishaMaster.orders.noHistory": "कोई पूर्ण ऑर्डर नहीं",
+    "shishaMaster.orders.statusDelivered": "डिलीवर किया गया",
+    "shishaMaster.orders.statusCancelled": "रद्द किया गया",
     
     // Payment
     "payment.methods": "भुगतान के तरीके",
@@ -1194,6 +1218,10 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.cancelReasonPlaceholder": "输入取消原因...",
     "shishaMaster.orders.cancelReason": "取消原因",
     "shishaMaster.orders.confirmCancel": "确认取消",
+    "shishaMaster.orders.history": "历史记录",
+    "shishaMaster.orders.noHistory": "暂无已完成订单",
+    "shishaMaster.orders.statusDelivered": "已送达",
+    "shishaMaster.orders.statusCancelled": "已取消",
     
     // Payment
     "payment.methods": "支付方式",
