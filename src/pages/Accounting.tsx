@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useLogout } from "@/hooks/useLogout";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import type { PurchaseWithProfile, DashboardStats } from "@/hooks/useAdmin";
@@ -38,6 +39,7 @@ const AccountingContent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { logout } = useLogout();
   
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -334,10 +336,7 @@ const AccountingContent = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate("/");
-              }}
+              onClick={logout}
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut className="w-4 h-4 mr-2" />

@@ -29,7 +29,8 @@ import {
   Filter,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -199,6 +200,33 @@ function ActivityLogsContent() {
     setCurrentPage(1);
   };
 
+  const exportToCSV = () => {
+    const headers = ['Дата', 'Время', 'Пользователь', 'Тип', 'Действие', 'Детали'];
+    const rows = filteredLogs.map(log => [
+      format(new Date(log.created_at), "dd.MM.yyyy"),
+      format(new Date(log.created_at), "HH:mm:ss"),
+      log.profile?.email || log.profile?.full_name || 'Гость',
+      log.activity_type,
+      log.action,
+      getDetailsText(log.details).replace(/•/g, ',')
+    ]);
+    
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `activity-logs-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredLogs = logs.filter(log => {
     const typeMatch = selectedTypes.includes(log.activity_type);
     const userMatch = selectedUsers.length === 0 || (log.user_id && selectedUsers.includes(log.user_id));
@@ -310,6 +338,19 @@ function ActivityLogsContent() {
                 className="text-primary border-primary"
               >
                 Сбросить всё
+              </Button>
+            )}
+
+            {/* Export CSV */}
+            {filteredLogs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportToCSV}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                CSV
               </Button>
             )}
 
