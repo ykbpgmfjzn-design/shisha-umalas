@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const WHATSAPP_NUMBER = "6285190268329";
 
 const WhatsAppChat = () => {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Set default message when component mounts or language changes
+  useEffect(() => {
+    setMessage(t("whatsapp.defaultMessage"));
+  }, [t]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -46,8 +53,8 @@ const WhatsAppChat = () => {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-semibold text-sm">Shisha Lounge</h3>
-                <p className="text-white/80 text-xs">Обычно отвечаем в течение часа</p>
+                <h3 className="text-white font-semibold text-sm">{t("whatsapp.title")}</h3>
+                <p className="text-white/80 text-xs">{t("whatsapp.subtitle")}</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -61,9 +68,9 @@ const WhatsAppChat = () => {
             <div className="p-4 bg-[#ECE5DD] min-h-[200px]">
               <div className="bg-white rounded-lg p-3 shadow-sm max-w-[85%]">
                 <p className="text-sm text-gray-800">
-                  👋 Привет! Как мы можем вам помочь?
+                  {t("whatsapp.greeting")}
                 </p>
-                <p className="text-xs text-gray-500 mt-1 text-right">Shisha Lounge</p>
+                <p className="text-xs text-gray-500 mt-1 text-right">{t("whatsapp.title")}</p>
               </div>
             </div>
 
@@ -73,7 +80,7 @@ const WhatsAppChat = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Напишите сообщение..."
+                placeholder={t("whatsapp.placeholder")}
                 className="flex-1 text-sm"
               />
               <Button
