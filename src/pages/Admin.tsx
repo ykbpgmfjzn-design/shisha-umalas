@@ -28,7 +28,19 @@ import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
 import DeliverySettings from "@/components/admin/DeliverySettings";
 import FeedbackList from "@/components/admin/FeedbackList";
+import FeedbackChart from "@/components/admin/FeedbackChart";
+import RecentFeedback from "@/components/admin/RecentFeedback";
 import type { Profile } from "@/hooks/useProfile";
+
+interface FeedbackWithUser {
+  id: string;
+  user_id: string | null;
+  rating: number;
+  message: string | null;
+  created_at: string;
+  user_name?: string;
+  user_email?: string;
+}
 
 const AdminContent = () => {
   const navigate = useNavigate();
@@ -57,26 +69,71 @@ const AdminContent = () => {
   const [showAddPurchase, setShowAddPurchase] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [feedbackStats, setFeedbackStats] = useState({ count: 0, avgRating: 0 });
+  const [allFeedbacks, setAllFeedbacks] = useState<FeedbackWithUser[]>([]);
 
-  // Fetch feedback stats on mount
-  useEffect(() => {
-    const fetchFeedbackStats = async () => {
-      const { data, error } = await supabase
-        .from("feedback")
-        .select("rating");
-      
-      if (!error && data) {
-        const count = data.length;
-        const avgRating = count > 0 
-          ? data.reduce((sum, f) => sum + f.rating, 0) / count 
-          : 0;
-        setFeedbackStats({ count, avgRating });
-      }
-    };
-    
-    if (isAdmin) {
-      fetchFeedbackStats();
+  // Fetch feedback with user data
+  const fetchFeedbacks = async () => {
+    const { data, error } = await supabase
+      .from("feedback")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching feedback:", error);
+      return;
     }
+
+    // Fetch user profiles for each feedback
+    const feedbacksWithUsers = await Promise.all(
+      (data || []).map(async (fb) => {
+        if (fb.user_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", fb.user_id)
+            .maybeSingle();
+          
+          return {
+            ...fb,
+            user_email: profile?.email || undefined,
+            user_name: profile?.full_name || undefined,
+          };
+        }
+        return fb as FeedbackWithUser;
+      })
+    );
+
+    setAllFeedbacks(feedbacksWithUsers);
+    
+    // Calculate stats
+    const count = feedbacksWithUsers.length;
+    const avgRating = count > 0 
+      ? feedbacksWithUsers.reduce((sum, fb) => sum + fb.rating, 0) / count 
+      : 0;
+    setFeedbackStats({ count, avgRating });
+  };
+
+  // Fetch feedback on mount and setup realtime subscription
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    fetchFeedbacks();
+
+    // Realtime subscription for feedback updates
+    const channel = supabase
+      .channel('feedback-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'feedback' },
+        () => {
+          fetchFeedbacks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAdmin]);
   const [purchaseForm, setPurchaseForm] = useState({
     hookahCount: 1,
@@ -325,6 +382,12 @@ const AdminContent = () => {
               feedbackCount={feedbackStats.count} 
               avgRating={feedbackStats.avgRating} 
             />
+            
+            {/* Feedback Chart + Recent Feedback */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              <FeedbackChart feedbacks={allFeedbacks} />
+              <RecentFeedback feedbacks={allFeedbacks} />
+            </div>
             
             {/* Current Orders + Settings */}
             <div className="grid lg:grid-cols-2 gap-6">
