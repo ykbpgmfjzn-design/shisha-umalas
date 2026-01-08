@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Plus, LogOut,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import DeliverySettings from "@/components/admin/DeliverySettings";
 import FeedbackList from "@/components/admin/FeedbackList";
 import FeedbackChart from "@/components/admin/FeedbackChart";
 import RecentFeedback from "@/components/admin/RecentFeedback";
+import ReservationsList from "@/components/admin/ReservationsList";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -351,7 +352,7 @@ const AdminContent = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4 bg-card/60 backdrop-blur-xl">
+          <TabsList className="grid w-full max-w-2xl grid-cols-5 bg-card/60 backdrop-blur-xl">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Обзор</span>
@@ -364,6 +365,10 @@ const AdminContent = () => {
                   {pendingOrders.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="reservations" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("admin.reservations")}</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
@@ -420,6 +425,11 @@ const AdminContent = () => {
               onUpdateStatus={handleUpdateOrderStatus}
               title="Все заказы"
             />
+          </TabsContent>
+
+          {/* Reservations Tab */}
+          <TabsContent value="reservations">
+            <ReservationsList />
           </TabsContent>
 
           {/* Users Tab */}

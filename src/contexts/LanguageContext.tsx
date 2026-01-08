@@ -281,6 +281,27 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.statusDelivered": "Delivered",
     "shishaMaster.orders.statusCancelled": "Cancelled",
     
+    // Training Materials
+    "shishaMaster.training.title": "Training Materials",
+    "shishaMaster.training.addMaterial": "Add Material",
+    "shishaMaster.training.noMaterials": "No training materials yet",
+    "shishaMaster.training.materialTitle": "Title",
+    "shishaMaster.training.description": "Description",
+    "shishaMaster.training.file": "File",
+    "shishaMaster.training.uploading": "Uploading...",
+    "shishaMaster.training.upload": "Upload",
+    "shishaMaster.training.open": "Open",
+    "shishaMaster.training.delete": "Delete",
+    "shishaMaster.training.deleteConfirmTitle": "Delete Material",
+    "shishaMaster.training.deleteConfirmDesc": "Are you sure you want to delete this material?",
+    
+    // Reservations
+    "admin.reservations": "Reservations",
+    "admin.noReservations": "No reservations yet",
+    "admin.upcomingReservations": "Upcoming",
+    "admin.pastReservations": "Past",
+    "admin.guests": "guests",
+    
     // Payment
     "payment.methods": "Payment Methods",
     "payment.bankTransfer": "Bank Transfer (IDR)",
@@ -550,6 +571,27 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "Нет завершённых заказов",
     "shishaMaster.orders.statusDelivered": "Доставлено",
     "shishaMaster.orders.statusCancelled": "Отменено",
+    
+    // Training Materials
+    "shishaMaster.training.title": "Обучающие материалы",
+    "shishaMaster.training.addMaterial": "Добавить материал",
+    "shishaMaster.training.noMaterials": "Материалов пока нет",
+    "shishaMaster.training.materialTitle": "Название",
+    "shishaMaster.training.description": "Описание",
+    "shishaMaster.training.file": "Файл",
+    "shishaMaster.training.uploading": "Загрузка...",
+    "shishaMaster.training.upload": "Загрузить",
+    "shishaMaster.training.open": "Открыть",
+    "shishaMaster.training.delete": "Удалить",
+    "shishaMaster.training.deleteConfirmTitle": "Удалить материал",
+    "shishaMaster.training.deleteConfirmDesc": "Вы уверены, что хотите удалить этот материал?",
+    
+    // Reservations
+    "admin.reservations": "Бронирования",
+    "admin.noReservations": "Бронирований пока нет",
+    "admin.upcomingReservations": "Предстоящие",
+    "admin.pastReservations": "Прошедшие",
+    "admin.guests": "гостей",
     
     // Payment
     "payment.methods": "Способы оплаты",
