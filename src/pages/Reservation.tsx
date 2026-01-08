@@ -43,6 +43,7 @@ const ReservationContent = () => {
   const [partySize, setPartySize] = useState<number>(2);
   const [hookahCount, setHookahCount] = useState<number>(1);
   const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,7 @@ const ReservationContent = () => {
           party_size: partySize,
           hookah_count: hookahCount,
           phone,
+          location: location || null,
           notes: notes || specialRequests || null,
           status: 'pending',
         });
@@ -253,6 +255,21 @@ const ReservationContent = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+62..."
+                  className="pl-10 bg-card/50 border-golden/30 focus:border-golden"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                {t("reservation.location")}
+              </label>
+              <div className="relative">
+                <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={t("reservation.locationPlaceholder")}
                   className="pl-10 bg-card/50 border-golden/30 focus:border-golden"
                 />
               </div>

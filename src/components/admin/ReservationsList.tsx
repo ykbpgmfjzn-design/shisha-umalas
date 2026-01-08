@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar, Clock, Users, Wind, Phone, User, Check, X, MoreVertical, Loader2 } from "lucide-react";
+import { Calendar, Clock, Users, Wind, Phone, User, Check, X, MoreVertical, Loader2, MapPin } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { format } from "date-fns";
@@ -24,6 +24,7 @@ interface Reservation {
   party_size: number;
   hookah_count: number;
   phone: string;
+  location: string | null;
   notes: string | null;
   status: string;
   created_at: string;
@@ -238,6 +239,13 @@ export default function ReservationsList() {
               </div>
             )}
           </div>
+
+          {res.location && (
+            <div className="flex items-center gap-1.5 text-sm text-primary">
+              <MapPin className="h-3.5 w-3.5" />
+              <span>{res.location}</span>
+            </div>
+          )}
 
           {res.notes && (
             <p className="text-sm text-muted-foreground italic">

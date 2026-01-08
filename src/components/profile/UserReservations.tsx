@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Wind, Loader2 } from "lucide-react";
+import { Calendar, Clock, Users, Wind, Loader2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -12,6 +12,7 @@ interface Reservation {
   reservation_time: string;
   party_size: number;
   hookah_count: number;
+  location: string | null;
   status: string;
   created_at: string;
 }
@@ -149,6 +150,12 @@ export default function UserReservations() {
                     <span>{res.hookah_count} кальян(ов)</span>
                   </div>
                 </div>
+                {res.location && (
+                  <div className="flex items-center gap-1.5 text-sm text-primary mt-2">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{res.location}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

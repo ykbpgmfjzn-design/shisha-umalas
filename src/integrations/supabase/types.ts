@@ -218,6 +218,7 @@ export type Database = {
           created_at: string
           hookah_count: number
           id: string
+          location: string | null
           notes: string | null
           party_size: number
           phone: string
@@ -232,6 +233,7 @@ export type Database = {
           created_at?: string
           hookah_count?: number
           id?: string
+          location?: string | null
           notes?: string | null
           party_size?: number
           phone: string
@@ -246,6 +248,7 @@ export type Database = {
           created_at?: string
           hookah_count?: number
           id?: string
+          location?: string | null
           notes?: string | null
           party_size?: number
           phone?: string
