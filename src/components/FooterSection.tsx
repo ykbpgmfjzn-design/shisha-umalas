@@ -59,13 +59,18 @@ const FooterSection = () => {
           </p>
 
           {/* Address */}
-          <div className="text-center space-y-1">
-            <p className="font-display text-lg text-golden">The Umalas Signature</p>
-            <p className="font-body text-sm text-muted-foreground leading-relaxed">
+          <a 
+            href="https://maps.google.com/?q=The+Umalas+Signature,+Jl.+Bumbak+No.156,+Kerobokan,+Bali"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center space-y-1 group"
+          >
+            <p className="font-display text-lg text-golden group-hover:text-golden/80 transition-colors">The Umalas Signature</p>
+            <p className="font-body text-sm text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">
               Jl. Bumbak No.156, Kerobokan, Kec. Kuta Utara,<br />
               Kabupaten Badung, Bali 80361
             </p>
-          </div>
+          </a>
         </motion.div>
       </div>
 
