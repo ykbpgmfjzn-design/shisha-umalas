@@ -329,6 +329,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Bank",
     "payment.accountNumber": "Account Number",
     "payment.copy": "Copy",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "Usually reply within an hour",
+    "whatsapp.greeting": "👋 Hi! How can we help you?",
+    "whatsapp.placeholder": "Write a message...",
+    "whatsapp.defaultMessage": "I want Shisha, need advice",
   },
   ru: {
     "hero.title": "КАЛЬЯН",
@@ -628,6 +635,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер счёта",
     "payment.copy": "Копировать",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "Обычно отвечаем в течение часа",
+    "whatsapp.greeting": "👋 Привет! Как мы можем вам помочь?",
+    "whatsapp.placeholder": "Напишите сообщение...",
+    "whatsapp.defaultMessage": "Хочу Shisha, нужен совет",
   },
   id: {
     "hero.title": "SHISHA",
@@ -847,6 +861,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Bank",
     "payment.accountNumber": "Nomor Rekening",
     "payment.copy": "Salin",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "Biasanya membalas dalam satu jam",
+    "whatsapp.greeting": "👋 Hai! Bagaimana kami bisa membantu Anda?",
+    "whatsapp.placeholder": "Tulis pesan...",
+    "whatsapp.defaultMessage": "Saya ingin Shisha, butuh saran",
   },
   uk: {
     "hero.title": "КАЛЬЯН",
@@ -1048,6 +1069,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер рахунку",
     "payment.copy": "Копіювати",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "Зазвичай відповідаємо протягом години",
+    "whatsapp.greeting": "👋 Привіт! Як ми можемо вам допомогти?",
+    "whatsapp.placeholder": "Напишіть повідомлення...",
+    "whatsapp.defaultMessage": "Хочу Shisha, потрібна порада",
   },
   fr: {
     "hero.title": "CHICHA",
@@ -1249,6 +1277,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Banque",
     "payment.accountNumber": "Numéro de compte",
     "payment.copy": "Copier",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "Répond généralement dans l'heure",
+    "whatsapp.greeting": "👋 Bonjour ! Comment pouvons-nous vous aider ?",
+    "whatsapp.placeholder": "Écrivez un message...",
+    "whatsapp.defaultMessage": "Je veux du Shisha, j'ai besoin de conseils",
   },
   hi: {
     "hero.title": "हुक्का",
@@ -1444,6 +1479,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "बैंक",
     "payment.accountNumber": "खाता संख्या",
     "payment.copy": "कॉपी",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "आमतौर पर एक घंटे में जवाब देते हैं",
+    "whatsapp.greeting": "👋 नमस्ते! हम आपकी कैसे मदद कर सकते हैं?",
+    "whatsapp.placeholder": "संदेश लिखें...",
+    "whatsapp.defaultMessage": "मुझे Shisha चाहिए, सलाह चाहिए",
   },
   zh: {
     "hero.title": "水烟",
@@ -1639,6 +1681,13 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "银行",
     "payment.accountNumber": "账号",
     "payment.copy": "复制",
+    
+    // WhatsApp
+    "whatsapp.title": "Shisha Lounge",
+    "whatsapp.subtitle": "通常在一小时内回复",
+    "whatsapp.greeting": "👋 您好！我们能为您做些什么？",
+    "whatsapp.placeholder": "输入消息...",
+    "whatsapp.defaultMessage": "我想要水烟，需要建议",
   },
 };
 
