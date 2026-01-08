@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Plus, LogOut,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ const AdminContent = () => {
     freeSnack: false,
   });
   const [saving, setSaving] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -76,10 +77,23 @@ const AdminContent = () => {
   }, [isAdmin, loading, navigate, toast]);
 
   useEffect(() => {
+    const checkOwner = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        const hasOwnerRole = roles?.some(r => r.role === "owner") || false;
+        setIsOwner(hasOwnerRole);
+      }
+    };
+    
     if (isAdmin) {
       fetchAllProfiles();
       fetchAllPurchases();
       fetchAllUserRoles();
+      checkOwner();
     }
   }, [isAdmin, fetchAllProfiles, fetchAllPurchases, fetchAllUserRoles]);
 
@@ -228,6 +242,17 @@ const AdminContent = () => {
           </Button>
           <div className="flex items-center gap-4">
             <OrderNotifications />
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/activity-logs")}
+                className="border-golden/30 text-golden hover:bg-golden/10"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Логи</span>
+              </Button>
+            )}
             <div className="flex items-center gap-2 text-golden">
               <Shield className="w-5 h-5" />
               <span className="font-medium hidden sm:inline">Админ панель</span>
