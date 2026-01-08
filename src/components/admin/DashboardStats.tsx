@@ -41,14 +41,14 @@ const DashboardStats = ({ stats }: DashboardStatsProps) => {
     },
     {
       label: "Общая выручка",
-      value: `${stats.totalRevenue.toLocaleString()} ₽`,
+      value: `IDR ${stats.totalRevenue.toLocaleString('id-ID')}`,
       icon: DollarSign,
       color: "text-emerald-400",
       bgColor: "bg-emerald-400/10",
     },
     {
       label: "Выручка сегодня",
-      value: `${stats.todayRevenue.toLocaleString()} ₽`,
+      value: `IDR ${stats.todayRevenue.toLocaleString('id-ID')}`,
       icon: DollarSign,
       color: "text-cyan-400",
       bgColor: "bg-cyan-400/10",
