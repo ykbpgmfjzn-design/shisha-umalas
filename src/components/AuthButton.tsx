@@ -2,12 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, Crown, Shield } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const AuthButton = () => {
   const { user, profile, loading } = useProfile();
-  const { isAdmin } = useAdmin();
+  const { isAdmin } = useIsAdmin();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
