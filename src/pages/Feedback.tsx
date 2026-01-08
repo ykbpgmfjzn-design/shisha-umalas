@@ -9,6 +9,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const FeedbackContent = () => {
   const context = useContext(LanguageContext);
@@ -48,6 +49,12 @@ const FeedbackContent = () => {
       toast.error("Ошибка при отправке отзыва");
       console.error(error);
     } else {
+      // Log feedback submission
+      await logActivity('feedback', 'Отзыв отправлен', {
+        rating,
+        has_message: !!feedback,
+      });
+      
       toast.success(t("feedback.success"));
       setRating(0);
       setFeedback("");
