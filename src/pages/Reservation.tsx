@@ -26,6 +26,7 @@ import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const timeSlots = [
   "12:00", "13:00", "14:00", "15:00", "16:00", "17:00",
@@ -57,7 +58,15 @@ const ReservationContent = () => {
     setIsSubmitting(true);
     
     try {
-      // For now, just show success - you can add database saving later
+      // Log reservation
+      await logActivity('reservation', 'Бронирование создано', {
+        date: format(date, 'yyyy-MM-dd'),
+        time,
+        party_size: partySize,
+        hookah_count: hookahCount,
+        phone,
+      });
+
       toast.success(t("reservation.success"));
       
       // Reset form
