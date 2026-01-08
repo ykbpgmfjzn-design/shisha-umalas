@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
 
 const FeedbackContent = () => {
@@ -15,6 +16,15 @@ const FeedbackContent = () => {
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
 
   if (!context) return null;
 
@@ -28,12 +38,21 @@ const FeedbackContent = () => {
 
     setIsSubmitting(true);
 
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const { error } = await supabase.from("feedback").insert({
+      user_id: userId,
+      rating,
+      message: feedback || null,
+    });
     
-    toast.success(t("feedback.success"));
-    setRating(0);
-    setFeedback("");
+    if (error) {
+      toast.error("Ошибка при отправке отзыва");
+      console.error(error);
+    } else {
+      toast.success(t("feedback.success"));
+      setRating(0);
+      setFeedback("");
+    }
+    
     setIsSubmitting(false);
   };
 

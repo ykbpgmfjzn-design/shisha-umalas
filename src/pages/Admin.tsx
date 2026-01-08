@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Plus, LogOut,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import OrdersTable from "@/components/admin/OrdersTable";
 import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
 import DeliverySettings from "@/components/admin/DeliverySettings";
+import FeedbackList from "@/components/admin/FeedbackList";
 import type { Profile } from "@/hooks/useProfile";
 
 const AdminContent = () => {
@@ -53,6 +54,7 @@ const AdminContent = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [showAddPurchase, setShowAddPurchase] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [feedbackStats, setFeedbackStats] = useState({ count: 0, avgRating: 0 });
   const [purchaseForm, setPurchaseForm] = useState({
     hookahCount: 1,
     amount: "",
@@ -247,7 +249,7 @@ const AdminContent = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3 bg-card/60 backdrop-blur-xl">
+          <TabsList className="grid w-full max-w-lg grid-cols-4 bg-card/60 backdrop-blur-xl">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Обзор</span>
@@ -265,11 +267,19 @@ const AdminContent = () => {
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Пользователи</span>
             </TabsTrigger>
+            <TabsTrigger value="feedback" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Отзывы</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            <DashboardStats stats={stats} />
+            <DashboardStats 
+              stats={stats} 
+              feedbackCount={feedbackStats.count} 
+              avgRating={feedbackStats.avgRating} 
+            />
             
             {/* Current Orders + Settings */}
             <div className="grid lg:grid-cols-2 gap-6">
@@ -349,6 +359,13 @@ const AdminContent = () => {
                 onAddPurchase={() => setShowAddPurchase(true)}
               />
             </div>
+          </TabsContent>
+
+          {/* Feedback Tab */}
+          <TabsContent value="feedback">
+            <FeedbackList 
+              onStatsUpdate={(count, avgRating) => setFeedbackStats({ count, avgRating })}
+            />
           </TabsContent>
         </Tabs>
       </div>
