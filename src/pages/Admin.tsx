@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Users, Plus, Search, 
   Crown, Building2, Coffee, Cookie, Gift,
-  Calendar, Hash, LogOut
+  Calendar, Hash, LogOut, UserCog, ShieldCheck, ShieldX
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import OrderNotifications from "@/components/OrderNotifications";
@@ -30,8 +31,12 @@ const Admin = () => {
     loading, 
     profiles, 
     allPurchases,
+    userRoles,
     fetchAllProfiles, 
     fetchUserPurchases,
+    fetchUserRoles,
+    addUserRole,
+    removeUserRole,
     addPurchase 
   } = useAdmin();
 
@@ -46,6 +51,7 @@ const Admin = () => {
     freeSnack: false,
   });
   const [saving, setSaving] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -67,8 +73,53 @@ const Admin = () => {
   useEffect(() => {
     if (selectedUser) {
       fetchUserPurchases(selectedUser.id);
+      fetchUserRoles(selectedUser.id);
     }
-  }, [selectedUser, fetchUserPurchases]);
+  }, [selectedUser, fetchUserPurchases, fetchUserRoles]);
+
+  const isUserAdmin = (userId: string) => {
+    return userRoles.some(r => r.user_id === userId && r.role === "admin");
+  };
+
+  const handleToggleAdminRole = async () => {
+    if (!selectedUser) return;
+    
+    setRoleLoading(true);
+    const hasAdmin = isUserAdmin(selectedUser.id);
+    
+    if (hasAdmin) {
+      const { error } = await removeUserRole(selectedUser.id, "admin");
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: "Не удалось убрать роль администратора",
+        });
+      } else {
+        toast({
+          title: "Роль удалена",
+          description: "Пользователь больше не администратор",
+        });
+        fetchUserRoles(selectedUser.id);
+      }
+    } else {
+      const { error } = await addUserRole(selectedUser.id, "admin");
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: "Не удалось добавить роль администратора",
+        });
+      } else {
+        toast({
+          title: "Роль добавлена",
+          description: "Пользователь теперь администратор",
+        });
+        fetchUserRoles(selectedUser.id);
+      }
+    }
+    setRoleLoading(false);
+  };
 
   const filteredProfiles = profiles.filter(p => 
     p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -259,9 +310,17 @@ const Admin = () => {
             {selectedUser ? (
               <>
                 {/* User Info */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="font-display text-xl">{selectedUser.email}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-display text-xl">{selectedUser.email}</h2>
+                      {isUserAdmin(selectedUser.id) && (
+                        <Badge variant="outline" className="border-golden text-golden">
+                          <Shield className="w-3 h-3 mr-1" />
+                          Админ
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {selectedUser.full_name || "Без имени"} • 
                       {selectedUser.guest_type === "special" 
@@ -278,6 +337,29 @@ const Admin = () => {
                       {selectedUser.total_hookahs_ordered} кальянов
                     </p>
                   </div>
+                </div>
+
+                {/* Role Management */}
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    variant={isUserAdmin(selectedUser.id) ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={handleToggleAdminRole}
+                    disabled={roleLoading}
+                    className="flex-1"
+                  >
+                    {isUserAdmin(selectedUser.id) ? (
+                      <>
+                        <ShieldX className="w-4 h-4 mr-2" />
+                        Убрать админа
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4 mr-2" />
+                        Сделать админом
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 {/* Add Purchase Button */}
