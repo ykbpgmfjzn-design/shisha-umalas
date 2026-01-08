@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, Crown, Shield } from "lucide-react";
@@ -5,17 +6,28 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const AuthButton = () => {
+const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
   const { user, profile, loading } = useProfile();
   const { isAdmin } = useIsAdmin();
-  const { t } = useLanguage();
+  const languageContext = useLanguage();
   const navigate = useNavigate();
+
+  // Fallback translations if context is not available
+  const t = languageContext?.t || ((key: string) => {
+    const fallbacks: Record<string, string> = {
+      "auth.admin": "Admin",
+      "auth.level": "Lvl.",
+      "auth.profile": "Profile",
+      "auth.login": "Login",
+    };
+    return fallbacks[key] || key;
+  });
 
   if (loading) return null;
 
   if (user) {
     return (
-      <div className="flex items-center gap-2">
+      <div ref={ref} className="flex items-center gap-2">
         {isAdmin && (
           <Button
             variant="ghost"
@@ -41,16 +53,20 @@ const AuthButton = () => {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => navigate("/auth")}
-      className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-    >
-      <User className="w-4 h-4 mr-2" />
-      {t("auth.login")}
-    </Button>
+    <div ref={ref}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/auth")}
+        className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
+      >
+        <User className="w-4 h-4 mr-2" />
+        {t("auth.login")}
+      </Button>
+    </div>
   );
-};
+});
+
+AuthButton.displayName = "AuthButton";
 
 export default AuthButton;
