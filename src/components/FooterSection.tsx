@@ -54,9 +54,18 @@ const FooterSection = () => {
 
           <div className="w-16 h-px bg-gradient-golden mx-auto mb-8" />
           
-          <p className="font-body text-xs text-muted-foreground tracking-[0.2em] uppercase">
+          <p className="font-body text-xs text-muted-foreground tracking-[0.2em] uppercase mb-8">
             {t("footer.tagline")}
           </p>
+
+          {/* Address */}
+          <div className="text-center space-y-1">
+            <p className="font-display text-lg text-golden">The Umalas Signature</p>
+            <p className="font-body text-sm text-muted-foreground leading-relaxed">
+              Jl. Bumbak No.156, Kerobokan, Kec. Kuta Utara,<br />
+              Kabupaten Badung, Bali 80361
+            </p>
+          </div>
         </motion.div>
       </div>
 
