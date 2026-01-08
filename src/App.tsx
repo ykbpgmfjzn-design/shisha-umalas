@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Accounting from "./pages/Accounting";
+import ShishaMaster from "./pages/ShishaMaster";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/accounting" element={<Accounting />} />
+          <Route path="/shisha-master" element={<ShishaMaster />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
