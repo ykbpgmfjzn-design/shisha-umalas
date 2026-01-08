@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   ArrowLeft, 
   Activity, 
@@ -15,14 +16,17 @@ import {
   User, 
   Shield, 
   MessageSquare,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
-  Filter
+  Filter,
+  X
 } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { ru } from "date-fns/locale";
 import { Json } from "@/integrations/supabase/types";
+import { DateRange } from "react-day-picker";
 
 type ActivityTypeValue = 'auth' | 'order' | 'payment' | 'profile' | 'admin' | 'feedback' | 'reservation';
 
@@ -47,7 +51,7 @@ const ACTIVITY_TYPES = [
   { value: 'profile', label: 'Профили', icon: User },
   { value: 'admin', label: 'Админ', icon: Shield },
   { value: 'feedback', label: 'Отзывы', icon: MessageSquare },
-  { value: 'reservation', label: 'Брони', icon: Calendar },
+  { value: 'reservation', label: 'Брони', icon: CalendarIcon },
 ];
 
 function ActivityLogsContent() {
@@ -57,6 +61,7 @@ function ActivityLogsContent() {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     checkAccess();
@@ -66,7 +71,7 @@ function ActivityLogsContent() {
     if (hasAccess) {
       fetchLogs();
     }
-  }, [hasAccess, activeFilter]);
+  }, [hasAccess, activeFilter, dateRange]);
 
   const checkAccess = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -102,6 +107,14 @@ function ActivityLogsContent() {
     
     if (activeFilter !== 'all') {
       query = query.eq('activity_type', activeFilter as ActivityTypeValue);
+    }
+
+    // Apply date range filter
+    if (dateRange?.from) {
+      query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
+    }
+    if (dateRange?.to) {
+      query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
     }
     
     const { data, error } = await query;
@@ -191,6 +204,52 @@ function ActivityLogsContent() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Date filter */}
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd.MM.yy", { locale: ru })} -{" "}
+                      {format(dateRange.to, "dd.MM.yy", { locale: ru })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd.MM.yyyy", { locale: ru })
+                  )
+                ) : (
+                  "Выбрать период"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={ru}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          {dateRange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDateRange(undefined)}
+              className="text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Сбросить
+            </Button>
+          )}
+        </div>
+
         {/* Filter tabs */}
         <div className="mb-6">
           <ScrollArea className="w-full">

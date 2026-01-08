@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "./useProfile";
 import type { Database } from "@/integrations/supabase/types";
+import { logActivity } from "./useActivityLog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -221,6 +222,23 @@ export const useAdmin = () => {
       .eq("id", purchaseId)
       .select()
       .single();
+
+    // Log order status change
+    if (!error && data) {
+      const action = status === "cancelled" 
+        ? "Заказ отменён" 
+        : status === "PAID" 
+          ? "Заказ оплачен" 
+          : `Статус заказа изменён на ${status}`;
+      
+      await logActivity('order', action, {
+        purchase_id: purchaseId,
+        new_status: status,
+        hookah_count: data.hookah_count,
+        amount: data.amount,
+        user_id: data.user_id,
+      });
+    }
 
     return { data, error };
   }, []);
