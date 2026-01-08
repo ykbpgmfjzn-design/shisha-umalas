@@ -1,16 +1,18 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const OrderConfirmationContent = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { toast } = useToast();
   
   const orderId = searchParams.get("id") || "";
   const total = searchParams.get("total") || "0";
@@ -23,6 +25,9 @@ const OrderConfirmationContent = () => {
   const [timeLeft, setTimeLeft] = useState(estimatedMinutes * 60);
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -44,11 +49,74 @@ const OrderConfirmationContent = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prev) => Math.max(0, prev - 1));
+      setTimeLeft((prev) => {
+        const newTime = Math.max(0, prev - 1);
+        if (newTime === 0 && prev !== 0) {
+          setIsReady(true);
+          playReadySound();
+        }
+        return newTime;
+      });
     }, 1000);
     
     return () => clearInterval(timer);
   }, []);
+
+  const playReadySound = () => {
+    // Create a simple notification sound using Web Audio API
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    // Play a pleasant chime melody
+    const now = audioContext.currentTime;
+    playTone(523.25, now, 0.2);        // C5
+    playTone(659.25, now + 0.2, 0.2);  // E5
+    playTone(783.99, now + 0.4, 0.3);  // G5
+  };
+
+  const handleCancelOrder = async () => {
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("purchases")
+        .delete()
+        .eq("id", orderId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: t("order.cancelled"),
+        description: t("order.cancelledDesc"),
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast({
+        title: t("order.cancelError"),
+        description: t("order.cancelErrorDesc"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -78,35 +146,39 @@ const OrderConfirmationContent = () => {
         >
           {/* Success Card */}
           <div className="bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-br from-golden/20 to-sunset/10 p-8 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-flex items-center justify-center w-20 h-20 bg-golden/20 rounded-full mb-4"
-              >
-                <CheckCircle className="w-12 h-12 text-golden" />
-              </motion.div>
-              
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="font-display text-3xl text-foreground mb-2"
-              >
-                {t("order.confirmed")}
-              </motion.h1>
-              
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-muted-foreground"
-              >
-                {t("order.thankYou")}
-              </motion.p>
-            </div>
+              {/* Header */}
+              <div className={`bg-gradient-to-br ${isReady ? 'from-green-500/20 to-emerald-500/10' : 'from-golden/20 to-sunset/10'} p-8 text-center transition-colors duration-500`}>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: isReady ? [1, 1.1, 1] : 1 }}
+                  transition={isReady ? { repeat: Infinity, duration: 1 } : { delay: 0.2, type: "spring", stiffness: 200 }}
+                  className={`inline-flex items-center justify-center w-20 h-20 ${isReady ? 'bg-green-500/20' : 'bg-golden/20'} rounded-full mb-4`}
+                >
+                  {isReady ? (
+                    <PartyPopper className="w-12 h-12 text-green-500" />
+                  ) : (
+                    <CheckCircle className="w-12 h-12 text-golden" />
+                  )}
+                </motion.div>
+                
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className={`font-display text-3xl ${isReady ? 'text-green-500' : 'text-foreground'} mb-2`}
+                >
+                  {isReady ? t("order.ready") : t("order.confirmed")}
+                </motion.h1>
+                
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-muted-foreground"
+                >
+                  {isReady ? t("order.readyDesc") : t("order.thankYou")}
+                </motion.p>
+              </div>
 
             {/* Order Details */}
             <div className="p-6 space-y-6">
@@ -246,6 +318,18 @@ const OrderConfirmationContent = () => {
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   {t("order.viewProfile")}
                 </Button>
+
+                {!isReady && (
+                  <Button
+                    onClick={handleCancelOrder}
+                    disabled={isCancelling}
+                    variant="ghost"
+                    className="w-full text-destructive hover:bg-destructive/10 h-12"
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    {isCancelling ? t("order.cancelling") : t("order.cancelOrder")}
+                  </Button>
+                )}
               </motion.div>
             </div>
           </div>
