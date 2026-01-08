@@ -293,11 +293,7 @@ const UsersTable = ({
                         })}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  ) : (
-                    <Badge variant="outline" className="bg-golden/20 border-golden text-golden">
-                      Owner
-                    </Badge>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </motion.button>
