@@ -1590,10 +1590,19 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Default fallback for when hook is used outside provider (e.g., during hot-reload)
+const defaultT = (key: string): string => {
+  return translations["en"][key] || key;
+};
+
+const defaultContext: LanguageContextType = {
+  language: "en",
+  setLanguage: () => {},
+  t: defaultT,
+};
+
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  return context;
+  // Return default context instead of throwing to handle hot-reload edge cases
+  return context || defaultContext;
 };
