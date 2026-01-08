@@ -9,6 +9,7 @@ import { z } from "zod";
 import { Mail, Lock, ArrowLeft } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const AuthContent = () => {
   const { t } = useLanguage();
@@ -92,6 +93,9 @@ const AuthContent = () => {
           return;
         }
 
+        // Log successful login
+        logActivity('auth', 'Вход в систему', { email: email.trim() });
+
         toast({
           title: t("auth.welcome"),
           description: t("auth.loginSuccess"),
@@ -123,6 +127,9 @@ const AuthContent = () => {
           }
           return;
         }
+
+        // Log signup
+        logActivity('auth', 'Регистрация', { email: email.trim() });
 
         toast({
           title: t("auth.signupSuccess"),

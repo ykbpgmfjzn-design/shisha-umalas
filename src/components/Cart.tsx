@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen } = useCart();
@@ -51,6 +52,14 @@ const Cart = () => {
       }).select().single();
 
       if (error) throw error;
+
+      // Log order creation
+      await logActivity('order', 'Новый заказ создан', {
+        purchase_id: data.id,
+        hookah_count: hookahCount,
+        amount: totalPrice,
+        items: orderNotes,
+      });
 
       // Navigate to confirmation page with order details
       const params = new URLSearchParams({
