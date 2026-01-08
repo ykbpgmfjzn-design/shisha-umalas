@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
-import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
@@ -35,8 +35,8 @@ const timeSlots = [
   "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"
 ];
 
-const ReservationContent = () => {
-  const context = useContext(LanguageContext);
+const Reservation = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { user } = useProfile();
   const [date, setDate] = useState<Date>();
@@ -48,10 +48,6 @@ const ReservationContent = () => {
   const [notes, setNotes] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!context) return null;
-
-  const { t } = context;
 
   const handleSubmit = async () => {
     if (!date || !time || !phone) {
@@ -317,14 +313,6 @@ const ReservationContent = () => {
 
       <BottomNavigation />
     </main>
-  );
-};
-
-const Reservation = () => {
-  return (
-    <LanguageProvider>
-      <ReservationContent />
-    </LanguageProvider>
   );
 };
 

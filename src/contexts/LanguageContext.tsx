@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export type Language = "en" | "ru" | "id" | "uk" | "fr" | "hi" | "zh";
 
@@ -7,6 +7,16 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
 }
+
+const LANGUAGE_STORAGE_KEY = "shisha-app-language";
+
+const getStoredLanguage = (): Language => {
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (stored && ["en", "ru", "id", "uk", "fr", "hi", "zh"].includes(stored)) {
+    return stored as Language;
+  }
+  return "en";
+};
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
@@ -1635,7 +1645,20 @@ const translations: Record<Language, Record<string, string>> = {
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>(getStoredLanguage);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  };
+
+  // Load language from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredLanguage();
+    if (stored !== language) {
+      setLanguageState(stored);
+    }
+  }, []);
 
   const t = (key: string): string => {
     return translations[language][key] || key;

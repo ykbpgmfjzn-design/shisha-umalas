@@ -8,8 +8,6 @@ import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
 import WhatsAppChat from "@/components/WhatsAppChat";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { CartProvider } from "@/contexts/CartContext";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,19 +26,15 @@ const Index = () => {
   }, [searchParams, setSearchParams]);
 
   return (
-    <LanguageProvider>
-      <CartProvider>
-        <main className="min-h-screen bg-background pb-20">
-          <LanguageSelector />
-          <HeroSection />
-          <MenuSection />
-          <FooterSection />
-          <Cart />
-          <WhatsAppChat />
-          <BottomNavigation />
-        </main>
-      </CartProvider>
-    </LanguageProvider>
+    <main className="min-h-screen bg-background pb-20">
+      <LanguageSelector />
+      <HeroSection />
+      <MenuSection />
+      <FooterSection />
+      <Cart />
+      <WhatsAppChat />
+      <BottomNavigation />
+    </main>
   );
 };
 
