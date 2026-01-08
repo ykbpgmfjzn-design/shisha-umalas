@@ -18,6 +18,7 @@ import {
 import type { Profile } from "@/hooks/useProfile";
 import type { UserRole } from "@/hooks/useAdmin";
 import type { Database } from "@/integrations/supabase/types";
+import { logActivity } from "@/hooks/useActivityLog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -104,6 +105,8 @@ const UsersTable = ({
     setRoleLoading(`${userId}-${newRole}`);
     
     const currentRoles = getUserRoles(userId);
+    const userProfile = profiles.find(p => p.id === userId);
+    const userEmail = userProfile?.email || 'Unknown';
     
     // Remove all current roles except the new one
     for (const role of currentRoles) {
@@ -113,6 +116,12 @@ const UsersTable = ({
         } else {
           await onRemoveRole?.(userId, role);
         }
+        // Log role removal
+        await logActivity('admin', `Роль ${ROLE_CONFIG[role]?.label || role} удалена`, {
+          target_user_id: userId,
+          target_user_email: userEmail,
+          removed_role: role,
+        });
       }
     }
     
@@ -123,6 +132,12 @@ const UsersTable = ({
       } else {
         await onAddRole?.(userId, newRole);
       }
+      // Log role addition
+      await logActivity('admin', `Роль ${ROLE_CONFIG[newRole]?.label || newRole} назначена`, {
+        target_user_id: userId,
+        target_user_email: userEmail,
+        added_role: newRole,
+      });
     }
     
     setRoleLoading(null);

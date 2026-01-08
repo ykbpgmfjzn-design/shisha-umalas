@@ -2,11 +2,19 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { 
   ArrowLeft, 
   Activity, 
@@ -19,11 +27,13 @@ import {
   Calendar as CalendarIcon,
   Clock,
   Filter,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Json } from "@/integrations/supabase/types";
 import { DateRange } from "react-day-picker";
@@ -44,15 +54,16 @@ interface ActivityLog {
 }
 
 const ACTIVITY_TYPES = [
-  { value: 'all', label: 'Все', icon: Activity },
-  { value: 'auth', label: 'Авторизация', icon: LogIn },
+  { value: 'auth', label: 'Вход в систему', icon: LogIn },
   { value: 'order', label: 'Заказы', icon: ShoppingCart },
   { value: 'payment', label: 'Платежи', icon: CreditCard },
   { value: 'profile', label: 'Профили', icon: User },
-  { value: 'admin', label: 'Админ', icon: Shield },
+  { value: 'admin', label: 'Админ действия', icon: Shield },
   { value: 'feedback', label: 'Отзывы', icon: MessageSquare },
-  { value: 'reservation', label: 'Брони', icon: CalendarIcon },
+  { value: 'reservation', label: 'Бронирования', icon: CalendarIcon },
 ];
+
+const ITEMS_PER_PAGE = 20;
 
 function ActivityLogsContent() {
   const navigate = useNavigate();
@@ -60,8 +71,12 @@ function ActivityLogsContent() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(ACTIVITY_TYPES.map(t => t.value));
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<{ id: string; email: string }[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     checkAccess();
@@ -70,8 +85,9 @@ function ActivityLogsContent() {
   useEffect(() => {
     if (hasAccess) {
       fetchLogs();
+      fetchUsers();
     }
-  }, [hasAccess, activeFilter, dateRange]);
+  }, [hasAccess, dateRange]);
 
   const checkAccess = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -96,6 +112,17 @@ function ActivityLogsContent() {
     setHasAccess(true);
   };
 
+  const fetchUsers = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .not("email", "is", null);
+    
+    if (data) {
+      setAllUsers(data.filter(u => u.email) as { id: string; email: string }[]);
+    }
+  };
+
   const fetchLogs = async () => {
     setLoading(true);
     
@@ -104,12 +131,7 @@ function ActivityLogsContent() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(500);
-    
-    if (activeFilter !== 'all') {
-      query = query.eq('activity_type', activeFilter as ActivityTypeValue);
-    }
 
-    // Apply date range filter
     if (dateRange?.from) {
       query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
     }
@@ -125,7 +147,6 @@ function ActivityLogsContent() {
       return;
     }
 
-    // Fetch profiles for user_ids
     const logsWithProfiles: ActivityLog[] = await Promise.all(
       (data || []).map(async (log) => {
         if (!log.user_id) return { ...log, profile: null };
@@ -153,27 +174,61 @@ function ActivityLogsContent() {
     return <Activity className="h-4 w-4" />;
   };
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'auth': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'order': return 'bg-primary/20 text-primary border-primary/30';
-      case 'payment': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'profile': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'admin': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'feedback': return 'bg-accent/20 text-accent border-accent/30';
-      case 'reservation': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
+  const toggleActivityType = (type: string) => {
+    setSelectedTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+    setCurrentPage(1);
   };
 
-  const getCounts = () => {
-    const counts: Record<string, number> = { all: logs.length };
-    ACTIVITY_TYPES.forEach(type => {
-      if (type.value !== 'all') {
-        counts[type.value] = logs.filter(l => l.activity_type === type.value).length;
-      }
-    });
-    return counts;
+  const toggleUser = (userId: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setDateRange(undefined);
+    setSelectedTypes(ACTIVITY_TYPES.map(t => t.value));
+    setSelectedUsers([]);
+    setCurrentPage(1);
+  };
+
+  const filteredLogs = logs.filter(log => {
+    const typeMatch = selectedTypes.includes(log.activity_type);
+    const userMatch = selectedUsers.length === 0 || (log.user_id && selectedUsers.includes(log.user_id));
+    return typeMatch && userMatch;
+  });
+
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const getDetailsText = (details: Json): string => {
+    if (!details || typeof details !== 'object' || Array.isArray(details)) return '';
+    const obj = details as Record<string, unknown>;
+    const parts: string[] = [];
+    
+    if (obj.email) parts.push(`Email: ${obj.email}`);
+    if (obj.target_user_email) parts.push(`Пользователь: ${obj.target_user_email}`);
+    if (obj.added_role) parts.push(`Роль: ${obj.added_role}`);
+    if (obj.removed_role) parts.push(`Роль: ${obj.removed_role}`);
+    if (obj.hookah_count) parts.push(`Кальянов: ${obj.hookah_count}`);
+    if (obj.amount) parts.push(`Сумма: IDR ${Number(obj.amount).toLocaleString()}`);
+    if (obj.rating) parts.push(`Рейтинг: ${obj.rating}★`);
+    if (obj.party_size) parts.push(`Гостей: ${obj.party_size}`);
+    if (obj.date) parts.push(`Дата: ${obj.date}`);
+    if (obj.time) parts.push(`Время: ${obj.time}`);
+    if (obj.new_status) parts.push(`Статус: ${obj.new_status}`);
+    
+    return parts.join(' • ');
   };
 
   if (loading && !hasAccess) {
@@ -184,14 +239,12 @@ function ActivityLogsContent() {
     );
   }
 
-  const counts = getCounts();
-
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
@@ -204,133 +257,220 @@ function ActivityLogsContent() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        {/* Date filter */}
-        <div className="mb-4 flex items-center gap-2 flex-wrap">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "dd.MM.yy", { locale: ru })} -{" "}
-                      {format(dateRange.to, "dd.MM.yy", { locale: ru })}
-                    </>
-                  ) : (
-                    format(dateRange.from, "dd.MM.yyyy", { locale: ru })
-                  )
-                ) : (
-                  "Выбрать период"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={setDateRange}
-                numberOfMonths={2}
-                locale={ru}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          {dateRange && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDateRange(undefined)}
-              className="text-muted-foreground"
+        {/* Filters Row */}
+        <div className="bg-card rounded-lg border border-border p-4 mb-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Filter Toggle */}
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
             >
-              <X className="h-4 w-4 mr-1" />
-              Сбросить
+              <Filter className="h-4 w-4" />
+              Фильтр
             </Button>
+
+            {/* Date Range */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd/MM/yyyy")
+                    )
+                  ) : (
+                    "Период"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={ru}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Clear All */}
+            {(dateRange || selectedTypes.length < ACTIVITY_TYPES.length || selectedUsers.length > 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="text-primary border-primary"
+              >
+                Сбросить всё
+              </Button>
+            )}
+
+            <div className="ml-auto text-sm text-muted-foreground">
+              Показано {paginatedLogs.length} из {filteredLogs.length}
+            </div>
+          </div>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Filter */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Пользователь</h3>
+                <ScrollArea className="h-48 border rounded-md p-2">
+                  {allUsers.map(user => (
+                    <div key={user.id} className="flex items-center gap-2 py-1">
+                      <Checkbox
+                        id={`user-${user.id}`}
+                        checked={selectedUsers.includes(user.id)}
+                        onCheckedChange={() => toggleUser(user.id)}
+                      />
+                      <label 
+                        htmlFor={`user-${user.id}`}
+                        className={`text-sm cursor-pointer ${selectedUsers.includes(user.id) ? 'text-primary font-medium' : ''}`}
+                      >
+                        {user.email}
+                      </label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+
+              {/* Activity Type Filter */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Тип активности</h3>
+                <div className="space-y-2">
+                  {ACTIVITY_TYPES.map(type => (
+                    <div key={type.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`type-${type.value}`}
+                        checked={selectedTypes.includes(type.value)}
+                        onCheckedChange={() => toggleActivityType(type.value)}
+                      />
+                      <label 
+                        htmlFor={`type-${type.value}`}
+                        className={`text-sm cursor-pointer flex items-center gap-2 ${selectedTypes.includes(type.value) ? 'text-primary font-medium' : ''}`}
+                      >
+                        {type.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Filter tabs */}
-        <div className="mb-6">
-          <ScrollArea className="w-full">
-            <div className="flex gap-2 pb-2">
-              {ACTIVITY_TYPES.map((type) => {
-                const Icon = type.icon;
-                const isActive = activeFilter === type.value;
-                return (
-                  <Button
-                    key={type.value}
-                    variant={isActive ? "default" : "outline"}
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => setActiveFilter(type.value)}
-                  >
-                    <Icon className="h-4 w-4 mr-1.5" />
-                    {type.label}
-                    {counts[type.value] > 0 && (
-                      <Badge variant="secondary" className="ml-1.5 text-xs">
-                        {counts[type.value]}
-                      </Badge>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Logs list */}
+        {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : logs.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Нет записей активности</p>
-            </CardContent>
-          </Card>
+        ) : filteredLogs.length === 0 ? (
+          <div className="bg-card rounded-lg border border-border p-12 text-center text-muted-foreground">
+            <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Нет записей активности</p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {logs.map((log) => (
-              <Card key={log.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    {/* Activity type badge */}
-                    <div className={`p-2 rounded-lg border ${getActivityColor(log.activity_type)}`}>
-                      {getActivityIcon(log.activity_type)}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-medium text-foreground">{log.action}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {log.profile?.full_name || log.profile?.email || 'Гость'}
-                          </p>
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground shrink-0">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(log.created_at), "HH:mm")}
-                          </div>
-                          <div>{format(new Date(log.created_at), "dd.MM.yy")}</div>
-                        </div>
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[180px]">Дата и время</TableHead>
+                  <TableHead className="w-[200px]">Пользователь</TableHead>
+                  <TableHead>Действие</TableHead>
+                  <TableHead className="w-[300px]">Детали</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedLogs.map((log) => (
+                  <TableRow key={log.id} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-sm">
+                      <div>{format(new Date(log.created_at), "dd MMM yyyy", { locale: ru })}</div>
+                      <div className="text-muted-foreground">{format(new Date(log.created_at), "HH:mm:ss")}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {log.profile?.email || log.profile?.full_name || 
+                          <span className="text-muted-foreground italic">Гость</span>
+                        }
                       </div>
-                      
-                      {/* Details */}
-                      {log.details && typeof log.details === 'object' && !Array.isArray(log.details) && Object.keys(log.details as object).length > 0 && (
-                        <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground font-mono">
-                          {JSON.stringify(log.details, null, 2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {getActivityIcon(log.activity_type)}
+                        </span>
+                        <span className="font-medium">{log.action}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {getDetailsText(log.details)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <div className="text-sm text-muted-foreground">
+                  Показано {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} из {filteredLogs.length}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
