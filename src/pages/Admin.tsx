@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Users, Plus, Search, 
   Crown, Building2, Coffee, Cookie, Gift,
-  Calendar, Hash
+  Calendar, Hash, LogOut
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -159,6 +160,18 @@ const Admin = () => {
               <Shield className="w-5 h-5" />
               <span className="font-medium">Админ панель</span>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate("/");
+              }}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Выйти
+            </Button>
           </div>
         </div>
 
