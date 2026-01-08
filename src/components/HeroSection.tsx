@@ -69,9 +69,9 @@ const HeroSection = () => {
         >
           <div className="mb-6 flex justify-center">
             <div 
-              className="relative w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full flex items-center justify-center"
+              className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full flex items-center justify-center"
               style={{
-                background: 'radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 40%, transparent 70%)'
+                background: 'radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)'
               }}
             >
               <img 
