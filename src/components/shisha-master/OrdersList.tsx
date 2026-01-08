@@ -34,8 +34,6 @@ interface OrderWithProfile {
   } | null;
 }
 
-const DELIVERY_TIME_MINUTES = 15;
-
 export default function OrdersList() {
   const { t } = useLanguage();
   const [orders, setOrders] = useState<OrderWithProfile[]>([]);
@@ -44,8 +42,10 @@ export default function OrdersList() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [now, setNow] = useState(new Date());
+  const [deliveryTimeMinutes, setDeliveryTimeMinutes] = useState(15);
 
   useEffect(() => {
+    fetchSettings();
     fetchOrders();
     
     // Subscribe to realtime updates
@@ -66,6 +66,18 @@ export default function OrdersList() {
       clearInterval(timer);
     };
   }, []);
+
+  const fetchSettings = async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "delivery_time_minutes")
+      .maybeSingle();
+    
+    if (data?.value) {
+      setDeliveryTimeMinutes(parseInt(data.value, 10));
+    }
+  };
 
   const fetchOrders = async () => {
     const { data, error } = await supabase
@@ -98,7 +110,7 @@ export default function OrdersList() {
 
   const getTimeRemaining = (createdAt: string) => {
     const orderTime = new Date(createdAt);
-    const deadline = new Date(orderTime.getTime() + DELIVERY_TIME_MINUTES * 60 * 1000);
+    const deadline = new Date(orderTime.getTime() + deliveryTimeMinutes * 60 * 1000);
     const remaining = deadline.getTime() - now.getTime();
     
     if (remaining <= 0) return { minutes: 0, seconds: 0, isOverdue: true };
