@@ -19,7 +19,7 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OrderNotifications from "@/components/OrderNotifications";
 import DashboardStats from "@/components/admin/DashboardStats";
@@ -574,11 +574,7 @@ const AdminContent = () => {
 };
 
 const Admin = () => {
-  return (
-    <LanguageProvider>
-      <AdminContent />
-    </LanguageProvider>
-  );
+  return <AdminContent />;
 };
 
 export default Admin;

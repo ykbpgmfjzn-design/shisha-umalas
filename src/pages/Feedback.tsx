@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
-import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
 import { logActivity } from "@/hooks/useActivityLog";
 
-const FeedbackContent = () => {
-  const context = useContext(LanguageContext);
+const Feedback = () => {
+  const { t } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState("");
@@ -26,10 +26,6 @@ const FeedbackContent = () => {
     };
     getUser();
   }, []);
-
-  if (!context) return null;
-
-  const { t } = context;
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -145,14 +141,6 @@ const FeedbackContent = () => {
 
       <BottomNavigation />
     </main>
-  );
-};
-
-const Feedback = () => {
-  return (
-    <LanguageProvider>
-      <FeedbackContent />
-    </LanguageProvider>
   );
 };
 

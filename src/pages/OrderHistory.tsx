@@ -1,10 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, Package, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
-import { LanguageProvider, LanguageContext } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
@@ -18,8 +18,8 @@ interface Order {
   notes: string | null;
 }
 
-const OrderHistoryContent = () => {
-  const context = useContext(LanguageContext);
+const OrderHistory = () => {
+  const { t } = useLanguage();
   const { user } = useProfile();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,10 +45,6 @@ const OrderHistoryContent = () => {
     }
     setLoading(false);
   };
-
-  if (!context) return null;
-
-  const { t } = context;
 
   const getStatusIcon = (status: string | null) => {
     switch (status) {
@@ -153,14 +149,6 @@ const OrderHistoryContent = () => {
 
       <BottomNavigation />
     </main>
-  );
-};
-
-const OrderHistory = () => {
-  return (
-    <LanguageProvider>
-      <OrderHistoryContent />
-    </LanguageProvider>
   );
 };
 

@@ -11,11 +11,15 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePurchases } from "@/hooks/usePurchases";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import UserReservations from "@/components/profile/UserReservations";
+import LanguageSelector from "@/components/LanguageSelector";
+import BottomNavigation from "@/components/BottomNavigation";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { 
     user,
     profile, 
@@ -139,31 +143,25 @@ const Profile = () => {
     : 100;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
+      <LanguageSelector />
+      
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-64 h-64 bg-golden/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sunset/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-lg mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-24 pb-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Назад
-          </Button>
+        <div className="flex items-center justify-end mb-8">
           <Button
             variant="ghost"
             onClick={handleLogout}
             className="text-muted-foreground hover:text-foreground"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Выйти
+            {t("admin.logout")}
           </Button>
         </div>
 
@@ -176,7 +174,7 @@ const Profile = () => {
           {/* Title */}
           <div className="text-center mb-8">
             <Crown className="w-12 h-12 text-golden mx-auto mb-4" />
-            <h1 className="font-display text-3xl text-foreground mb-2">Мой профиль</h1>
+            <h1 className="font-display text-3xl text-foreground mb-2">{t("nav.profile")}</h1>
             <p className="text-muted-foreground">{profile.email}</p>
           </div>
 
@@ -442,6 +440,7 @@ const Profile = () => {
           </div>
         </motion.div>
       </div>
+      <BottomNavigation />
     </div>
   );
 };
