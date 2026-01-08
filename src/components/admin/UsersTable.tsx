@@ -2,13 +2,24 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Shield, Users, Search, Crown, Building2, User,
-  ShieldCheck, ShieldX, Plus
+  ShieldCheck, ShieldX, Wind, Calculator, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import type { Profile } from "@/hooks/useProfile";
 import type { UserRole } from "@/hooks/useAdmin";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface UsersTableProps {
   profiles: Profile[];
@@ -16,20 +27,55 @@ interface UsersTableProps {
   onSelectUser: (user: Profile) => void;
   selectedUserId?: string;
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
+  onAddRole?: (userId: string, role: AppRole) => Promise<void>;
+  onRemoveRole?: (userId: string, role: AppRole) => Promise<void>;
 }
+
+const ROLE_CONFIG: Record<AppRole, { label: string; icon: typeof Shield; color: string; bgColor: string }> = {
+  admin: { 
+    label: "Админ", 
+    icon: Shield, 
+    color: "text-red-400", 
+    bgColor: "bg-red-500/20 border-red-400" 
+  },
+  user: { 
+    label: "Пользователь", 
+    icon: User, 
+    color: "text-muted-foreground", 
+    bgColor: "bg-muted border-muted-foreground" 
+  },
+  shisha_master: { 
+    label: "Shisha Master", 
+    icon: Wind, 
+    color: "text-purple-400", 
+    bgColor: "bg-purple-500/20 border-purple-400" 
+  },
+  accounting: { 
+    label: "Бухгалтерия", 
+    icon: Calculator, 
+    color: "text-blue-400", 
+    bgColor: "bg-blue-500/20 border-blue-400" 
+  },
+};
 
 const UsersTable = ({ 
   profiles, 
   userRoles, 
   onSelectUser, 
   selectedUserId,
-  onToggleAdmin 
+  onToggleAdmin,
+  onAddRole,
+  onRemoveRole,
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
 
-  const isUserAdmin = (userId: string) => {
-    return userRoles.some(r => r.user_id === userId && r.role === "admin");
+  const getUserRoles = (userId: string): AppRole[] => {
+    return userRoles.filter(r => r.user_id === userId).map(r => r.role);
+  };
+
+  const hasRole = (userId: string, role: AppRole) => {
+    return userRoles.some(r => r.user_id === userId && r.role === role);
   };
 
   const filteredProfiles = profiles.filter(p => 
@@ -38,11 +84,47 @@ const UsersTable = ({
     p.room_number?.includes(searchQuery)
   );
 
-  const handleToggleAdmin = async (e: React.MouseEvent, userId: string) => {
+  const handleToggleRole = async (e: React.MouseEvent, userId: string, role: AppRole) => {
     e.stopPropagation();
-    setRoleLoading(userId);
-    await onToggleAdmin(userId, isUserAdmin(userId));
+    setRoleLoading(`${userId}-${role}`);
+    
+    if (role === "admin") {
+      await onToggleAdmin(userId, hasRole(userId, "admin"));
+    } else if (hasRole(userId, role)) {
+      await onRemoveRole?.(userId, role);
+    } else {
+      await onAddRole?.(userId, role);
+    }
+    
     setRoleLoading(null);
+  };
+
+  const getMainRoleIcon = (userId: string) => {
+    const roles = getUserRoles(userId);
+    if (roles.includes("admin")) {
+      return <Shield className="w-4 h-4 text-red-400" />;
+    }
+    if (roles.includes("shisha_master")) {
+      return <Wind className="w-4 h-4 text-purple-400" />;
+    }
+    if (roles.includes("accounting")) {
+      return <Calculator className="w-4 h-4 text-blue-400" />;
+    }
+    const profile = profiles.find(p => p.id === userId);
+    if (profile?.guest_type === "special") {
+      return <Building2 className="w-4 h-4 text-golden" />;
+    }
+    return <User className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const getMainRoleBg = (userId: string) => {
+    const roles = getUserRoles(userId);
+    if (roles.includes("admin")) return "bg-red-500/20";
+    if (roles.includes("shisha_master")) return "bg-purple-500/20";
+    if (roles.includes("accounting")) return "bg-blue-500/20";
+    const profile = profiles.find(p => p.id === userId);
+    if (profile?.guest_type === "special") return "bg-golden/20";
+    return "bg-muted";
   };
 
   return (
@@ -69,7 +151,7 @@ const UsersTable = ({
       {/* User List */}
       <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
         {filteredProfiles.map((profile, index) => {
-          const isAdmin = isUserAdmin(profile.id);
+          const roles = getUserRoles(profile.id);
           
           return (
             <motion.button
@@ -87,20 +169,8 @@ const UsersTable = ({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Role/Type Icon */}
-                  <div className={`p-2 rounded-full shrink-0 ${
-                    isAdmin 
-                      ? "bg-red-500/20" 
-                      : profile.guest_type === "special" 
-                        ? "bg-golden/20" 
-                        : "bg-muted"
-                  }`}>
-                    {isAdmin ? (
-                      <Shield className="w-4 h-4 text-red-400" />
-                    ) : profile.guest_type === "special" ? (
-                      <Building2 className="w-4 h-4 text-golden" />
-                    ) : (
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    )}
+                  <div className={`p-2 rounded-full shrink-0 ${getMainRoleBg(profile.id)}`}>
+                    {getMainRoleIcon(profile.id)}
                   </div>
                   
                   <div className="min-w-0 flex-1">
@@ -108,16 +178,28 @@ const UsersTable = ({
                       <p className="font-medium text-sm truncate">
                         {profile.email || "Без email"}
                       </p>
-                      {isAdmin && (
-                        <Badge variant="outline" className="border-red-400 text-red-400 text-xs shrink-0">
-                          Админ
-                        </Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {profile.room_number ? `Комната ${profile.room_number}` : "Гость"} • 
                       {profile.full_name || "Без имени"}
                     </p>
+                    {/* Role Badges */}
+                    {roles.filter(r => r !== "user").length > 0 && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {roles.filter(r => r !== "user").map(role => {
+                          const config = ROLE_CONFIG[role];
+                          return (
+                            <Badge 
+                              key={role} 
+                              variant="outline" 
+                              className={`${config.bgColor} ${config.color} text-xs`}
+                            >
+                              {config.label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -128,20 +210,50 @@ const UsersTable = ({
                     <span className="text-sm font-bold">{profile.loyalty_level}</span>
                   </div>
 
-                  {/* Toggle Admin Button */}
-                  <Button
-                    size="sm"
-                    variant={isAdmin ? "destructive" : "outline"}
-                    className="shrink-0"
-                    disabled={roleLoading === profile.id}
-                    onClick={(e) => handleToggleAdmin(e, profile.id)}
-                  >
-                    {isAdmin ? (
-                      <ShieldX className="w-3 h-3" />
-                    ) : (
-                      <ShieldCheck className="w-3 h-3" />
-                    )}
-                  </Button>
+                  {/* Roles Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 gap-1"
+                      >
+                        <Shield className="w-3 h-3" />
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuLabel>Управление ролями</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {(Object.keys(ROLE_CONFIG) as AppRole[]).filter(r => r !== "user").map(role => {
+                        const config = ROLE_CONFIG[role];
+                        const Icon = config.icon;
+                        const isActive = hasRole(profile.id, role);
+                        const isLoading = roleLoading === `${profile.id}-${role}`;
+                        
+                        return (
+                          <DropdownMenuItem
+                            key={role}
+                            onClick={(e) => handleToggleRole(e, profile.id, role)}
+                            disabled={isLoading}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                <Icon className={`w-4 h-4 ${config.color}`} />
+                                <span>{config.label}</span>
+                              </div>
+                              {isActive && (
+                                <Badge variant="secondary" className="text-xs">
+                                  ✓
+                                </Badge>
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </motion.button>

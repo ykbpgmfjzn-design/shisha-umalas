@@ -304,6 +304,32 @@ const Admin = () => {
                 onSelectUser={setSelectedUser}
                 selectedUserId={selectedUser?.id}
                 onToggleAdmin={handleToggleAdmin}
+                onAddRole={async (userId, role) => {
+                  const { error } = await addUserRole(userId, role);
+                  if (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Ошибка",
+                      description: "Не удалось добавить роль",
+                    });
+                  } else {
+                    toast({ title: "Роль добавлена" });
+                    fetchAllUserRoles();
+                  }
+                }}
+                onRemoveRole={async (userId, role) => {
+                  const { error } = await removeUserRole(userId, role);
+                  if (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Ошибка",
+                      description: "Не удалось удалить роль",
+                    });
+                  } else {
+                    toast({ title: "Роль удалена" });
+                    fetchAllUserRoles();
+                  }
+                }}
               />
               
               <UserDetails
@@ -339,7 +365,7 @@ const Admin = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Сумма (₽)</label>
+              <label className="text-sm text-muted-foreground">Сумма (IDR)</label>
               <Input
                 type="number"
                 placeholder="Необязательно"
