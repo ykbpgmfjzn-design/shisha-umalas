@@ -1,4 +1,5 @@
 import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, Phone, MessageSquare, Sparkles } from "lucide-react";
@@ -35,6 +36,7 @@ const timeSlots = [
 
 const ReservationContent = () => {
   const context = useContext(LanguageContext);
+  const navigate = useNavigate();
   const { user } = useProfile();
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>();
@@ -87,14 +89,8 @@ const ReservationContent = () => {
 
       toast.success(t("reservation.success"));
       
-      // Reset form
-      setDate(undefined);
-      setTime(undefined);
-      setPartySize(2);
-      setHookahCount(1);
-      setPhone("");
-      setNotes("");
-      setSpecialRequests("");
+      // Navigate to profile to show reservation status
+      navigate("/profile");
     } catch (error) {
       console.error("Reservation error:", error);
       toast.error(t("reservation.error"));
