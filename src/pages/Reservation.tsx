@@ -2,7 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Phone, MessageSquare, Sparkles } from "lucide-react";
+import { CalendarIcon, Clock, Phone, Sparkles, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import heroBackground from "@/assets/rooftop-shisha-bg.jpg";
 import { logActivity } from "@/hooks/useActivityLog";
+import { LocationPicker } from "@/components/LocationPicker";
 
 const timeSlots = [
   "12:00", "13:00", "14:00", "15:00", "16:00", "17:00",
@@ -261,18 +262,15 @@ const ReservationContent = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">
+              <label className="text-sm text-muted-foreground flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-golden" />
                 {t("reservation.location")}
               </label>
-              <div className="relative">
-                <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder={t("reservation.locationPlaceholder")}
-                  className="pl-10 bg-card/50 border-golden/30 focus:border-golden"
-                />
-              </div>
+              <LocationPicker
+                value={location}
+                onChange={(loc) => setLocation(loc)}
+                placeholder={t("reservation.selectOnMap")}
+              />
             </div>
 
             <div className="space-y-2">
