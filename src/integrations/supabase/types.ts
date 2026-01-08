@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -209,8 +242,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_activity: {
+        Args: {
+          _action: string
+          _activity_type: Database["public"]["Enums"]["activity_type"]
+          _details?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
+      activity_type:
+        | "auth"
+        | "order"
+        | "payment"
+        | "profile"
+        | "admin"
+        | "feedback"
+        | "reservation"
       app_role: "admin" | "user" | "shisha_master" | "accounting" | "owner"
       guest_type: "guest" | "special"
     }
@@ -340,6 +389,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "auth",
+        "order",
+        "payment",
+        "profile",
+        "admin",
+        "feedback",
+        "reservation",
+      ],
       app_role: ["admin", "user", "shisha_master", "accounting", "owner"],
       guest_type: ["guest", "special"],
     },

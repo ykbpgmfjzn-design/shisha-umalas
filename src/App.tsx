@@ -13,6 +13,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Reservation from "./pages/Reservation";
 import OrderHistory from "./pages/OrderHistory";
 import Feedback from "./pages/Feedback";
+import ActivityLogs from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/reservation" element={<Reservation />} />
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/activity-logs" element={<ActivityLogs />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
