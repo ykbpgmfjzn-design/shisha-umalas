@@ -14,19 +14,36 @@ const Cart = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetchRoomNumber(session.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetchRoomNumber(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchRoomNumber = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("room_number")
+      .eq("id", userId)
+      .single();
+    
+    setRoomNumber(data?.room_number || null);
+  };
 
   const handleSubmitOrder = async () => {
     if (!user) {
@@ -36,6 +53,14 @@ const Cart = () => {
 
     if (items.length === 0) {
       toast.error(t("cart.emptyCart"));
+      return;
+    }
+
+    // Check if room number is set
+    if (!roomNumber) {
+      toast.error(t("cart.roomRequired"));
+      navigate("/profile");
+      setIsOpen(false);
       return;
     }
 
@@ -59,6 +84,7 @@ const Cart = () => {
         hookah_count: hookahCount,
         amount: totalPrice,
         items: orderNotes,
+        room_number: roomNumber,
       });
 
       // Navigate to confirmation page with order details

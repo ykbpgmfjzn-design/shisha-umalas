@@ -325,13 +325,7 @@ const Profile = () => {
                     <span>{currentLevel.special_bonus}</span>
                   </div>
                 )}
-                {profile.guest_type === "special" && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-sunset/10 text-sunset">
-                    <Building2 className="w-5 h-5" />
-                    <span>Дополнительные угощения для гостей отеля</span>
-                  </div>
-                )}
-                {(!currentLevel || currentLevel.discount_percent === 0) && profile.guest_type !== "special" && (
+                {(!currentLevel || currentLevel.discount_percent === 0) && (
                   <p className="text-sm text-muted-foreground p-3">
                     Закажите 30 кальянов для получения скидки
                   </p>
