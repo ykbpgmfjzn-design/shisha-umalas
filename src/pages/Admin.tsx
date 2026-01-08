@@ -57,6 +57,27 @@ const AdminContent = () => {
   const [showAddPurchase, setShowAddPurchase] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [feedbackStats, setFeedbackStats] = useState({ count: 0, avgRating: 0 });
+
+  // Fetch feedback stats on mount
+  useEffect(() => {
+    const fetchFeedbackStats = async () => {
+      const { data, error } = await supabase
+        .from("feedback")
+        .select("rating");
+      
+      if (!error && data) {
+        const count = data.length;
+        const avgRating = count > 0 
+          ? data.reduce((sum, f) => sum + f.rating, 0) / count 
+          : 0;
+        setFeedbackStats({ count, avgRating });
+      }
+    };
+    
+    if (isAdmin) {
+      fetchFeedbackStats();
+    }
+  }, [isAdmin]);
   const [purchaseForm, setPurchaseForm] = useState({
     hookahCount: 1,
     amount: "",
