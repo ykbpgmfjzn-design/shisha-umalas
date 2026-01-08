@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, History } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, History, Crown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +34,7 @@ interface OrderWithProfile {
     full_name: string | null;
     email: string | null;
     room_number: string | null;
+    loyalty_level: number;
   } | null;
 }
 
@@ -109,7 +110,7 @@ export default function OrdersList() {
       (active || []).map(async (order) => {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, email, room_number")
+          .select("full_name, email, room_number, loyalty_level")
           .eq("id", order.user_id)
           .maybeSingle();
         return { ...order, profile };
@@ -121,7 +122,7 @@ export default function OrdersList() {
       (history || []).map(async (order) => {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, email, room_number")
+          .select("full_name, email, room_number, loyalty_level")
           .eq("id", order.user_id)
           .maybeSingle();
         return { ...order, profile };
@@ -148,19 +149,12 @@ export default function OrdersList() {
     return { minutes, seconds, isOverdue: false, percentRemaining };
   };
 
-  const getTimerColor = (percentRemaining: number): string => {
-    // Green -> Yellow -> Orange -> Red gradient based on time remaining
-    if (percentRemaining > 66) return "hsl(142, 76%, 45%)"; // Green
-    if (percentRemaining > 33) return "hsl(45, 100%, 50%)"; // Yellow/Orange
-    if (percentRemaining > 15) return "hsl(25, 100%, 50%)"; // Orange
-    return "hsl(0, 90%, 55%)"; // Red
-  };
-
-  const getTimerBgColor = (percentRemaining: number): string => {
-    if (percentRemaining > 66) return "hsl(142, 76%, 45%, 0.15)";
-    if (percentRemaining > 33) return "hsl(45, 100%, 50%, 0.15)";
-    if (percentRemaining > 15) return "hsl(25, 100%, 50%, 0.15)";
-    return "hsl(0, 90%, 55%, 0.15)";
+  const getTimerStyle = (percentRemaining: number, isOverdue: boolean) => {
+    // Use theme colors: primary (golden) -> destructive (red)
+    if (isOverdue) return { colorClass: "text-destructive", bgClass: "bg-destructive/20", borderClass: "border-destructive" };
+    if (percentRemaining > 50) return { colorClass: "text-primary", bgClass: "bg-primary/20", borderClass: "border-primary" };
+    if (percentRemaining > 25) return { colorClass: "text-accent", bgClass: "bg-accent/20", borderClass: "border-accent" };
+    return { colorClass: "text-destructive", bgClass: "bg-destructive/20", borderClass: "border-destructive" };
   };
 
   const formatTimer = (createdAt: string) => {
@@ -227,9 +221,10 @@ export default function OrdersList() {
 
   const renderActiveOrder = (order: OrderWithProfile) => {
     const { isOverdue, percentRemaining } = getTimeRemaining(order.created_at);
-    const timerColor = isOverdue ? "hsl(0, 90%, 55%)" : getTimerColor(percentRemaining);
-    const timerBgColor = isOverdue ? "hsl(0, 90%, 55%, 0.15)" : getTimerBgColor(percentRemaining);
-    const isUrgent = percentRemaining < 33;
+    const { colorClass, bgClass, borderClass } = getTimerStyle(percentRemaining, isOverdue);
+    const isUrgent = percentRemaining < 25;
+    const orderTime = format(new Date(order.created_at), "HH:mm");
+    const loyaltyLevel = order.profile?.loyalty_level || 1;
     
     return (
       <motion.div
@@ -239,124 +234,75 @@ export default function OrdersList() {
         exit={{ opacity: 0, x: -100 }}
         layout
       >
-        <Card 
-          className={`overflow-hidden transition-all duration-300 ${isOverdue ? "ring-2 ring-destructive" : isUrgent ? "ring-2" : ""}`}
-          style={{ 
-            borderColor: timerColor,
-            ...(isUrgent && !isOverdue ? { ringColor: timerColor } : {})
-          }}
-        >
+        <Card className={`overflow-hidden border-2 ${borderClass} ${isOverdue || isUrgent ? "animate-pulse" : ""}`}>
           <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                {/* Animated circular progress timer */}
-                <div className="relative">
-                  <motion.div
-                    className="w-20 h-20 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: timerBgColor }}
-                    animate={isUrgent || isOverdue ? { 
-                      scale: [1, 1.05, 1],
-                    } : {}}
-                    transition={{ 
-                      duration: isOverdue ? 0.5 : 1,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <svg className="absolute w-20 h-20 -rotate-90">
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        className="text-muted/20"
-                      />
-                      <motion.circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        fill="none"
-                        stroke={timerColor}
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray={226}
-                        strokeDashoffset={226 - (226 * (isOverdue ? 0 : percentRemaining)) / 100}
-                        style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }}
-                      />
-                    </svg>
-                    <div className="text-center z-10">
-                      <motion.span 
-                        className="text-xl font-mono font-bold block"
-                        style={{ color: timerColor }}
-                        animate={isUrgent || isOverdue ? { opacity: [1, 0.6, 1] } : {}}
-                        transition={{ duration: isOverdue ? 0.5 : 1, repeat: Infinity }}
-                      >
-                        {formatTimer(order.created_at)}
-                      </motion.span>
-                    </div>
-                  </motion.div>
+            <div className="flex items-start justify-between gap-4">
+              {/* Timer circle */}
+              <div className={`w-16 h-16 rounded-full ${bgClass} flex items-center justify-center shrink-0`}>
+                <span className={`text-lg font-mono font-bold ${colorClass}`}>
+                  {formatTimer(order.created_at)}
+                </span>
+              </div>
+              
+              {/* Order info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wind className="h-5 w-5 text-primary shrink-0" />
+                  <span className="font-semibold text-lg">{order.hookah_count}x Hookah</span>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {t("shishaMaster.orders.timeRemaining")}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Wind className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-lg">{order.hookah_count}x Hookah</span>
+                {order.amount && (
+                  <p className="text-muted-foreground">Rp {order.amount.toLocaleString()}</p>
+                )}
+                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{orderTime}</span>
                   </div>
-                  {order.amount && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Rp {order.amount.toLocaleString()}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <Crown className="h-3.5 w-3.5 text-primary" />
+                    <span>Lvl {loyaltyLevel}</span>
+                  </div>
                 </div>
               </div>
+              
               <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
                 {order.payment_status === "paid" ? t("admin.paid") : t("admin.pending")}
               </Badge>
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {/* Progress bar */}
-            <div className="w-full h-2 rounded-full bg-muted/30 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ 
-                  backgroundColor: timerColor,
-                  width: `${isOverdue ? 100 : percentRemaining}%`
-                }}
-                animate={isUrgent || isOverdue ? { opacity: [1, 0.7, 1] } : {}}
-                transition={{ duration: 0.5, repeat: Infinity }}
+            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${isOverdue ? "bg-destructive w-full" : percentRemaining > 50 ? "bg-primary" : percentRemaining > 25 ? "bg-accent" : "bg-destructive"}`}
+                style={{ width: isOverdue ? "100%" : `${percentRemaining}%` }}
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{order.profile?.full_name || order.profile?.email || t("admin.guest")}</span>
-              </div>
-              
-              {order.profile?.room_number && (
-                <div className="flex items-center gap-2 text-sm p-2 bg-primary/10 rounded-lg">
-                  <Home className="h-4 w-4 text-primary" />
-                  <span className="font-bold text-primary">{t("admin.room")}: {order.profile.room_number}</span>
-                </div>
-              )}
-              
-              {order.notes && (
-                <div className="flex items-start gap-2 text-sm p-3 bg-accent/50 rounded-lg">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <span>{order.notes}</span>
-                </div>
-              )}
+            {/* Customer info */}
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span>{order.profile?.full_name || order.profile?.email || t("admin.guest")}</span>
             </div>
+            
+            {order.profile?.room_number && (
+              <div className="flex items-center gap-2 text-sm p-2 bg-primary/10 rounded-lg border border-primary/20">
+                <Home className="h-4 w-4 text-primary" />
+                <span className="font-medium text-primary">{t("admin.room")}: {order.profile.room_number}</span>
+              </div>
+            )}
+            
+            {order.notes && (
+              <div className="flex items-start gap-2 text-sm p-2 bg-muted rounded-lg">
+                <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <span className="text-foreground">{order.notes}</span>
+              </div>
+            )}
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-1">
               <Button 
-                className="flex-1 h-12 text-base font-semibold" 
+                className="flex-1 h-11" 
                 onClick={() => handleMarkDelivered(order.id)}
               >
                 <CheckCircle className="h-5 w-5 mr-2" />
@@ -365,7 +311,7 @@ export default function OrdersList() {
               <Button 
                 variant="outline" 
                 size="icon"
-                className="h-12 w-12"
+                className="h-11 w-11"
                 onClick={() => openCancelDialog(order.id)}
               >
                 <XCircle className="h-5 w-5" />
