@@ -221,9 +221,9 @@ const UsersTable = ({
                       {profile.full_name || "Без имени"}
                     </p>
                     {/* Role Badges */}
-                    {roles.filter(r => r !== "user" && r !== "owner").length > 0 && (
+                    {roles.filter(r => r !== "user").length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {roles.filter(r => r !== "user" && r !== "owner").map(role => {
+                        {roles.filter(r => r !== "user").map(role => {
                           const config = ROLE_CONFIG[role];
                           return (
                             <Badge 
