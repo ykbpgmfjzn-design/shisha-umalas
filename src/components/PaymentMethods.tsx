@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Building2, Banknote, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -49,9 +48,7 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className={`bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6 ${className}`}
     >
       <h3 className="font-display text-lg text-foreground mb-4 flex items-center gap-2">
@@ -111,7 +108,7 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
           </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
