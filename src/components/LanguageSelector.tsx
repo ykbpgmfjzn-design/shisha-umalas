@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useContext } from "react";
+import { Link } from "react-router-dom";
 import { LanguageContext, Language } from "@/contexts/LanguageContext";
 import { Globe } from "lucide-react";
 import AuthButton from "./AuthButton";
@@ -28,7 +29,9 @@ const LanguageSelector = () => {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-background/60 backdrop-blur-md border-b border-border/20">
       {/* Logo */}
-      <img src={logo} alt="Shisha Cool" className="h-12 w-auto" />
+      <Link to="/">
+        <img src={logo} alt="Shisha Cool" className="h-12 w-auto hover:opacity-80 transition-opacity" />
+      </Link>
       
       {/* Right side controls */}
       <div className="flex items-center gap-3 relative">
