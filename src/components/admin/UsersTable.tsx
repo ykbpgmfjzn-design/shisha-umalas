@@ -33,6 +33,13 @@ interface UsersTableProps {
 }
 
 const getRoleConfig = (t?: (key: string) => string) => ({
+  owner: { 
+    labelKey: "role.owner",
+    label: t ? t("role.owner") : "Owner", 
+    icon: Crown, 
+    color: "text-golden", 
+    bgColor: "bg-golden/20 border-golden" 
+  },
   admin: { 
     labelKey: "role.admin",
     label: t ? t("role.admin") : "Admin", 
@@ -123,6 +130,9 @@ const UsersTable = ({
 
   const getMainRoleIcon = (userId: string) => {
     const roles = getUserRoles(userId);
+    if (roles.includes("owner")) {
+      return <Crown className="w-4 h-4 text-golden" />;
+    }
     if (roles.includes("admin")) {
       return <Shield className="w-4 h-4 text-red-400" />;
     }
@@ -139,8 +149,13 @@ const UsersTable = ({
     return <User className="w-4 h-4 text-muted-foreground" />;
   };
 
+  const isOwner = (userId: string) => {
+    return getUserRoles(userId).includes("owner");
+  };
+
   const getMainRoleBg = (userId: string) => {
     const roles = getUserRoles(userId);
+    if (roles.includes("owner")) return "bg-golden/20";
     if (roles.includes("admin")) return "bg-red-500/20";
     if (roles.includes("shisha_master")) return "bg-purple-500/20";
     if (roles.includes("accounting")) return "bg-blue-500/20";
@@ -232,51 +247,57 @@ const UsersTable = ({
                     <span className="text-sm font-bold">{profile.loyalty_level}</span>
                   </div>
 
-                  {/* Roles Dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 gap-1"
-                      >
-                        <Shield className="w-3 h-3" />
-                        <ChevronDown className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuLabel>{t ? t("admin.manageRoles") : "Manage Roles"}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {(Object.keys(ROLE_CONFIG) as AppRole[]).map(role => {
-                        const config = ROLE_CONFIG[role];
-                        const Icon = config.icon;
-                        const currentRoles = getUserRoles(profile.id);
-                        const isActive = currentRoles.includes(role) && currentRoles.length === 1;
-                        const isLoading = roleLoading === `${profile.id}-${role}`;
-                        
-                        return (
-                          <DropdownMenuItem
-                            key={role}
-                            onClick={(e) => handleSetRole(e, profile.id, role)}
-                            disabled={isLoading}
-                            className="cursor-pointer"
-                          >
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2">
-                                <Icon className={`w-4 h-4 ${config.color}`} />
-                                <span>{config.label}</span>
+                  {/* Roles Dropdown - hidden for owners */}
+                  {!isOwner(profile.id) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 gap-1"
+                        >
+                          <Shield className="w-3 h-3" />
+                          <ChevronDown className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>{t ? t("admin.manageRoles") : "Manage Roles"}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {(Object.keys(ROLE_CONFIG) as AppRole[]).filter(role => role !== "owner").map(role => {
+                          const config = ROLE_CONFIG[role];
+                          const Icon = config.icon;
+                          const currentRoles = getUserRoles(profile.id);
+                          const isActive = currentRoles.includes(role) && currentRoles.length === 1;
+                          const isLoading = roleLoading === `${profile.id}-${role}`;
+                          
+                          return (
+                            <DropdownMenuItem
+                              key={role}
+                              onClick={(e) => handleSetRole(e, profile.id, role)}
+                              disabled={isLoading}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Icon className={`w-4 h-4 ${config.color}`} />
+                                  <span>{config.label}</span>
+                                </div>
+                                {isActive && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    ✓
+                                  </Badge>
+                                )}
                               </div>
-                              {isActive && (
-                                <Badge variant="secondary" className="text-xs">
-                                  ✓
-                                </Badge>
-                              )}
-                            </div>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Badge variant="outline" className="bg-golden/20 border-golden text-golden">
+                      Owner
+                    </Badge>
+                  )}
                 </div>
               </div>
             </motion.button>

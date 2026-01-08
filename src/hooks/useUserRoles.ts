@@ -41,7 +41,8 @@ export const useUserRoles = () => {
     roles, 
     loading, 
     hasRole,
-    isAdmin: hasRole("admin"),
+    isOwner: hasRole("owner"),
+    isAdmin: hasRole("admin") || hasRole("owner"),
     isAccounting: hasRole("accounting"),
     isShishaMaster: hasRole("shisha_master"),
   };
