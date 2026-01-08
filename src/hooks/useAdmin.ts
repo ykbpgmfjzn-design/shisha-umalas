@@ -2,12 +2,22 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "./useProfile";
 import type { Purchase } from "./usePurchases";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+interface UserRole {
+  id: string;
+  user_id: string;
+  role: AppRole;
+}
 
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [allPurchases, setAllPurchases] = useState<Purchase[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
 
   // Check if current user is admin
   const checkAdminStatus = useCallback(async () => {
@@ -60,6 +70,41 @@ export const useAdmin = () => {
     return { data, error };
   }, []);
 
+  // Fetch user roles for a specific user
+  const fetchUserRoles = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (!error && data) {
+      setUserRoles(data as UserRole[]);
+    }
+    return { data, error };
+  }, []);
+
+  // Add role to user
+  const addUserRole = useCallback(async (userId: string, role: AppRole) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .insert({ user_id: userId, role })
+      .select()
+      .single();
+
+    return { data, error };
+  }, []);
+
+  // Remove role from user
+  const removeUserRole = useCallback(async (userId: string, role: AppRole) => {
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", role);
+
+    return { error };
+  }, []);
+
   // Add purchase for a user
   const addPurchase = useCallback(async (
     userId: string, 
@@ -92,8 +137,12 @@ export const useAdmin = () => {
     loading,
     profiles,
     allPurchases,
+    userRoles,
     fetchAllProfiles,
     fetchUserPurchases,
+    fetchUserRoles,
+    addUserRole,
+    removeUserRole,
     addPurchase,
     refetchAdmin: checkAdminStatus,
   };
