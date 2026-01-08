@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
 import { 
   TrendingUp, Clock, CheckCircle, Calendar,
-  DollarSign, Users, Wind
+  DollarSign, Users, Wind, MessageSquare, Star
 } from "lucide-react";
 import type { DashboardStats as StatsType } from "@/hooks/useAdmin";
 
 interface DashboardStatsProps {
   stats: StatsType;
+  feedbackCount?: number;
+  avgRating?: number;
 }
 
-const DashboardStats = ({ stats }: DashboardStatsProps) => {
+const DashboardStats = ({ stats, feedbackCount = 0, avgRating = 0 }: DashboardStatsProps) => {
   const statCards = [
     {
       label: "Всего заказов",
@@ -66,6 +68,20 @@ const DashboardStats = ({ stats }: DashboardStatsProps) => {
       icon: Users,
       color: "text-pink-400",
       bgColor: "bg-pink-400/10",
+    },
+    {
+      label: "Отзывов",
+      value: feedbackCount,
+      icon: MessageSquare,
+      color: "text-amber-400",
+      bgColor: "bg-amber-400/10",
+    },
+    {
+      label: "Средний рейтинг",
+      value: avgRating > 0 ? `${avgRating.toFixed(1)} ★` : "—",
+      icon: Star,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-400/10",
     },
   ];
 
