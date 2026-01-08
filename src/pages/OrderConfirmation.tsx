@@ -184,12 +184,7 @@ const OrderConfirmationContent = () => {
             {/* Order Details */}
             <div className="p-6 space-y-6">
               {/* Order Number */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/30"
-              >
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/30">
                 <div className="flex items-center gap-3">
                   <Receipt className="w-5 h-5 text-golden" />
                   <span className="text-muted-foreground">{t("order.orderNumber")}</span>
@@ -197,15 +192,10 @@ const OrderConfirmationContent = () => {
                 <span className="font-display text-xl text-foreground tracking-wider">
                   #{orderNumber}
                 </span>
-              </motion.div>
+              </div>
 
               {/* Wait Time */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                className="p-6 bg-gradient-to-br from-golden/10 to-sunset/5 rounded-xl border border-golden/20"
-              >
+              <div className="p-6 bg-gradient-to-br from-golden/10 to-sunset/5 rounded-xl border border-golden/20">
                 <div className="flex items-center gap-3 mb-4">
                   <Clock className="w-5 h-5 text-golden" />
                   <span className="text-muted-foreground">{t("order.estimatedTime")}</span>
@@ -219,14 +209,11 @@ const OrderConfirmationContent = () => {
                     {t("order.approx")} {estimatedMinutes} {t("order.minutes")}
                   </p>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Delivery Info */}
               {!loading && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.65 }}
+                <div
                   className={`p-4 rounded-xl border ${
                     roomNumber 
                       ? 'bg-golden/10 border-golden/30' 
@@ -274,16 +261,11 @@ const OrderConfirmationContent = () => {
                       </>
                     )}
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {/* Order Summary */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 }}
-                className="space-y-3"
-              >
+              <div className="space-y-3">
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider">
                   {t("order.summary")}
                 </h3>
@@ -294,24 +276,15 @@ const OrderConfirmationContent = () => {
                     <span className="font-display text-xl text-golden">IDR {total}K</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Payment Methods */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.75 }}
-              >
+              <div>
                 <PaymentMethods />
-              </motion.div>
+              </div>
 
               {/* Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="space-y-3 pt-4"
-              >
+              <div className="space-y-3 pt-4">
                 <Button
                   onClick={() => navigate("/")}
                   className="w-full bg-golden hover:bg-golden/90 text-background h-12"
@@ -340,7 +313,7 @@ const OrderConfirmationContent = () => {
                     {isCancelling ? t("order.cancelling") : t("order.cancelOrder")}
                   </Button>
                 )}
-              </motion.div>
+              </div>
             </div>
           </div>
 
