@@ -30,7 +30,11 @@ const LanguageSelector = () => {
     <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-background/60 backdrop-blur-md border-b border-border/20">
       {/* Logo */}
       <Link to="/">
-        <img src={logo} alt="Shisha Cool" className="h-12 w-auto hover:opacity-80 transition-opacity" />
+        <img 
+          src={logo} 
+          alt="Shisha Cool" 
+          className="h-12 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" 
+        />
       </Link>
       
       {/* Right side controls */}
