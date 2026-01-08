@@ -58,7 +58,25 @@ const ReservationContent = () => {
     setIsSubmitting(true);
     
     try {
-      // Log reservation
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Insert into reservations table
+      const { error } = await supabase
+        .from("reservations")
+        .insert({
+          user_id: user?.id || null,
+          reservation_date: format(date, 'yyyy-MM-dd'),
+          reservation_time: time,
+          party_size: partySize,
+          hookah_count: hookahCount,
+          phone,
+          notes: notes || specialRequests || null,
+          status: 'pending',
+        });
+
+      if (error) throw error;
+
+      // Also log activity for backwards compatibility
       await logActivity('reservation', 'Бронирование создано', {
         date: format(date, 'yyyy-MM-dd'),
         time,
@@ -78,6 +96,7 @@ const ReservationContent = () => {
       setNotes("");
       setSpecialRequests("");
     } catch (error) {
+      console.error("Reservation error:", error);
       toast.error(t("reservation.error"));
     } finally {
       setIsSubmitting(false);

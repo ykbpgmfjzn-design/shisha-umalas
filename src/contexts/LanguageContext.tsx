@@ -301,6 +301,11 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.upcomingReservations": "Upcoming",
     "admin.pastReservations": "Past",
     "admin.guests": "guests",
+    "admin.confirmed": "Confirmed",
+    "admin.cancelled": "Cancelled",
+    "admin.reservationConfirmed": "Reservation confirmed",
+    "admin.reservationCancelled": "Reservation cancelled",
+    "admin.markPending": "Mark as Pending",
     
     // Payment
     "payment.methods": "Payment Methods",
@@ -592,6 +597,11 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.upcomingReservations": "Предстоящие",
     "admin.pastReservations": "Прошедшие",
     "admin.guests": "гостей",
+    "admin.confirmed": "Подтверждено",
+    "admin.cancelled": "Отменено",
+    "admin.reservationConfirmed": "Бронирование подтверждено",
+    "admin.reservationCancelled": "Бронирование отменено",
+    "admin.markPending": "В ожидании",
     
     // Payment
     "payment.methods": "Способы оплаты",
