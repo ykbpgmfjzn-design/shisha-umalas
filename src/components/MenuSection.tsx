@@ -1,6 +1,6 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ReactNode, useState, useEffect } from "react";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Plus, ChevronDown, ShoppingCart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ interface MenuItemProps {
 const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, strength, itemType = "hookah" }: MenuItemProps) => {
   const { t, language } = useLanguage();
   const { addItem } = useCart();
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Get localized description
   const description = getMenuDescription(id, language);
@@ -40,7 +41,8 @@ const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, stren
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       toast.info(t("menu.loginToOrder"));
       return;
@@ -59,6 +61,12 @@ const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, stren
     toast.success(t("menu.addedToCart"));
   };
 
+  const toggleExpand = () => {
+    if (description) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,44 +75,77 @@ const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, stren
       transition={{ duration: 0.5, delay }}
       className="group"
     >
-      <div className="flex items-center gap-4 py-4 px-4 rounded-xl bg-background/50 hover:bg-background/80 border border-transparent hover:border-golden/20 transition-all duration-300">
-        {/* Item Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className={`font-display text-lg md:text-xl ${isSignature ? 'text-golden' : 'text-foreground'} group-hover:text-golden transition-colors duration-300 truncate`}>
-              {name}
-            </h4>
-            {isSignature && (
-              <span className="text-[9px] uppercase tracking-widest text-sunset border border-sunset/40 px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                {t("menu.signature")}
-              </span>
+      <div 
+        className={`py-4 px-4 rounded-xl bg-background/50 hover:bg-background/80 border border-transparent hover:border-golden/20 transition-all duration-300 ${description ? 'cursor-pointer' : ''}`}
+        onClick={toggleExpand}
+      >
+        <div className="flex items-center gap-4">
+          {/* Item Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className={`font-display text-lg md:text-xl ${isSignature ? 'text-golden' : 'text-foreground'} group-hover:text-golden transition-colors duration-300`}>
+                {name}
+              </h4>
+              {isSignature && (
+                <span className="text-[9px] uppercase tracking-widest text-sunset border border-sunset/40 px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                  {t("menu.signature")}
+                </span>
+              )}
+            </div>
+            {description && !isExpanded && (
+              <p className="text-sm text-muted-foreground mt-0.5 font-body line-clamp-1">
+                {description}
+              </p>
             )}
           </div>
+
+          {/* Expand indicator */}
           {description && (
-            <p className="text-sm text-muted-foreground mt-0.5 font-body line-clamp-1">
-              {description}
-            </p>
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-muted-foreground flex-shrink-0"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
           )}
+
+          {/* Price */}
+          <div className="font-display text-lg md:text-xl text-smoke-light whitespace-nowrap">
+            {priceDisplay}
+          </div>
+
+          {/* Add Button */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleAddToCart}
+            className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
+              user 
+                ? 'bg-golden/20 hover:bg-golden text-golden hover:text-background' 
+                : 'bg-muted/50 text-muted-foreground cursor-default'
+            }`}
+          >
+            <Plus className="w-5 h-5" />
+          </motion.button>
         </div>
 
-        {/* Price */}
-        <div className="font-display text-lg md:text-xl text-smoke-light whitespace-nowrap">
-          {priceDisplay}
-        </div>
-
-        {/* Add Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleAddToCart}
-          className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
-            user 
-              ? 'bg-golden/20 hover:bg-golden text-golden hover:text-background' 
-              : 'bg-muted/50 text-muted-foreground cursor-default'
-          }`}
-        >
-          <Plus className="w-5 h-5" />
-        </motion.button>
+        {/* Expanded Description */}
+        <AnimatePresence>
+          {isExpanded && description && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border/30 font-body">
+                {description}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

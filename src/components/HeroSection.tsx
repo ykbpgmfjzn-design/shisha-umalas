@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import heroVideo from "@/assets/hero-video.mp4";
+import heroVideo from "@/assets/hero-animated-bg.mp4";
 import logo from "@/assets/logo-shisha-cool.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
