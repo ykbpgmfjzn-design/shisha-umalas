@@ -25,6 +25,7 @@ import DashboardStats from "@/components/admin/DashboardStats";
 import OrdersTable from "@/components/admin/OrdersTable";
 import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
+import DeliverySettings from "@/components/admin/DeliverySettings";
 import type { Profile } from "@/hooks/useProfile";
 
 const AdminContent = () => {
@@ -270,7 +271,7 @@ const AdminContent = () => {
           <TabsContent value="dashboard" className="space-y-6">
             <DashboardStats stats={stats} />
             
-            {/* Current Orders */}
+            {/* Current Orders + Settings */}
             <div className="grid lg:grid-cols-2 gap-6">
               <OrdersTable
                 orders={pendingOrders}
@@ -279,13 +280,18 @@ const AdminContent = () => {
                 title="Текущие заказы"
               />
               
-              {/* Recent Activity */}
-              <OrdersTable
-                orders={allPurchases.slice(0, 10)}
-                onUpdateStatus={handleUpdateOrderStatus}
-                showFilters={false}
-                title="Последние заказы"
-              />
+              <div className="space-y-6">
+                {/* Delivery Settings */}
+                <DeliverySettings t={t} />
+                
+                {/* Recent Activity */}
+                <OrdersTable
+                  orders={allPurchases.slice(0, 5)}
+                  onUpdateStatus={handleUpdateOrderStatus}
+                  showFilters={false}
+                  title="Последние заказы"
+                />
+              </div>
             </div>
           </TabsContent>
 

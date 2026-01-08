@@ -177,6 +177,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Export CSV",
     "admin.dateRange": "Date Range",
     "admin.revenue": "Revenue",
+    "admin.settings": "Settings",
+    "admin.deliveryTime": "Delivery Time",
+    "admin.deliveryTimeDesc": "Maximum time for order delivery to customer",
+    "admin.minutes": "minutes",
+    "admin.saving": "Saving...",
+    "admin.settingsSaved": "Settings saved",
+    "admin.settingsError": "Error saving settings",
     
     // Roles
     "role.admin": "Admin",
@@ -381,6 +388,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Экспорт CSV",
     "admin.dateRange": "Период",
     "admin.revenue": "Выручка",
+    "admin.settings": "Настройки",
+    "admin.deliveryTime": "Время доставки",
+    "admin.deliveryTimeDesc": "Максимальное время для доставки заказа клиенту",
+    "admin.minutes": "минут",
+    "admin.saving": "Сохранение...",
+    "admin.settingsSaved": "Настройки сохранены",
+    "admin.settingsError": "Ошибка сохранения настроек",
     
     // Roles
     "role.admin": "Админ",
@@ -543,6 +557,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Ekspor CSV",
     "admin.dateRange": "Rentang Tanggal",
     "admin.revenue": "Pendapatan",
+    "admin.settings": "Pengaturan",
+    "admin.deliveryTime": "Waktu Pengiriman",
+    "admin.deliveryTimeDesc": "Waktu maksimal untuk pengiriman pesanan ke pelanggan",
+    "admin.minutes": "menit",
+    "admin.saving": "Menyimpan...",
+    "admin.settingsSaved": "Pengaturan disimpan",
+    "admin.settingsError": "Kesalahan menyimpan pengaturan",
     
     // Roles
     "role.admin": "Admin",
@@ -687,6 +708,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "всього",
     "admin.exportCsv": "Експорт CSV",
     "admin.revenue": "Дохід",
+    "admin.settings": "Налаштування",
+    "admin.deliveryTime": "Час доставки",
+    "admin.deliveryTimeDesc": "Максимальний час для доставки замовлення клієнту",
+    "admin.minutes": "хвилин",
+    "admin.saving": "Збереження...",
+    "admin.settingsSaved": "Налаштування збережено",
+    "admin.settingsError": "Помилка збереження налаштувань",
     
     // Roles
     "role.admin": "Адмін",
@@ -831,6 +859,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "total",
     "admin.exportCsv": "Exporter CSV",
     "admin.revenue": "Revenu",
+    "admin.settings": "Paramètres",
+    "admin.deliveryTime": "Temps de livraison",
+    "admin.deliveryTimeDesc": "Temps maximum pour livrer la commande au client",
+    "admin.minutes": "minutes",
+    "admin.saving": "Enregistrement...",
+    "admin.settingsSaved": "Paramètres enregistrés",
+    "admin.settingsError": "Erreur d'enregistrement",
     
     // Roles
     "role.admin": "Admin",
@@ -969,6 +1004,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "कुल",
     "admin.exportCsv": "CSV निर्यात करें",
     "admin.revenue": "राजस्व",
+    "admin.settings": "सेटिंग्स",
+    "admin.deliveryTime": "डिलीवरी समय",
+    "admin.deliveryTimeDesc": "ग्राहक को ऑर्डर डिलीवर करने का अधिकतम समय",
+    "admin.minutes": "मिनट",
+    "admin.saving": "सहेज रहा है...",
+    "admin.settingsSaved": "सेटिंग्स सहेजी गईं",
+    "admin.settingsError": "सेटिंग्स सहेजने में त्रुटि",
     
     // Roles
     "role.admin": "एडमिन",
@@ -1107,6 +1149,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "总计",
     "admin.exportCsv": "导出CSV",
     "admin.revenue": "收入",
+    "admin.settings": "设置",
+    "admin.deliveryTime": "送达时间",
+    "admin.deliveryTimeDesc": "订单送达客户的最长时间",
+    "admin.minutes": "分钟",
+    "admin.saving": "保存中...",
+    "admin.settingsSaved": "设置已保存",
+    "admin.settingsError": "保存设置出错",
     
     // Roles
     "role.admin": "管理员",
