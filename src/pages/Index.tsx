@@ -7,6 +7,7 @@ import FooterSection from "@/components/FooterSection";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
+import WhatsAppChat from "@/components/WhatsAppChat";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -35,6 +36,7 @@ const Index = () => {
           <MenuSection />
           <FooterSection />
           <Cart />
+          <WhatsAppChat />
           <BottomNavigation />
         </main>
       </CartProvider>
