@@ -200,6 +200,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "Tobacco Handling Guide",
     "shishaMaster.doc.equipmentManual": "Equipment Manual",
     "shishaMaster.doc.hygieneProtocol": "Hygiene Protocol",
+    
+    // Payment
+    "payment.methods": "Payment Methods",
+    "payment.bankTransfer": "Bank Transfer (IDR)",
+    "payment.cash": "Cash at Reception",
+    "payment.cashDescription": "Pay in cash at the reception desk",
+    "payment.accountName": "Account Name",
+    "payment.bankName": "Bank",
+    "payment.accountNumber": "Account Number",
+    "payment.copy": "Copy",
   },
   ru: {
     "hero.title": "КАЛЬЯН",
@@ -379,6 +389,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "Руководство по табаку",
     "shishaMaster.doc.equipmentManual": "Руководство по оборудованию",
     "shishaMaster.doc.hygieneProtocol": "Протокол гигиены",
+    
+    // Payment
+    "payment.methods": "Способы оплаты",
+    "payment.bankTransfer": "Банковский перевод (IDR)",
+    "payment.cash": "Наличными на ресепшн",
+    "payment.cashDescription": "Оплата наличными на ресепшн",
+    "payment.accountName": "Имя счёта",
+    "payment.bankName": "Банк",
+    "payment.accountNumber": "Номер счёта",
+    "payment.copy": "Копировать",
   },
   id: {
     "hero.title": "SHISHA",
@@ -516,6 +536,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "Panduan Penanganan Tembakau",
     "shishaMaster.doc.equipmentManual": "Manual Peralatan",
     "shishaMaster.doc.hygieneProtocol": "Protokol Kebersihan",
+    
+    // Payment
+    "payment.methods": "Metode Pembayaran",
+    "payment.bankTransfer": "Transfer Bank (IDR)",
+    "payment.cash": "Tunai di Resepsionis",
+    "payment.cashDescription": "Bayar tunai di meja resepsionis",
+    "payment.accountName": "Nama Rekening",
+    "payment.bankName": "Bank",
+    "payment.accountNumber": "Nomor Rekening",
+    "payment.copy": "Salin",
   },
   uk: {
     "hero.title": "КАЛЬЯН",
@@ -635,6 +665,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "Посібник з тютюну",
     "shishaMaster.doc.equipmentManual": "Посібник з обладнання",
     "shishaMaster.doc.hygieneProtocol": "Протокол гігієни",
+    
+    // Payment
+    "payment.methods": "Способи оплати",
+    "payment.bankTransfer": "Банківський переказ (IDR)",
+    "payment.cash": "Готівкою на ресепшн",
+    "payment.cashDescription": "Оплата готівкою на ресепшн",
+    "payment.accountName": "Ім'я рахунку",
+    "payment.bankName": "Банк",
+    "payment.accountNumber": "Номер рахунку",
+    "payment.copy": "Копіювати",
   },
   fr: {
     "hero.title": "CHICHA",
@@ -754,6 +794,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "Guide du tabac",
     "shishaMaster.doc.equipmentManual": "Manuel d'équipement",
     "shishaMaster.doc.hygieneProtocol": "Protocole d'hygiène",
+    
+    // Payment
+    "payment.methods": "Modes de paiement",
+    "payment.bankTransfer": "Virement bancaire (IDR)",
+    "payment.cash": "Espèces à la réception",
+    "payment.cashDescription": "Payer en espèces à la réception",
+    "payment.accountName": "Nom du compte",
+    "payment.bankName": "Banque",
+    "payment.accountNumber": "Numéro de compte",
+    "payment.copy": "Copier",
   },
   hi: {
     "hero.title": "हुक्का",
@@ -867,6 +917,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "तंबाकू हैंडलिंग गाइड",
     "shishaMaster.doc.equipmentManual": "उपकरण मैनुअल",
     "shishaMaster.doc.hygieneProtocol": "स्वच्छता प्रोटोकॉल",
+    
+    // Payment
+    "payment.methods": "भुगतान के तरीके",
+    "payment.bankTransfer": "बैंक ट्रांसफर (IDR)",
+    "payment.cash": "रिसेप्शन पर नकद",
+    "payment.cashDescription": "रिसेप्शन डेस्क पर नकद भुगतान करें",
+    "payment.accountName": "खाता नाम",
+    "payment.bankName": "बैंक",
+    "payment.accountNumber": "खाता संख्या",
+    "payment.copy": "कॉपी",
   },
   zh: {
     "hero.title": "水烟",
@@ -980,6 +1040,16 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.doc.tobaccoGuide": "烟草处理指南",
     "shishaMaster.doc.equipmentManual": "设备手册",
     "shishaMaster.doc.hygieneProtocol": "卫生规程",
+    
+    // Payment
+    "payment.methods": "支付方式",
+    "payment.bankTransfer": "银行转账 (IDR)",
+    "payment.cash": "前台现金支付",
+    "payment.cashDescription": "在前台用现金支付",
+    "payment.accountName": "账户名称",
+    "payment.bankName": "银行",
+    "payment.accountNumber": "账号",
+    "payment.copy": "复制",
   },
 };
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import PaymentMethods from "@/components/PaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -293,6 +294,15 @@ const OrderConfirmationContent = () => {
                     <span className="font-display text-xl text-golden">IDR {total}K</span>
                   </div>
                 </div>
+              </motion.div>
+
+              {/* Payment Methods */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.75 }}
+              >
+                <PaymentMethods />
               </motion.div>
 
               {/* Actions */}

@@ -92,16 +92,30 @@ const UsersTable = ({
     p.room_number?.includes(searchQuery)
   );
 
-  const handleToggleRole = async (e: React.MouseEvent, userId: string, role: AppRole) => {
+  const handleSetRole = async (e: React.MouseEvent, userId: string, newRole: AppRole) => {
     e.stopPropagation();
-    setRoleLoading(`${userId}-${role}`);
+    setRoleLoading(`${userId}-${newRole}`);
     
-    if (role === "admin") {
-      await onToggleAdmin(userId, hasRole(userId, "admin"));
-    } else if (hasRole(userId, role)) {
-      await onRemoveRole?.(userId, role);
-    } else {
-      await onAddRole?.(userId, role);
+    const currentRoles = getUserRoles(userId);
+    
+    // Remove all current roles except the new one
+    for (const role of currentRoles) {
+      if (role !== newRole) {
+        if (role === "admin") {
+          await onToggleAdmin(userId, true);
+        } else {
+          await onRemoveRole?.(userId, role);
+        }
+      }
+    }
+    
+    // Add new role if not already present
+    if (!currentRoles.includes(newRole)) {
+      if (newRole === "admin") {
+        await onToggleAdmin(userId, false);
+      } else {
+        await onAddRole?.(userId, newRole);
+      }
     }
     
     setRoleLoading(null);
@@ -236,13 +250,14 @@ const UsersTable = ({
                       {(Object.keys(ROLE_CONFIG) as AppRole[]).map(role => {
                         const config = ROLE_CONFIG[role];
                         const Icon = config.icon;
-                        const isActive = hasRole(profile.id, role);
+                        const currentRoles = getUserRoles(profile.id);
+                        const isActive = currentRoles.includes(role) && currentRoles.length === 1;
                         const isLoading = roleLoading === `${profile.id}-${role}`;
                         
                         return (
                           <DropdownMenuItem
                             key={role}
-                            onClick={(e) => handleToggleRole(e, profile.id, role)}
+                            onClick={(e) => handleSetRole(e, profile.id, role)}
                             disabled={isLoading}
                             className="cursor-pointer"
                           >
