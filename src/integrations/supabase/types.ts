@@ -212,6 +212,39 @@ export type Database = {
         }
         Relationships: []
       }
+      training_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_type: string
+          file_url: string
+          id: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_type: string
+          file_url: string
+          id?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

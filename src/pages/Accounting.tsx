@@ -10,6 +10,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReservationsList from "@/components/admin/ReservationsList";
 import {
   Select,
   SelectContent,
@@ -366,14 +368,28 @@ const AccountingContent = () => {
           ))}
         </div>
 
-        {/* Orders Table */}
-        <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
-          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-            <h2 className="font-display text-xl">{t("admin.allOrders")}</h2>
+        {/* Main Content with Tabs */}
+        <Tabs defaultValue="orders" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2 bg-card/60 backdrop-blur-xl">
+            <TabsTrigger value="orders" className="gap-2">
+              <Hash className="w-4 h-4" />
+              {t("admin.allOrders")}
+            </TabsTrigger>
+            <TabsTrigger value="reservations" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              {t("admin.reservations")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            {/* Orders Table */}
+            <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                <h2 className="font-display text-xl">{t("admin.allOrders")}</h2>
             
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-muted-foreground" />
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                   <SelectTrigger className="w-[140px] bg-background/50">
                     <SelectValue />
@@ -525,6 +541,12 @@ const AccountingContent = () => {
             )}
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="reservations">
+            <ReservationsList />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Confirmation Dialog */}

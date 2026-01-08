@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Wind } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Wind, BookOpen } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OrdersList from "@/components/shisha-master/OrdersList";
+import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
@@ -67,7 +69,26 @@ function ShishaMasterContent() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <OrdersList />
+        <Tabs defaultValue="orders" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="orders" className="gap-2">
+              <Wind className="h-4 w-4" />
+              {t("shishaMaster.orders.activeOrders")}
+            </TabsTrigger>
+            <TabsTrigger value="training" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              {t("shishaMaster.training.title")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            <OrdersList />
+          </TabsContent>
+
+          <TabsContent value="training">
+            <TrainingMaterials />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
