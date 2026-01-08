@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Shield, Users, Search, Crown, Building2, User,
-  ShieldCheck, ShieldX, Wind, Calculator, ChevronDown
+  Wind, Calculator, ChevronDown, UserCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,34 +29,39 @@ interface UsersTableProps {
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
   onAddRole?: (userId: string, role: AppRole) => Promise<void>;
   onRemoveRole?: (userId: string, role: AppRole) => Promise<void>;
+  t?: (key: string) => string;
 }
 
-const ROLE_CONFIG: Record<AppRole, { label: string; icon: typeof Shield; color: string; bgColor: string }> = {
+const getRoleConfig = (t?: (key: string) => string) => ({
   admin: { 
-    label: "Админ", 
+    labelKey: "role.admin",
+    label: t ? t("role.admin") : "Admin", 
     icon: Shield, 
     color: "text-red-400", 
     bgColor: "bg-red-500/20 border-red-400" 
   },
   user: { 
-    label: "Пользователь", 
-    icon: User, 
-    color: "text-muted-foreground", 
-    bgColor: "bg-muted border-muted-foreground" 
+    labelKey: "role.guest",
+    label: t ? t("role.guest") : "Guest", 
+    icon: UserCircle, 
+    color: "text-green-400", 
+    bgColor: "bg-green-500/20 border-green-400" 
   },
   shisha_master: { 
-    label: "Shisha Master", 
+    labelKey: "role.shishaMaster",
+    label: t ? t("role.shishaMaster") : "Shisha Master", 
     icon: Wind, 
     color: "text-purple-400", 
     bgColor: "bg-purple-500/20 border-purple-400" 
   },
   accounting: { 
-    label: "Бухгалтерия", 
+    labelKey: "role.accounting",
+    label: t ? t("role.accounting") : "Accounting", 
     icon: Calculator, 
     color: "text-blue-400", 
     bgColor: "bg-blue-500/20 border-blue-400" 
   },
-};
+});
 
 const UsersTable = ({ 
   profiles, 
@@ -66,9 +71,12 @@ const UsersTable = ({
   onToggleAdmin,
   onAddRole,
   onRemoveRole,
+  t,
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
+  
+  const ROLE_CONFIG = getRoleConfig(t);
 
   const getUserRoles = (userId: string): AppRole[] => {
     return userRoles.filter(r => r.user_id === userId).map(r => r.role);
@@ -223,9 +231,9 @@ const UsersTable = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuLabel>Управление ролями</DropdownMenuLabel>
+                      <DropdownMenuLabel>{t ? t("admin.manageRoles") : "Manage Roles"}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      {(Object.keys(ROLE_CONFIG) as AppRole[]).filter(r => r !== "user").map(role => {
+                      {(Object.keys(ROLE_CONFIG) as AppRole[]).map(role => {
                         const config = ROLE_CONFIG[role];
                         const Icon = config.icon;
                         const isActive = hasRole(profile.id, role);

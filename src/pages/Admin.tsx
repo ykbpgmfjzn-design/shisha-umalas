@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 import OrderNotifications from "@/components/OrderNotifications";
 import DashboardStats from "@/components/admin/DashboardStats";
 import OrdersTable from "@/components/admin/OrdersTable";
@@ -25,10 +27,11 @@ import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
 import type { Profile } from "@/hooks/useProfile";
 
-const Admin = () => {
+const AdminContent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { 
+  const { t } = useLanguage();
+  const {
     isAdmin, 
     loading, 
     profiles, 
@@ -304,16 +307,17 @@ const Admin = () => {
                 onSelectUser={setSelectedUser}
                 selectedUserId={selectedUser?.id}
                 onToggleAdmin={handleToggleAdmin}
+                t={t}
                 onAddRole={async (userId, role) => {
                   const { error } = await addUserRole(userId, role);
                   if (error) {
                     toast({
                       variant: "destructive",
-                      title: "Ошибка",
-                      description: "Не удалось добавить роль",
+                      title: t("auth.error"),
+                      description: t("admin.roleAdded") + " failed",
                     });
                   } else {
-                    toast({ title: "Роль добавлена" });
+                    toast({ title: t("admin.roleAdded") });
                     fetchAllUserRoles();
                   }
                 }}
@@ -322,11 +326,11 @@ const Admin = () => {
                   if (error) {
                     toast({
                       variant: "destructive",
-                      title: "Ошибка",
-                      description: "Не удалось удалить роль",
+                      title: t("auth.error"),
+                      description: t("admin.roleRemoved") + " failed",
                     });
                   } else {
-                    toast({ title: "Роль удалена" });
+                    toast({ title: t("admin.roleRemoved") });
                     fetchAllUserRoles();
                   }
                 }}
@@ -425,6 +429,14 @@ const Admin = () => {
         </DialogContent>
       </Dialog>
     </div>
+  );
+};
+
+const Admin = () => {
+  return (
+    <LanguageProvider>
+      <AdminContent />
+    </LanguageProvider>
   );
 };
 
