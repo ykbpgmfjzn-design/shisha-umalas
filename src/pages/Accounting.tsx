@@ -539,8 +539,8 @@ const AccountingContent = () => {
                 </motion.div>
               ))
             )}
-          </div>
-        </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="reservations">
