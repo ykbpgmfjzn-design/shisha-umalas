@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, Shield, Users, Plus, Search, 
-  Crown, Building2, Coffee, Cookie, Gift,
-  Calendar, Hash, LogOut, UserCog, ShieldCheck, ShieldX
+  ArrowLeft, Shield, Plus, LogOut,
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +16,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import OrderNotifications from "@/components/OrderNotifications";
+import DashboardStats from "@/components/admin/DashboardStats";
+import OrdersTable from "@/components/admin/OrdersTable";
+import UsersTable from "@/components/admin/UsersTable";
+import UserDetails from "@/components/admin/UserDetails";
 import type { Profile } from "@/hooks/useProfile";
-import type { Purchase } from "@/hooks/usePurchases";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -31,18 +33,22 @@ const Admin = () => {
     loading, 
     profiles, 
     allPurchases,
-    userRoles,
+    userPurchases,
+    allUserRoles,
+    stats,
     fetchAllProfiles, 
+    fetchAllPurchases,
     fetchUserPurchases,
-    fetchUserRoles,
+    fetchAllUserRoles,
     addUserRole,
     removeUserRole,
+    updatePurchaseStatus,
     addPurchase 
   } = useAdmin();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [showAddPurchase, setShowAddPurchase] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [purchaseForm, setPurchaseForm] = useState({
     hookahCount: 1,
     amount: "",
@@ -51,7 +57,6 @@ const Admin = () => {
     freeSnack: false,
   });
   const [saving, setSaving] = useState(false);
-  const [roleLoading, setRoleLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -67,65 +72,27 @@ const Admin = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchAllProfiles();
+      fetchAllPurchases();
+      fetchAllUserRoles();
     }
-  }, [isAdmin, fetchAllProfiles]);
+  }, [isAdmin, fetchAllProfiles, fetchAllPurchases, fetchAllUserRoles]);
 
   useEffect(() => {
     if (selectedUser) {
       fetchUserPurchases(selectedUser.id);
-      fetchUserRoles(selectedUser.id);
     }
-  }, [selectedUser, fetchUserPurchases, fetchUserRoles]);
+  }, [selectedUser, fetchUserPurchases]);
 
-  const isUserAdmin = (userId: string) => {
-    return userRoles.some(r => r.user_id === userId && r.role === "admin");
-  };
-
-  const handleToggleAdminRole = async () => {
-    if (!selectedUser) return;
+  // Auto-refresh orders every 30 seconds
+  useEffect(() => {
+    if (!isAdmin) return;
     
-    setRoleLoading(true);
-    const hasAdmin = isUserAdmin(selectedUser.id);
-    
-    if (hasAdmin) {
-      const { error } = await removeUserRole(selectedUser.id, "admin");
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Ошибка",
-          description: "Не удалось убрать роль администратора",
-        });
-      } else {
-        toast({
-          title: "Роль удалена",
-          description: "Пользователь больше не администратор",
-        });
-        fetchUserRoles(selectedUser.id);
-      }
-    } else {
-      const { error } = await addUserRole(selectedUser.id, "admin");
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Ошибка",
-          description: "Не удалось добавить роль администратора",
-        });
-      } else {
-        toast({
-          title: "Роль добавлена",
-          description: "Пользователь теперь администратор",
-        });
-        fetchUserRoles(selectedUser.id);
-      }
-    }
-    setRoleLoading(false);
-  };
+    const interval = setInterval(() => {
+      fetchAllPurchases();
+    }, 30000);
 
-  const filteredProfiles = profiles.filter(p => 
-    p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.room_number?.includes(searchQuery)
-  );
+    return () => clearInterval(interval);
+  }, [isAdmin, fetchAllPurchases]);
 
   const handleAddPurchase = async () => {
     if (!selectedUser) return;
@@ -156,19 +123,69 @@ const Admin = () => {
       setShowAddPurchase(false);
       setPurchaseForm({ hookahCount: 1, amount: "", notes: "", freeDrink: false, freeSnack: false });
       fetchUserPurchases(selectedUser.id);
-      fetchAllProfiles(); // Refresh to get updated loyalty level
+      fetchAllPurchases();
+      fetchAllProfiles();
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ru-RU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    const { error } = await updatePurchaseStatus(orderId, status);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось обновить статус",
+      });
+    } else {
+      toast({
+        title: "Статус обновлён",
+        description: status === "PAID" ? "Заказ отмечен как оплаченный" : "Заказ отменён",
+      });
+      fetchAllPurchases();
+    }
   };
+
+  const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean) => {
+    if (isCurrentlyAdmin) {
+      const { error } = await removeUserRole(userId, "admin");
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: "Не удалось убрать роль администратора",
+        });
+      } else {
+        toast({
+          title: "Роль удалена",
+          description: "Пользователь больше не администратор",
+        });
+        fetchAllUserRoles();
+      }
+    } else {
+      const { error } = await addUserRole(userId, "admin");
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: "Не удалось добавить роль администратора",
+        });
+      } else {
+        toast({
+          title: "Роль добавлена",
+          description: "Пользователь теперь администратор",
+        });
+        fetchAllUserRoles();
+      }
+    }
+  };
+
+  const isUserAdmin = (userId: string) => {
+    return allUserRoles.some(r => r.user_id === userId && r.role === "admin");
+  };
+
+  // Get pending orders for "Current Orders" view
+  const pendingOrders = allPurchases.filter(p => p.payment_status === "pending");
 
   if (loading) {
     return (
@@ -192,9 +209,9 @@ const Admin = () => {
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sunset/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -204,12 +221,10 @@ const Admin = () => {
             На главную
           </Button>
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <OrderNotifications />
-            </div>
+            <OrderNotifications />
             <div className="flex items-center gap-2 text-golden">
               <Shield className="w-5 h-5" />
-              <span className="font-medium">Админ панель</span>
+              <span className="font-medium hidden sm:inline">Админ панель</span>
             </div>
             <Button
               variant="ghost"
@@ -221,219 +236,85 @@ const Admin = () => {
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Выйти
+              <span className="hidden sm:inline">Выйти</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Users List */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <Users className="w-5 h-5 text-golden" />
-              <h2 className="font-display text-xl">Пользователи</h2>
-              <span className="ml-auto text-sm text-muted-foreground">
-                {profiles.length} всего
-              </span>
-            </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-3 bg-card/60 backdrop-blur-xl">
+            <TabsTrigger value="dashboard" className="gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Обзор</span>
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="gap-2 relative">
+              <ClipboardList className="w-4 h-4" />
+              <span className="hidden sm:inline">Заказы</span>
+              {pendingOrders.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs flex items-center justify-center text-white">
+                  {pendingOrders.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Пользователи</span>
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Поиск по email, имени или комнате..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-background/50"
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <DashboardStats stats={stats} />
+            
+            {/* Current Orders */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              <OrdersTable
+                orders={pendingOrders}
+                onUpdateStatus={handleUpdateOrderStatus}
+                showFilters={false}
+                title="Текущие заказы"
+              />
+              
+              {/* Recent Activity */}
+              <OrdersTable
+                orders={allPurchases.slice(0, 10)}
+                onUpdateStatus={handleUpdateOrderStatus}
+                showFilters={false}
+                title="Последние заказы"
               />
             </div>
+          </TabsContent>
 
-            {/* User List */}
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-              {filteredProfiles.map((profile) => (
-                <button
-                  key={profile.id}
-                  onClick={() => setSelectedUser(profile)}
-                  className={`w-full text-left p-4 rounded-xl transition-all ${
-                    selectedUser?.id === profile.id
-                      ? "bg-golden/20 border border-golden/30"
-                      : "bg-muted/30 hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        profile.guest_type === "special" 
-                          ? "bg-golden/20" 
-                          : "bg-muted"
-                      }`}>
-                        {profile.guest_type === "special" 
-                          ? <Building2 className="w-4 h-4 text-golden" />
-                          : <Users className="w-4 h-4 text-muted-foreground" />
-                        }
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {profile.email || "Без email"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {profile.room_number ? `Комната ${profile.room_number}` : "Гость"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Crown className="w-4 h-4 text-golden" />
-                      <span className="text-sm font-bold">{profile.loyalty_level}</span>
-                    </div>
-                  </div>
-                </button>
-              ))}
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <OrdersTable
+              orders={allPurchases}
+              onUpdateStatus={handleUpdateOrderStatus}
+              title="Все заказы"
+            />
+          </TabsContent>
 
-              {filteredProfiles.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">
-                  Пользователи не найдены
-                </p>
-              )}
+          {/* Users Tab */}
+          <TabsContent value="users">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <UsersTable
+                profiles={profiles}
+                userRoles={allUserRoles}
+                onSelectUser={setSelectedUser}
+                selectedUserId={selectedUser?.id}
+                onToggleAdmin={handleToggleAdmin}
+              />
+              
+              <UserDetails
+                user={selectedUser}
+                purchases={userPurchases}
+                isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                onAddPurchase={() => setShowAddPurchase(true)}
+              />
             </div>
-          </motion.div>
-
-          {/* User Details & Purchases */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
-          >
-            {selectedUser ? (
-              <>
-                {/* User Info */}
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-display text-xl">{selectedUser.email}</h2>
-                      {isUserAdmin(selectedUser.id) && (
-                        <Badge variant="outline" className="border-golden text-golden">
-                          <Shield className="w-3 h-3 mr-1" />
-                          Админ
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedUser.full_name || "Без имени"} • 
-                      {selectedUser.guest_type === "special" 
-                        ? ` Комната ${selectedUser.room_number}` 
-                        : " Гость"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 text-golden">
-                      <Crown className="w-5 h-5" />
-                      <span className="text-2xl font-bold">Ур. {selectedUser.loyalty_level}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedUser.total_hookahs_ordered} кальянов
-                    </p>
-                  </div>
-                </div>
-
-                {/* Role Management */}
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={isUserAdmin(selectedUser.id) ? "destructive" : "outline"}
-                    size="sm"
-                    onClick={handleToggleAdminRole}
-                    disabled={roleLoading}
-                    className="flex-1"
-                  >
-                    {isUserAdmin(selectedUser.id) ? (
-                      <>
-                        <ShieldX className="w-4 h-4 mr-2" />
-                        Убрать админа
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4 mr-2" />
-                        Сделать админом
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Add Purchase Button */}
-                <Button
-                  onClick={() => setShowAddPurchase(true)}
-                  className="w-full mb-6 bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Добавить покупку
-                </Button>
-
-                {/* Purchases List */}
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
-                  <h3 className="font-medium text-sm text-muted-foreground mb-3">
-                    История заказов ({allPurchases.length})
-                  </h3>
-                  
-                  {allPurchases.map((purchase) => (
-                    <div
-                      key={purchase.id}
-                      className="p-4 rounded-xl bg-muted/30"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{purchase.hookah_count} кальян(ов)</span>
-                        </div>
-                        {purchase.amount && (
-                          <span className="text-golden font-medium">
-                            {purchase.amount.toLocaleString()} ₽
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(purchase.created_at)}
-                        </div>
-                        {purchase.free_drink_used && (
-                          <div className="flex items-center gap-1 text-golden">
-                            <Coffee className="w-3 h-3" />
-                            Напиток
-                          </div>
-                        )}
-                        {purchase.free_snack_used && (
-                          <div className="flex items-center gap-1 text-golden">
-                            <Cookie className="w-3 h-3" />
-                            Снек
-                          </div>
-                        )}
-                      </div>
-                      {purchase.notes && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {purchase.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-
-                  {allPurchases.length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">
-                      Нет заказов
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-20">
-                <Users className="w-12 h-12 mb-4 opacity-50" />
-                <p>Выберите пользователя</p>
-              </div>
-            )}
-          </motion.div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Add Purchase Dialog */}
