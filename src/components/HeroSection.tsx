@@ -1,13 +1,22 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import heroVideo from "@/assets/hero-animated-bg.mp4";
 import logo from "@/assets/logo-shisha-cool.png";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useRef } from "react";
 
 const HeroSection = () => {
   const { t } = useLanguage();
+  const sectionRef = useRef<HTMLElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"]
+  });
+  
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.8], [0.6, 0.95]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Video */}
       <div className="absolute inset-0">
         <video
@@ -20,7 +29,10 @@ const HeroSection = () => {
           <source src={heroVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-smoke" />
-        <div className="absolute inset-0 bg-background/60" />
+        <motion.div 
+          className="absolute inset-0 bg-background" 
+          style={{ opacity: overlayOpacity }}
+        />
       </div>
 
       {/* Floating smoke particles */}
