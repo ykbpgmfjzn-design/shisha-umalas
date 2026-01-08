@@ -236,7 +236,7 @@ const Cart = () => {
 
               {/* Footer */}
               {items.length > 0 && (
-                <div className="border-t border-border p-6 space-y-4">
+                <div className="border-t border-border p-6 pb-24 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">{t("cart.total")}</span>
                     <span className="font-display text-2xl text-golden">
