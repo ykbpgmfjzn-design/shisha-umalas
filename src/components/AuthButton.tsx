@@ -1,14 +1,14 @@
 import { forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { User, Crown, Shield } from "lucide-react";
+import { User, Crown, Shield, Calculator, Flame } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
   const { user, profile, loading } = useProfile();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, isAccounting, isShishaMaster, loading: rolesLoading } = useUserRoles();
   const languageContext = useLanguage();
   const navigate = useNavigate();
 
@@ -16,6 +16,8 @@ const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
   const t = languageContext?.t || ((key: string) => {
     const fallbacks: Record<string, string> = {
       "auth.admin": "Admin",
+      "auth.accounting": "Accounting",
+      "auth.shishaMaster": "Shisha Master",
       "auth.level": "Lvl.",
       "auth.profile": "Profile",
       "auth.login": "Login",
@@ -23,7 +25,7 @@ const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
     return fallbacks[key] || key;
   });
 
-  if (loading) return null;
+  if (loading || rolesLoading) return null;
 
   if (user) {
     return (
@@ -37,6 +39,28 @@ const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
           >
             <Shield className="w-4 h-4 mr-2" />
             {t("auth.admin")}
+          </Button>
+        )}
+        {isAccounting && !isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/accounting")}
+            className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+          >
+            <Calculator className="w-4 h-4 mr-2" />
+            {t("auth.accounting")}
+          </Button>
+        )}
+        {isShishaMaster && !isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/shisha-master")}
+            className="text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
+          >
+            <Flame className="w-4 h-4 mr-2" />
+            {t("auth.shishaMaster")}
           </Button>
         )}
         <Button
