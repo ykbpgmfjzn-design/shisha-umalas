@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { useLanguage, Language } from "@/contexts/LanguageContext";
+import { useState, useContext } from "react";
+import { LanguageContext, Language } from "@/contexts/LanguageContext";
 import { Globe } from "lucide-react";
 import AuthButton from "./AuthButton";
 import logo from "@/assets/logo-shisha-cool.png";
@@ -16,9 +16,13 @@ const languages: { code: Language; name: string; flag: string }[] = [
 ];
 
 const LanguageSelector = () => {
-  const { language, setLanguage } = useLanguage();
+  const context = useContext(LanguageContext);
   const [isOpen, setIsOpen] = useState(false);
 
+  // Return null if context is not available yet
+  if (!context) return null;
+
+  const { language, setLanguage } = context;
   const currentLang = languages.find((l) => l.code === language);
 
   return (
