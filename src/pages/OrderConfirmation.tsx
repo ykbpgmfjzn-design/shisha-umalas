@@ -139,14 +139,9 @@ const OrderConfirmationContent = () => {
                 </div>
                 
                 <div className="text-center">
-                  <motion.div
-                    key={timeLeft}
-                    initial={{ scale: 1.1 }}
-                    animate={{ scale: 1 }}
-                    className="font-display text-5xl text-golden mb-2"
-                  >
+                  <div className="font-display text-5xl text-golden mb-2">
                     {formatTime(timeLeft)}
-                  </motion.div>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {t("order.approx")} {estimatedMinutes} {t("order.minutes")}
                   </p>
