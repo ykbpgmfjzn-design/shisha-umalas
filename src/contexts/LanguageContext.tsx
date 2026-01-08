@@ -177,6 +177,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Export CSV",
     "admin.dateRange": "Date Range",
     "admin.revenue": "Revenue",
+    
+    // Roles
+    "role.admin": "Admin",
+    "role.guest": "Guest",
+    "role.shishaMaster": "Shisha Master",
+    "role.accounting": "Accounting",
   },
   ru: {
     "hero.title": "КАЛЬЯН",
@@ -333,6 +339,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Экспорт CSV",
     "admin.dateRange": "Период",
     "admin.revenue": "Выручка",
+    
+    // Roles
+    "role.admin": "Админ",
+    "role.guest": "Гость",
+    "role.shishaMaster": "Shisha Master",
+    "role.accounting": "Бухгалтерия",
   },
   id: {
     "hero.title": "SHISHA",
@@ -447,6 +459,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.exportCsv": "Ekspor CSV",
     "admin.dateRange": "Rentang Tanggal",
     "admin.revenue": "Pendapatan",
+    
+    // Roles
+    "role.admin": "Admin",
+    "role.guest": "Tamu",
+    "role.shishaMaster": "Shisha Master",
+    "role.accounting": "Akuntansi",
   },
   uk: {
     "hero.title": "КАЛЬЯН",
@@ -543,6 +561,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "всього",
     "admin.exportCsv": "Експорт CSV",
     "admin.revenue": "Дохід",
+    
+    // Roles
+    "role.admin": "Адмін",
+    "role.guest": "Гість",
+    "role.shishaMaster": "Shisha Master",
+    "role.accounting": "Бухгалтерія",
   },
   fr: {
     "hero.title": "CHICHA",
@@ -639,6 +663,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "total",
     "admin.exportCsv": "Exporter CSV",
     "admin.revenue": "Revenu",
+    
+    // Roles
+    "role.admin": "Admin",
+    "role.guest": "Invité",
+    "role.shishaMaster": "Shisha Master",
+    "role.accounting": "Comptabilité",
   },
   hi: {
     "hero.title": "हुक्का",
@@ -729,6 +759,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "कुल",
     "admin.exportCsv": "CSV निर्यात करें",
     "admin.revenue": "राजस्व",
+    
+    // Roles
+    "role.admin": "एडमिन",
+    "role.guest": "अतिथि",
+    "role.shishaMaster": "शीशा मास्टर",
+    "role.accounting": "लेखांकन",
   },
   zh: {
     "hero.title": "水烟",
@@ -819,6 +855,12 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.total": "总计",
     "admin.exportCsv": "导出CSV",
     "admin.revenue": "收入",
+    
+    // Roles
+    "role.admin": "管理员",
+    "role.guest": "客人",
+    "role.shishaMaster": "水烟师",
+    "role.accounting": "财务",
   },
 };
 
