@@ -89,7 +89,7 @@ const Cart = () => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 z-40 bg-golden text-background p-4 rounded-full shadow-lg hover:bg-golden/90 transition-colors"
+        className="fixed bottom-28 right-6 z-[60] bg-golden text-background p-4 rounded-full shadow-lg hover:bg-golden/90 transition-colors md:bottom-24"
       >
         <ShoppingCart className="w-6 h-6" />
         {totalItems > 0 && (
