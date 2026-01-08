@@ -4,7 +4,7 @@ import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
-const WHATSAPP_NUMBER = "6287810495053";
+const WHATSAPP_NUMBER = "6285190268329";
 
 const WhatsAppChat = () => {
   const [isOpen, setIsOpen] = useState(false);
