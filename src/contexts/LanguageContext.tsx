@@ -46,6 +46,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.payNow": "Pay Now",
     "cart.payLater": "Pay Later",
     "cart.paymentError": "Payment failed. Please try again.",
+    "cart.submit": "Send Order",
     
     // Order Confirmation
     "order.confirmed": "Order Confirmed!",
@@ -269,6 +270,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.payNow": "Оплатить сейчас",
     "cart.payLater": "Оплатить позже",
     "cart.paymentError": "Ошибка оплаты. Попробуйте ещё раз.",
+    "cart.submit": "Отправить заказ",
     "order.confirmed": "Заказ подтверждён!",
     "order.thankYou": "Спасибо за ваш заказ",
     "order.orderNumber": "Номер заказа",
@@ -455,6 +457,7 @@ const translations: Record<Language, Record<string, string>> = {
   id: {
     "hero.title": "SHISHA",
     "hero.subtitle": "MENU",
+    "cart.submit": "Kirim Pesanan",
     "hero.tagline": "Rasakan Seni Asap",
     "menu.ourSelection": "Pilihan Kami",
     "menu.curatedFlavors": "Rasa Terpilih",
@@ -628,6 +631,7 @@ const translations: Record<Language, Record<string, string>> = {
   uk: {
     "hero.title": "КАЛЬЯН",
     "hero.subtitle": "МЕНЮ",
+    "cart.submit": "Надіслати замовлення",
     "hero.tagline": "Відчуй мистецтво диму",
     "menu.ourSelection": "Наш вибір",
     "menu.curatedFlavors": "Вибрані смаки",
@@ -784,6 +788,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.title": "CHICHA",
     "hero.subtitle": "MENU",
     "hero.tagline": "L'Art de la Fumée",
+    "cart.submit": "Envoyer la commande",
     "menu.ourSelection": "Notre Sélection",
     "menu.curatedFlavors": "Saveurs Raffinées",
     "menu.singleFlavor": "Saveur Unique",
@@ -938,6 +943,7 @@ const translations: Record<Language, Record<string, string>> = {
   hi: {
     "hero.title": "हुक्का",
     "hero.subtitle": "मेन्यू",
+    "cart.submit": "ऑर्डर भेजें",
     "hero.tagline": "धुएं की कला का अनुभव करें",
     "menu.ourSelection": "हमारा चयन",
     "menu.curatedFlavors": "चुने हुए स्वाद",
@@ -1087,6 +1093,7 @@ const translations: Record<Language, Record<string, string>> = {
   zh: {
     "hero.title": "水烟",
     "hero.subtitle": "菜单",
+    "cart.submit": "发送订单",
     "hero.tagline": "体验烟雾艺术",
     "menu.ourSelection": "我们的精选",
     "menu.curatedFlavors": "精选口味",
