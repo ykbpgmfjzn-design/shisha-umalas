@@ -212,6 +212,59 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          activity_log_id: string | null
+          created_at: string
+          hookah_count: number
+          id: string
+          notes: string | null
+          party_size: number
+          phone: string
+          reservation_date: string
+          reservation_time: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_log_id?: string | null
+          created_at?: string
+          hookah_count?: number
+          id?: string
+          notes?: string | null
+          party_size?: number
+          phone: string
+          reservation_date: string
+          reservation_time: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_log_id?: string | null
+          created_at?: string
+          hookah_count?: number
+          id?: string
+          notes?: string | null
+          party_size?: number
+          phone?: string
+          reservation_date?: string
+          reservation_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_activity_log_id_fkey"
+            columns: ["activity_log_id"]
+            isOneToOne: false
+            referencedRelation: "activity_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_materials: {
         Row: {
           created_at: string
