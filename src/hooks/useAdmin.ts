@@ -131,13 +131,17 @@ export const useAdmin = () => {
         p => new Date(p.created_at) >= today
       );
 
+      // Only count revenue from paid orders
+      const paidPurchases = purchasesWithProfiles.filter(p => p.payment_status === "PAID");
+      const todayPaidPurchases = todayPurchases.filter(p => p.payment_status === "PAID");
+
       setStats({
         totalOrders: purchasesWithProfiles.length,
         pendingOrders: purchasesWithProfiles.filter(p => p.payment_status === "pending").length,
-        completedOrders: purchasesWithProfiles.filter(p => p.payment_status === "PAID").length,
+        completedOrders: paidPurchases.length,
         todayOrders: todayPurchases.length,
-        totalRevenue: purchasesWithProfiles.reduce((sum, p) => sum + (p.amount || 0), 0),
-        todayRevenue: todayPurchases.reduce((sum, p) => sum + (p.amount || 0), 0),
+        totalRevenue: paidPurchases.reduce((sum, p) => sum + (p.amount || 0), 0),
+        todayRevenue: todayPaidPurchases.reduce((sum, p) => sum + (p.amount || 0), 0),
         totalHookahs: purchasesWithProfiles.reduce((sum, p) => sum + p.hookah_count, 0),
         totalUsers: profilesData?.length || 0,
       });
