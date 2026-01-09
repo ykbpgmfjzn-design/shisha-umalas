@@ -87,6 +87,27 @@ const Cart = () => {
         room_number: roomNumber,
       });
 
+      // Send Telegram notification
+      try {
+        await supabase.functions.invoke('send-telegram-notification', {
+          body: {
+            orderId: data.id,
+            roomNumber: roomNumber,
+            userEmail: user.email,
+            hookahCount: hookahCount,
+            totalAmount: totalPrice,
+            items: items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price * item.quantity,
+            })),
+          },
+        });
+      } catch (telegramError) {
+        console.error('Telegram notification failed:', telegramError);
+        // Don't block order if notification fails
+      }
+
       // Navigate to confirmation page with order details
       const params = new URLSearchParams({
         id: data.id,
