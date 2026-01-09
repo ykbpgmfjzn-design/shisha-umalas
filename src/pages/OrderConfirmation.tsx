@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
@@ -28,19 +28,25 @@ const OrderConfirmationContent = () => {
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        setUserEmail(session.user.email || null);
+        
         const { data } = await supabase
           .from("profiles")
-          .select("room_number")
+          .select("room_number, full_name")
           .eq("id", session.user.id)
           .maybeSingle();
         
         setRoomNumber(data?.room_number || null);
+        setUserName(data?.full_name || null);
       }
       setLoading(false);
     };
@@ -116,6 +122,49 @@ const OrderConfirmationContent = () => {
       });
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handlePayOnline = async () => {
+    if (!orderId || !userEmail) {
+      toast({
+        title: t("order.paymentError"),
+        description: t("order.loginRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-doku-checkout', {
+        body: {
+          purchaseId: orderId,
+          amount: parseInt(total) * 1000, // Convert back to full amount
+          description: items,
+          customerName: userName || "Guest",
+          customerEmail: userEmail,
+        },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || "Failed to create payment");
+      }
+
+      // Redirect to DOKU payment page
+      if (data.invoiceUrl) {
+        window.location.href = data.invoiceUrl;
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast({
+        title: t("order.paymentError"),
+        description: error instanceof Error ? error.message : t("order.paymentErrorDesc"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -279,8 +328,36 @@ const OrderConfirmationContent = () => {
               </div>
 
               {/* Payment Methods */}
-              <div>
-                <PaymentMethods />
+              <div className="space-y-4">
+                {/* Online Payment Button */}
+                <Button
+                  onClick={handlePayOnline}
+                  disabled={isProcessingPayment || !userEmail}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white h-14 text-lg font-display shadow-lg"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {t("order.processing")}
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-5 h-5 mr-2" />
+                      {t("order.payOnline")}
+                    </>
+                  )}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/50" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">{t("order.orPayWith")}</span>
+                  </div>
+                </div>
+                
+                <PaymentMethods compact />
               </div>
 
               {/* Actions */}
