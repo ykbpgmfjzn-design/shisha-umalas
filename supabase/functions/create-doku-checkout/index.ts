@@ -124,7 +124,7 @@ serve(async (req) => {
         id: purchaseId.slice(0, 20),
         name: customerName || "Guest",
         email: customerEmail,
-        phone: customerPhone || "",
+        phone: customerPhone && customerPhone.length >= 5 ? customerPhone.replace(/\D/g, '') : "628000000000",
         country: "ID"
       },
       payment: {
