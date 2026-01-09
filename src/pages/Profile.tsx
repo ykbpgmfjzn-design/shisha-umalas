@@ -39,14 +39,14 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const roomInputRef = useRef<HTMLInputElement>(null);
 
+  const shouldReturnToCart = searchParams.get('returnToCart') === 'true';
+
   // Handle focus=room query param from cart redirect
   useEffect(() => {
     if (searchParams.get('focus') === 'room' && !loading && profile) {
       setIsEditing(true);
-      // Clear the param from URL
-      navigate('/profile', { replace: true });
     }
-  }, [searchParams, loading, profile, navigate]);
+  }, [searchParams, loading, profile]);
 
   // Auto-focus room input when editing starts
   useEffect(() => {
@@ -86,10 +86,17 @@ const Profile = () => {
       toast({
         title: roomInput.trim() ? "Статус обновлён!" : "Статус изменён",
         description: roomInput.trim() 
-          ? "Вы получили статус Special гостя отеля!" 
+          ? shouldReturnToCart 
+            ? "Теперь вы можете оформить заказ!" 
+            : "Вы получили статус Special гостя отеля!" 
           : "Вы теперь обычный гость",
       });
       setIsEditing(false);
+      
+      // Return to cart if came from order flow
+      if (shouldReturnToCart && roomInput.trim()) {
+        navigate('/?openCart=true');
+      }
     }
   };
 

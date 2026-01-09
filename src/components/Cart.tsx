@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 
@@ -13,9 +13,19 @@ const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen } = useCart();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Open cart if redirected back from profile
+  useEffect(() => {
+    if (searchParams.get('openCart') === 'true' && items.length > 0) {
+      setIsOpen(true);
+      // Clear the param from URL
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, items.length, setIsOpen, setSearchParams]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -59,7 +69,7 @@ const Cart = () => {
     // Check if room number is set
     if (!roomNumber) {
       toast.error(t("cart.roomRequired"));
-      navigate("/profile?focus=room");
+      navigate("/profile?focus=room&returnToCart=true");
       setIsOpen(false);
       return;
     }
