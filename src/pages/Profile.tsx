@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Crown, Gift, Coffee, Cookie, Star, 
@@ -18,6 +18,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { t } = useLanguage();
   const { 
@@ -36,6 +37,23 @@ const Profile = () => {
   const [roomInput, setRoomInput] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const roomInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle focus=room query param from cart redirect
+  useEffect(() => {
+    if (searchParams.get('focus') === 'room' && !loading && profile) {
+      setIsEditing(true);
+      // Clear the param from URL
+      navigate('/profile', { replace: true });
+    }
+  }, [searchParams, loading, profile, navigate]);
+
+  // Auto-focus room input when editing starts
+  useEffect(() => {
+    if (isEditing && roomInputRef.current) {
+      roomInputRef.current.focus();
+    }
+  }, [isEditing]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -216,6 +234,7 @@ const Profile = () => {
             {isEditing ? (
               <div className="flex gap-2">
                 <Input
+                  ref={roomInputRef}
                   placeholder="Например: 205"
                   value={roomInput}
                   onChange={(e) => setRoomInput(e.target.value)}
