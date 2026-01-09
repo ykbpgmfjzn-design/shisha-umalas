@@ -336,6 +336,26 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Account Name",
     "payment.bankName": "Bank",
     "payment.accountNumber": "Account Number",
+    
+    // QRIS Payment
+    "qris.title": "QRIS Payment",
+    "qris.subtitle": "Scan with any banking app",
+    "qris.generating": "Generating QR code...",
+    "qris.amountToPay": "Amount to pay",
+    "qris.scanInstructions": "How to pay:",
+    "qris.step1": "Open your banking/e-wallet app",
+    "qris.step2": "Scan this QR code",
+    "qris.step3": "Confirm payment",
+    "qris.checkStatus": "Check Payment Status",
+    "qris.success": "Payment Successful!",
+    "qris.successDesc": "Your payment has been confirmed",
+    "qris.failed": "Payment Failed",
+    "qris.failedDesc": "Something went wrong. Please try again.",
+    "qris.expired": "QR Code Expired",
+    "qris.expiredDesc": "The QR code has expired. Generate a new one.",
+    "qris.tryAgain": "Try Again",
+    "qris.cancel": "Cancel Payment",
+    "qris.payWithQris": "Pay with QRIS",
     "payment.copy": "Copy",
     
     // WhatsApp
@@ -685,6 +705,26 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер счёта",
     "payment.copy": "Копировать",
+    
+    // QRIS Payment
+    "qris.title": "Оплата QRIS",
+    "qris.subtitle": "Сканируйте любым банковским приложением",
+    "qris.generating": "Генерация QR-кода...",
+    "qris.amountToPay": "Сумма к оплате",
+    "qris.scanInstructions": "Как оплатить:",
+    "qris.step1": "Откройте банковское/e-wallet приложение",
+    "qris.step2": "Отсканируйте этот QR-код",
+    "qris.step3": "Подтвердите оплату",
+    "qris.checkStatus": "Проверить статус оплаты",
+    "qris.success": "Оплата успешна!",
+    "qris.successDesc": "Ваш платёж подтверждён",
+    "qris.failed": "Ошибка оплаты",
+    "qris.failedDesc": "Что-то пошло не так. Попробуйте снова.",
+    "qris.expired": "QR-код истёк",
+    "qris.expiredDesc": "QR-код истёк. Сгенерируйте новый.",
+    "qris.tryAgain": "Попробовать снова",
+    "qris.cancel": "Отменить оплату",
+    "qris.payWithQris": "Оплатить через QRIS",
     
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",

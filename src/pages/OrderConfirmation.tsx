@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2 } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import PaymentMethods from "@/components/PaymentMethods";
+import QrisPayment from "@/components/QrisPayment";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +30,7 @@ const OrderConfirmationContent = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showQrisPayment, setShowQrisPayment] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -123,6 +125,32 @@ const OrderConfirmationContent = () => {
     } finally {
       setIsCancelling(false);
     }
+  };
+
+  const handlePayWithQris = () => {
+    if (!orderId || !userEmail) {
+      toast({
+        title: t("order.paymentError"),
+        description: t("order.loginRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowQrisPayment(true);
+  };
+
+  const handleQrisSuccess = () => {
+    setShowQrisPayment(false);
+    toast({
+      title: t("qris.success"),
+      description: t("qris.successDesc"),
+    });
+    // Refresh the page to show updated payment status
+    window.location.reload();
+  };
+
+  const handleQrisCancel = () => {
+    setShowQrisPayment(false);
   };
 
   const handlePayOnline = async () => {
@@ -329,11 +357,22 @@ const OrderConfirmationContent = () => {
 
               {/* Payment Methods */}
               <div className="space-y-4">
-                {/* Online Payment Button */}
+                {/* QRIS Payment Button - Primary */}
+                <Button
+                  onClick={handlePayWithQris}
+                  disabled={!userEmail}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white h-14 text-lg font-display shadow-lg"
+                >
+                  <QrCode className="w-5 h-5 mr-2" />
+                  {t("qris.payWithQris")}
+                </Button>
+                
+                {/* Online Payment Button - Secondary */}
                 <Button
                   onClick={handlePayOnline}
                   disabled={isProcessingPayment || !userEmail}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white h-14 text-lg font-display shadow-lg"
+                  variant="outline"
+                  className="w-full border-blue-500/50 text-blue-500 hover:bg-blue-500/10 h-12"
                 >
                   {isProcessingPayment ? (
                     <>
@@ -405,6 +444,19 @@ const OrderConfirmationContent = () => {
           </motion.p>
         </motion.div>
       </div>
+
+      {/* QRIS Payment Modal */}
+      {showQrisPayment && userEmail && (
+        <QrisPayment
+          purchaseId={orderId}
+          amount={parseInt(total) * 1000}
+          description={items}
+          customerName={userName || "Guest"}
+          customerEmail={userEmail}
+          onSuccess={handleQrisSuccess}
+          onCancel={handleQrisCancel}
+        />
+      )}
     </main>
   );
 };
