@@ -79,17 +79,17 @@ const Profile = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось сохранить номер комнаты",
+        title: t("profile.error"),
+        description: t("profile.saveError"),
       });
     } else {
       toast({
-        title: roomInput.trim() ? "Статус обновлён!" : "Статус изменён",
+        title: roomInput.trim() ? t("profile.roomUpdated") : t("profile.statusChanged"),
         description: roomInput.trim() 
           ? shouldReturnToCart 
-            ? "Теперь вы можете оформить заказ!" 
-            : "Вы получили статус Special гостя отеля!" 
-          : "Вы теперь обычный гость",
+            ? t("profile.nowYouCanOrder") 
+            : t("profile.roomUpdatedDesc") 
+          : t("profile.nowRegularGuest"),
       });
       setIsEditing(false);
       
@@ -108,14 +108,14 @@ const Profile = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось обновить статус",
+        title: t("profile.error"),
+        description: t("profile.saveError"),
       });
     } else {
       setRoomInput("");
       toast({
-        title: "Статус изменён",
-        description: "Вы теперь обычный гость",
+        title: t("profile.statusChanged"),
+        description: t("profile.nowRegularGuest"),
       });
     }
   };
@@ -123,8 +123,8 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
     toast({
-      title: "До свидания!",
-      description: "Вы вышли из системы",
+      title: t("profile.goodbye"),
+      description: t("profile.loggedOut"),
     });
   };
 
@@ -218,11 +218,11 @@ const Profile = () => {
                 )}
                 <div>
                   <p className="font-medium text-lg">
-                    {profile.guest_type === "special" ? "Гость отеля" : "Гость"}
+                    {profile.guest_type === "special" ? t("profile.hotelGuest") : t("profile.guest")}
                   </p>
                   {profile.room_number && (
                     <p className="text-sm text-muted-foreground">
-                      Комната {profile.room_number}
+                      {t("profile.room")} {profile.room_number}
                     </p>
                   )}
                 </div>
@@ -237,12 +237,12 @@ const Profile = () => {
 
           {/* Room Number Editor */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 space-y-4">
-            <label className="text-sm text-muted-foreground font-medium">Номер комнаты в отеле</label>
+            <label className="text-sm text-muted-foreground font-medium">{t("profile.roomNumber")}</label>
             {isEditing ? (
               <div className="flex gap-2">
                 <Input
                   ref={roomInputRef}
-                  placeholder="Например: 205"
+                  placeholder={t("profile.roomPlaceholder")}
                   value={roomInput}
                   onChange={(e) => setRoomInput(e.target.value)}
                   className="bg-background/50"
@@ -252,7 +252,7 @@ const Profile = () => {
                   disabled={saving}
                   className="bg-golden hover:bg-golden/90"
                 >
-                  {saving ? "..." : "Сохранить"}
+                  {saving ? "..." : t("profile.save")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -271,7 +271,7 @@ const Profile = () => {
                   className="flex-1 justify-start h-12"
                   onClick={() => setIsEditing(true)}
                 >
-                  {profile.room_number || "Указать номер комнаты"}
+                  {profile.room_number || t("profile.specifyRoom")}
                 </Button>
                 {profile.room_number && (
                   <Button
@@ -280,15 +280,15 @@ const Profile = () => {
                     disabled={saving}
                     className="text-muted-foreground"
                   >
-                    Я не гость отеля
+                    {t("profile.notHotelGuest")}
                   </Button>
                 )}
               </div>
             )}
             <p className="text-xs text-muted-foreground">
               {profile.guest_type === "special" 
-                ? "✨ Как гость отеля вы получаете дополнительные угощения!" 
-                : "Укажите номер комнаты для получения статуса Special и дополнительных бонусов"}
+                ? t("profile.specialBenefits") 
+                : t("profile.specifyForBenefits")}
             </p>
           </div>
 
@@ -300,9 +300,9 @@ const Profile = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Star className="w-6 h-6 text-golden" />
-                <span className="font-display text-xl">{currentLevel?.name_ru || "Новичок"}</span>
+                <span className="font-display text-xl">{currentLevel?.name_en || "Beginner"}</span>
               </div>
-              <span className="text-3xl font-bold text-golden">Ур. {profile.loyalty_level}</span>
+              <span className="text-3xl font-bold text-golden">{t("profile.level")} {profile.loyalty_level}</span>
             </div>
 
             {/* Progress Bar */}
@@ -317,32 +317,32 @@ const Profile = () => {
                   />
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{profile.total_hookahs_ordered} кальянов</span>
-                  <span>До {nextLevel.name_ru}: {hookahsToNext}</span>
+                  <span>{profile.total_hookahs_ordered} {t("profile.hookahs")}</span>
+                  <span>{t("profile.toNextLevel")} {nextLevel.name_en}: {hookahsToNext}</span>
                 </div>
               </div>
             )}
 
             {/* Current Benefits */}
             <div className="space-y-3">
-              <p className="font-medium">Ваши привилегии:</p>
+              <p className="font-medium">{t("profile.yourPrivileges")}</p>
               <div className="grid gap-3">
                 {currentLevel && currentLevel.discount_percent > 0 && (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-background/50">
                     <Gift className="w-5 h-5 text-golden" />
-                    <span>Скидка {currentLevel.discount_percent}% на заказы</span>
+                    <span>{currentLevel.discount_percent}% {t("profile.discount")}</span>
                   </div>
                 )}
                 {currentLevel?.free_drink && (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-background/50">
                     <Coffee className="w-5 h-5 text-golden" />
-                    <span>Бесплатный напиток</span>
+                    <span>{t("profile.freeDrink")}</span>
                   </div>
                 )}
                 {currentLevel?.free_snack && (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-background/50">
                     <Cookie className="w-5 h-5 text-golden" />
-                    <span>Бесплатный снек</span>
+                    <span>{t("profile.freeSnack")}</span>
                   </div>
                 )}
                 {currentLevel?.special_bonus && (
@@ -353,7 +353,7 @@ const Profile = () => {
                 )}
                 {(!currentLevel || currentLevel.discount_percent === 0) && (
                   <p className="text-sm text-muted-foreground p-3">
-                    Закажите 30 кальянов для получения скидки
+                    {t("profile.orderFor30")}
                   </p>
                 )}
               </div>
@@ -363,8 +363,8 @@ const Profile = () => {
           {/* Purchase History */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="font-medium">История заказов</p>
-              <span className="text-sm text-muted-foreground">{purchases.length} заказов</span>
+              <p className="font-medium">{t("profile.orderHistory")}</p>
+              <span className="text-sm text-muted-foreground">{purchases.length} {t("profile.orders")}</span>
             </div>
             
             {purchasesLoading ? (
@@ -385,11 +385,11 @@ const Profile = () => {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{purchase.hookah_count} кальян(ов)</span>
+                        <span className="font-medium">{purchase.hookah_count} {t("profile.hookahCount")}</span>
                       </div>
                       {purchase.amount && (
                         <span className="text-golden font-medium">
-                          {purchase.amount.toLocaleString()} ₽
+                          IDR {(purchase.amount / 1000).toFixed(0)}K
                         </span>
                       )}
                     </div>
@@ -401,13 +401,13 @@ const Profile = () => {
                       {purchase.free_drink_used && (
                         <div className="flex items-center gap-1 text-golden">
                           <Coffee className="w-3 h-3" />
-                          Напиток
+                          {t("profile.freeDrink")}
                         </div>
                       )}
                       {purchase.free_snack_used && (
                         <div className="flex items-center gap-1 text-golden">
                           <Cookie className="w-3 h-3" />
-                          Снек
+                          {t("profile.freeSnack")}
                         </div>
                       )}
                     </div>
@@ -421,14 +421,14 @@ const Profile = () => {
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
-                Пока нет заказов
+                {t("profile.noOrdersYet")}
               </p>
             )}
           </div>
 
           {/* All Levels Preview */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 space-y-4">
-            <p className="font-medium">Все уровни:</p>
+            <p className="font-medium">{t("profile.allLevels")}</p>
             <div className="space-y-2">
               {loyaltyLevels.map((level) => (
                 <div
@@ -445,7 +445,7 @@ const Profile = () => {
                     <span className="w-8 h-8 flex items-center justify-center rounded-full bg-background/50 font-bold">
                       {level.level}
                     </span>
-                    <span>{level.name_ru}</span>
+                    <span>{level.name_en}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs">
                     {level.discount_percent > 0 && (
