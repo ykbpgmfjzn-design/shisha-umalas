@@ -101,6 +101,7 @@ const translations: Record<Language, Record<string, string>> = {
     "history.pending": "Pending",
     "history.delivered": "Delivered",
     "history.cancelled": "Cancelled",
+    "history.failed": "Failed",
     
     // Feedback
     "feedback.title": "Your Feedback",
@@ -421,6 +422,7 @@ const translations: Record<Language, Record<string, string>> = {
     "history.pending": "Ожидает",
     "history.delivered": "Доставлено",
     "history.cancelled": "Отменено",
+    "history.failed": "Ошибка",
     
     // Feedback
     "feedback.title": "Ваш отзыв",
