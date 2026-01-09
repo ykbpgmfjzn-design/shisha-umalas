@@ -59,7 +59,7 @@ const Cart = () => {
     // Check if room number is set
     if (!roomNumber) {
       toast.error(t("cart.roomRequired"));
-      navigate("/profile");
+      navigate("/profile?focus=room");
       setIsOpen(false);
       return;
     }
