@@ -86,6 +86,25 @@ const Reservation = () => {
         phone,
       });
 
+      // Send Telegram notification for reservation
+      try {
+        await supabase.functions.invoke('send-telegram-notification', {
+          body: {
+            type: 'reservation',
+            reservationDate: format(date, 'yyyy-MM-dd'),
+            reservationTime: time,
+            partySize,
+            hookahCount,
+            phone,
+            location: location || null,
+            notes: notes || specialRequests || null,
+            userEmail: user?.email,
+          },
+        });
+      } catch (telegramError) {
+        console.error('Telegram notification failed:', telegramError);
+      }
+
       toast.success(t("reservation.success"));
       
       // Navigate to profile to show reservation status

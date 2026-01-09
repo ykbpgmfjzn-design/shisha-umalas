@@ -18,14 +18,25 @@ const Cart = () => {
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Open cart if redirected back from profile
+  const [autoSubmitTriggered, setAutoSubmitTriggered] = useState(false);
+
+  // Open cart and auto-submit if redirected back from profile
   useEffect(() => {
-    if (searchParams.get('openCart') === 'true' && items.length > 0) {
+    if (searchParams.get('openCart') === 'true' && items.length > 0 && !autoSubmitTriggered) {
       setIsOpen(true);
+      setAutoSubmitTriggered(true);
       // Clear the param from URL
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, items.length, setIsOpen, setSearchParams]);
+  }, [searchParams, items.length, setIsOpen, setSearchParams, autoSubmitTriggered]);
+
+  // Auto-submit order when roomNumber is loaded after returning from profile
+  useEffect(() => {
+    if (autoSubmitTriggered && roomNumber && user && items.length > 0 && !isSubmitting) {
+      handleSubmitOrder();
+      setAutoSubmitTriggered(false);
+    }
+  }, [autoSubmitTriggered, roomNumber, user, items.length, isSubmitting]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

@@ -6,16 +6,24 @@ const corsHeaders = {
 };
 
 interface OrderNotification {
-  orderId: string;
+  type?: 'order' | 'reservation';
+  orderId?: string;
   roomNumber?: string;
   userEmail?: string;
   hookahCount: number;
-  totalAmount: number;
-  items: Array<{
+  totalAmount?: number;
+  items?: Array<{
     name: string;
     quantity: number;
     price: number;
   }>;
+  // Reservation fields
+  reservationDate?: string;
+  reservationTime?: string;
+  partySize?: number;
+  phone?: string;
+  location?: string;
+  notes?: string;
 }
 
 serve(async (req) => {
@@ -38,30 +46,50 @@ serve(async (req) => {
       throw new Error('Telegram chat ID not configured');
     }
 
-    const { orderId, roomNumber, userEmail, hookahCount, totalAmount, items }: OrderNotification = await req.json();
+    const data: OrderNotification = await req.json();
 
-    console.log('Sending Telegram notification for order:', orderId);
+    let message: string;
 
-    // Format order items
-    const itemsList = items.map(item => 
-      `  • ${item.name} x${item.quantity} - ${item.price.toLocaleString()} IDR`
-    ).join('\n');
+    if (data.type === 'reservation') {
+      // Reservation notification
+      console.log('Sending Telegram notification for reservation');
+      
+      message = `📅 *Новое бронирование!*
 
-    // Create message
-    const message = `🔔 *Новый заказ!*
+📆 *Дата:* ${data.reservationDate}
+🕐 *Время:* ${data.reservationTime}
+👥 *Гостей:* ${data.partySize}
+🚬 *Кальянов:* ${data.hookahCount}
 
-📋 *ID заказа:* \`${orderId.slice(0, 8)}\`
-${roomNumber ? `🏨 *Номер комнаты:* ${roomNumber}` : ''}
-${userEmail ? `📧 *Email:* ${userEmail}` : ''}
+📞 *Телефон:* ${data.phone}
+${data.userEmail ? `📧 *Email:* ${data.userEmail}` : ''}
+${data.location ? `📍 *Локация:* ${data.location}` : ''}
+${data.notes ? `📝 *Примечания:* ${data.notes}` : ''}
 
-🚬 *Кол-во кальянов:* ${hookahCount}
+⏰ *Создано:* ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Jakarta' })}`;
+    } else {
+      // Order notification
+      console.log('Sending Telegram notification for order:', data.orderId);
+
+      const itemsList = data.items?.map(item => 
+        `  • ${item.name} x${item.quantity} - ${item.price.toLocaleString()} IDR`
+      ).join('\n') || '';
+
+      message = `🔔 *Новый заказ!*
+
+📋 *ID заказа:* \`${data.orderId?.slice(0, 8)}\`
+${data.roomNumber ? `🏨 *Номер комнаты:* ${data.roomNumber}` : ''}
+${data.userEmail ? `📧 *Email:* ${data.userEmail}` : ''}
+
+🚬 *Кол-во кальянов:* ${data.hookahCount}
 
 📝 *Позиции:*
 ${itemsList}
 
-💰 *Сумма:* ${totalAmount.toLocaleString()} IDR
+💰 *Сумма:* ${data.totalAmount?.toLocaleString()} IDR
 
 ⏰ *Время:* ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Jakarta' })}`;
+    }
 
     // Send to Telegram
     const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
