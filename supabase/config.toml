@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.doku-webhook]
 verify_jwt = false
+
+[functions.create-qris-payment]
+verify_jwt = false
+
+[functions.check-qris-status]
+verify_jwt = false
