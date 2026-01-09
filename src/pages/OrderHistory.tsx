@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Package, CheckCircle, XCircle } from "lucide-react";
+import { Clock, Package, CheckCircle, XCircle, CreditCard, Truck } from "lucide-react";
 import { format } from "date-fns";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -16,6 +16,7 @@ interface Order {
   amount: number | null;
   payment_status: string | null;
   notes: string | null;
+  paid_at: string | null;
 }
 
 const OrderHistory = () => {
@@ -46,27 +47,38 @@ const OrderHistory = () => {
     setLoading(false);
   };
 
-  const getStatusIcon = (status: string | null) => {
+  const getStatusConfig = (status: string | null) => {
     switch (status) {
       case "paid":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "cancelled":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Clock className="w-5 h-5 text-golden" />;
-    }
-  };
-
-  const getStatusText = (status: string | null) => {
-    switch (status) {
-      case "paid":
-        return t("history.paid");
-      case "cancelled":
-        return t("history.cancelled");
+        return {
+          icon: <CheckCircle className="w-4 h-4" />,
+          text: t("history.paid"),
+          className: "bg-green-500/20 text-green-400 border-green-500/30"
+        };
       case "delivered":
-        return t("history.delivered");
+        return {
+          icon: <Truck className="w-4 h-4" />,
+          text: t("history.delivered"),
+          className: "bg-blue-500/20 text-blue-400 border-blue-500/30"
+        };
+      case "cancelled":
+        return {
+          icon: <XCircle className="w-4 h-4" />,
+          text: t("history.cancelled"),
+          className: "bg-red-500/20 text-red-400 border-red-500/30"
+        };
+      case "failed":
+        return {
+          icon: <XCircle className="w-4 h-4" />,
+          text: t("history.failed"),
+          className: "bg-red-500/20 text-red-400 border-red-500/30"
+        };
       default:
-        return t("history.pending");
+        return {
+          icon: <Clock className="w-4 h-4" />,
+          text: t("history.pending"),
+          className: "bg-golden/20 text-golden border-golden/30"
+        };
     }
   };
 
@@ -125,16 +137,31 @@ const OrderHistory = () => {
                         {order.hookah_count} {t("history.hookahs")}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(order.payment_status)}
-                      <span className="text-sm">{getStatusText(order.payment_status)}</span>
-                    </div>
+                    {(() => {
+                      const config = getStatusConfig(order.payment_status);
+                      return (
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${config.className}`}>
+                          {config.icon}
+                          <span>{config.text}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
-                  {order.amount && (
-                    <p className="text-golden font-semibold">
-                      Rp {order.amount.toLocaleString()}
-                    </p>
-                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    {order.amount && (
+                      <p className="text-golden font-display text-lg">
+                        IDR {(order.amount / 1000).toFixed(0)}K
+                      </p>
+                    )}
+                    {order.paid_at && (
+                      <p className="text-xs text-green-400 flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" />
+                        {format(new Date(order.paid_at), "MMM d, HH:mm")}
+                      </p>
+                    )}
+                  </div>
+                  
                   {order.notes && (
                     <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                       {order.notes}

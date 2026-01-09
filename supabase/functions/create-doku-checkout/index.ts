@@ -140,8 +140,8 @@ serve(async (req) => {
 
     console.log("Creating DOKU checkout for purchase:", purchaseId);
     
-    // Use sandbox URL for testing, change to https://api.doku.com for production
-    const dokuUrl = "https://api-sandbox.doku.com/checkout/v1/payment";
+    // Production URL - use sandbox for testing: https://api-sandbox.doku.com/checkout/v1/payment
+    const dokuUrl = "https://api.doku.com/checkout/v1/payment";
     
     const response = await fetch(dokuUrl, {
       method: "POST",
