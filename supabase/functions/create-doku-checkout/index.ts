@@ -34,10 +34,19 @@ async function generateSignature(
   requestId: string,
   requestTimestamp: string,
   requestTarget: string,
-  digest: string,
+  digestValue: string,
   secretKey: string
 ): Promise<string> {
-  const componentSignature = `Client-Id:${clientId}\nRequest-Id:${requestId}\nRequest-Timestamp:${requestTimestamp}\nRequest-Target:${requestTarget}\nDigest:${digest}`;
+  // Component signature format per DOKU docs
+  const componentSignature = [
+    `Client-Id:${clientId}`,
+    `Request-Id:${requestId}`,
+    `Request-Timestamp:${requestTimestamp}`,
+    `Request-Target:${requestTarget}`,
+    `Digest:${digestValue}`
+  ].join("\n");
+  
+  console.log("Component Signature:", componentSignature);
   
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secretKey);
@@ -62,7 +71,7 @@ async function generateDigest(body: string): Promise<string> {
   const data = encoder.encode(body);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const base64Hash = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
-  return `SHA-256=${base64Hash}`;
+  return base64Hash; // Return without prefix for component signature
 }
 
 serve(async (req) => {
@@ -125,20 +134,25 @@ serve(async (req) => {
 
     const requestBodyStr = JSON.stringify(requestBody);
     const requestId = generateRequestId();
-    const requestTimestamp = new Date().toISOString();
+    // Format timestamp without milliseconds: 2020-08-11T08:45:42Z
+    const now = new Date();
+    const requestTimestamp = now.toISOString().split('.')[0] + 'Z';
     const requestTarget = "/checkout/v1/payment";
     
-    const digest = await generateDigest(requestBodyStr);
+    const digestBase64 = await generateDigest(requestBodyStr);
     const signature = await generateSignature(
       clientId,
       requestId,
       requestTimestamp,
       requestTarget,
-      digest,
+      digestBase64,
       secretKey
     );
 
     console.log("Creating DOKU checkout for purchase:", purchaseId);
+    console.log("Request-Id:", requestId);
+    console.log("Request-Timestamp:", requestTimestamp);
+    console.log("Digest:", digestBase64);
     
     // Production URL - use sandbox for testing: https://api-sandbox.doku.com/checkout/v1/payment
     const dokuUrl = "https://api.doku.com/checkout/v1/payment";
