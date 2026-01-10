@@ -25,6 +25,7 @@ const Index = () => {
     startSession,
     endSession,
     isActive,
+    audioLevel,
   } = useVoiceAssistant();
 
   useEffect(() => {
@@ -73,6 +74,7 @@ const Index = () => {
           assistantMessage={assistantMessage}
           error={error}
           onEnd={handleEndVoice}
+          audioLevel={audioLevel}
         />
       )}
     </main>

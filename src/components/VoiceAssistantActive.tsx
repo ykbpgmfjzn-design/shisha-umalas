@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { VoiceWaveVisualizer } from '@/components/VoiceWaveVisualizer';
 import type { VoiceAssistantState } from '@/hooks/useVoiceAssistant';
 
 interface VoiceAssistantActiveProps {
@@ -10,6 +11,7 @@ interface VoiceAssistantActiveProps {
   assistantMessage: string;
   error: string | null;
   onEnd: () => void;
+  audioLevel?: number;
 }
 
 export const VoiceAssistantActive = ({
@@ -18,6 +20,7 @@ export const VoiceAssistantActive = ({
   assistantMessage,
   error,
   onEnd,
+  audioLevel = 0.5,
 }: VoiceAssistantActiveProps) => {
   const { t } = useLanguage();
 
@@ -131,24 +134,13 @@ export const VoiceAssistantActive = ({
             </motion.div>
           )}
 
-          {/* Audio visualization when listening */}
-          {state === 'listening' && (
-            <div className="flex justify-center gap-1 py-2">
-              {[...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{
-                    height: [12, 24 + Math.random() * 12, 12],
-                  }}
-                  transition={{
-                    duration: 0.5,
-                    repeat: Infinity,
-                    delay: i * 0.1,
-                  }}
-                  className="w-1 bg-primary rounded-full"
-                />
-              ))}
-            </div>
+          {/* Audio visualization when listening or speaking */}
+          {(state === 'listening' || state === 'speaking') && (
+            <VoiceWaveVisualizer 
+              isActive={true} 
+              variant={state === 'speaking' ? 'speaking' : 'listening'}
+              audioLevel={audioLevel}
+            />
           )}
 
           {/* Complete state */}
