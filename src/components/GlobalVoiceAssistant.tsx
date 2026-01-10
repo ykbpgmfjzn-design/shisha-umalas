@@ -6,16 +6,15 @@ import { VoiceAssistantButton } from "@/components/VoiceAssistantButton";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
-import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 export const GlobalVoiceAssistant = () => {
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [wasNotLoggedIn, setWasNotLoggedIn] = useState(false);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const { language } = useLanguage();
   const { setIsOpen: setCartOpen, items: cartItems } = useCart();
-  const { profile } = useProfile();
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -31,6 +30,19 @@ export const GlobalVoiceAssistant = () => {
     currentStage,
   } = useVoiceAssistant();
 
+  // Fetch room number when user is logged in
+  const fetchRoomNumber = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('room_number')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (data?.room_number) {
+      setRoomNumber(data.room_number);
+    }
+  };
+
   // Track authentication status and auto-open cart after login
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -38,6 +50,8 @@ export const GlobalVoiceAssistant = () => {
       setIsLoggedIn(loggedIn);
       if (!loggedIn) {
         setWasNotLoggedIn(true);
+      } else if (session?.user) {
+        fetchRoomNumber(session.user.id);
       }
     });
 
@@ -53,6 +67,12 @@ export const GlobalVoiceAssistant = () => {
       }
       
       setIsLoggedIn(loggedIn);
+      
+      if (session?.user) {
+        fetchRoomNumber(session.user.id);
+      } else {
+        setRoomNumber(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -76,7 +96,7 @@ export const GlobalVoiceAssistant = () => {
   const handleStartVoice = () => {
     setShowVoiceAssistant(true);
     // Pass current login status and room number to the session
-    startSession(language, isLoggedIn, profile?.room_number || null);
+    startSession(language, isLoggedIn, roomNumber);
   };
 
   const handleEndVoice = () => {
