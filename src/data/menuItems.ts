@@ -40,11 +40,21 @@ export const menuItems: MenuItem[] = [
   { id: 'wild-heart', name: 'Wild Heart', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['wild', 'heart', 'дикий', 'сердце', 'liar'] },
 ];
 
-export const findMenuItemByKeyword = (keyword: string): MenuItem | undefined => {
-  const lowerKeyword = keyword.toLowerCase();
+export const findMenuItemByKeyword = (text: string): MenuItem | undefined => {
+  const lowerText = text.toLowerCase();
+  
+  // First try to find by exact name match
+  const exactMatch = menuItems.find(item => 
+    lowerText.includes(item.name.toLowerCase())
+  );
+  if (exactMatch) return exactMatch;
+  
+  // Then try by keywords
   return menuItems.find(item => 
-    item.name.toLowerCase().includes(lowerKeyword) ||
-    item.keywords.some(kw => kw.toLowerCase().includes(lowerKeyword) || lowerKeyword.includes(kw.toLowerCase()))
+    item.keywords.some(kw => {
+      const lowerKw = kw.toLowerCase();
+      return lowerText.includes(lowerKw) || lowerKw.includes(lowerText);
+    })
   );
 };
 
