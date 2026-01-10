@@ -49,6 +49,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [orderState, setOrderState] = useState<OrderState>({ stage: 'login' });
   const orderStateRef = useRef<OrderState>({ stage: 'login' });
   const [user, setUser] = useState<any>(null);
+  const isAiRespondingRef = useRef(false); // Track if AI is currently responding
+  const pendingFollowUpRef = useRef<string | null>(null); // Queue for pending follow-up
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -139,21 +141,30 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     return null;
   }, []);
 
-  // Send follow-up message to continue conversation
+  // Send follow-up message to continue conversation (with queue to avoid conflicts)
   const sendFollowUpMessage = useCallback((instruction: string) => {
     const dc = dataChannelRef.current;
-    if (dc && dc.readyState === 'open') {
-      console.log('[VoiceAssistant] Sending follow-up instruction:', instruction);
-      dc.send(JSON.stringify({
-        type: 'response.create',
-        response: {
-          modalities: ['audio', 'text'],
-          instructions: instruction,
-        },
-      }));
-    } else {
+    if (!dc || dc.readyState !== 'open') {
       console.log('[VoiceAssistant] Data channel not ready for follow-up');
+      return;
     }
+    
+    // If AI is currently responding, queue the message
+    if (isAiRespondingRef.current) {
+      console.log('[VoiceAssistant] AI is responding, queuing follow-up:', instruction);
+      pendingFollowUpRef.current = instruction;
+      return;
+    }
+    
+    console.log('[VoiceAssistant] Sending follow-up instruction:', instruction);
+    isAiRespondingRef.current = true;
+    dc.send(JSON.stringify({
+      type: 'response.create',
+      response: {
+        modalities: ['audio', 'text'],
+        instructions: instruction,
+      },
+    }));
   }, []);
 
   // Save room number to profile - get fresh session to ensure we have user
@@ -494,6 +505,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       case 'response.audio_transcript.delta':
         setAssistantMessage(prev => prev + (event.delta || ''));
         setState('speaking');
+        isAiRespondingRef.current = true; // AI is responding
         break;
         
       case 'response.audio_transcript.done':
@@ -699,6 +711,17 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         break;
         
       case 'response.done':
+        isAiRespondingRef.current = false; // AI finished responding
+        
+        // Send any pending follow-up message
+        if (pendingFollowUpRef.current) {
+          const pending = pendingFollowUpRef.current;
+          pendingFollowUpRef.current = null;
+          setTimeout(() => {
+            sendFollowUpMessage(pending);
+          }, 300);
+        }
+        
         if (state !== 'complete') {
           setState('listening');
         }
