@@ -134,12 +134,13 @@ Say: "How many hookahs?"
 Wait for answer.
 
 STEP 4 - CONFIRM & ADD TO CART:
-Say: "[quantity] [strength] [flavor], [price]k. Added to cart! Opening cart now."
-IMMEDIATELY after this, proactively continue with: "Check your order. Ready to submit?"
+Say: "[quantity] [strength] [flavor], [price]k. Added to cart!"
+Wait 1-2 seconds for cart to open, then say: "Check your order. Is everything correct? Say yes to submit."
 
 STEP 5 - WHEN USER CONFIRMS:
-When user says "yes", "да", "confirm", "готов", "верно" - Say: "Submitting your order now!"
-Then after order is submitted: "Order placed! Enjoy your hookah. See you soon!"
+When user says "yes", "да", "confirm", "готов", "верно", "хорошо", "ок" - the system will automatically submit the order.
+DO NOT say "Submitting" - just wait. The system handles submission.
+After the order is successfully placed, you will be prompted to say goodbye.
 
 SPECIAL COMMANDS:
 - "help register" / "помоги зарегистрироваться" → Say "Opening registration." Navigate to /auth
@@ -164,9 +165,9 @@ ${!isLoggedIn ? `
 - "Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
 - "Для Среднего есть African Queen, Spicey Lime или Booster. Какой?"
 - "Сколько кальянов?"
-- "[кол-во] [крепость] [вкус], [цена]к. Добавлено! Проверьте заказ. Оформляем?"
-- При согласии: "Оформляю заказ!"
-- После отправки: "Заказ оформлен! Приятного отдыха. До скорой встречи!"`;
+- "[кол-во] [крепость] [вкус], [цена]к. Добавлено в корзину!"
+- После открытия корзины: "Проверьте заказ. Всё верно? Скажите да для оформления."
+- После успешного оформления: "Заказ оформлен! Приятного отдыха. До скорой встречи!"`;
   } else if (language === 'id') {
     return basePrompt + `
 
