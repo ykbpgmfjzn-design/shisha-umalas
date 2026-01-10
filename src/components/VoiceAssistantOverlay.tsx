@@ -16,8 +16,8 @@ export const VoiceAssistantOverlay = ({ onStart, onDismiss }: VoiceAssistantOver
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Check if already shown
-    const wasShown = localStorage.getItem(OVERLAY_SHOWN_KEY);
+    // Check if already shown this session
+    const wasShown = sessionStorage.getItem(OVERLAY_SHOWN_KEY);
     if (wasShown) return;
 
     // Show after 1 second delay
@@ -29,13 +29,13 @@ export const VoiceAssistantOverlay = ({ onStart, onDismiss }: VoiceAssistantOver
   }, []);
 
   const handleStart = () => {
-    localStorage.setItem(OVERLAY_SHOWN_KEY, 'true');
+    sessionStorage.setItem(OVERLAY_SHOWN_KEY, 'true');
     setShow(false);
     onStart();
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(OVERLAY_SHOWN_KEY, 'true');
+    sessionStorage.setItem(OVERLAY_SHOWN_KEY, 'true');
     setShow(false);
     onDismiss();
   };
