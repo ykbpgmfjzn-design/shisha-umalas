@@ -89,36 +89,52 @@ export const useCartState = (): CartContextType => {
   }, []); // Empty dependency - only set up listeners once
 
   const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
+    console.log('[Cart] Adding item:', newItem.name);
     setItems((prev) => {
       const existingItem = prev.find((item) => item.id === newItem.id);
+      let newItems;
       if (existingItem) {
-        return prev.map((item) =>
+        newItems = prev.map((item) =>
           item.id === newItem.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
+      } else {
+        newItems = [...prev, { ...newItem, quantity: 1 }];
       }
-      return [...prev, { ...newItem, quantity: 1 }];
+      console.log('[Cart] New items state:', newItems);
+      // Immediately save to localStorage for persistence
+      localStorage.setItem('shisha-cart', JSON.stringify(newItems));
+      console.log('[Cart] Saved to localStorage immediately');
+      return newItems;
     });
     setIsOpen(true);
   }, []);
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) => {
+      const newItems = prev.filter((item) => item.id !== id);
+      localStorage.setItem('shisha-cart', JSON.stringify(newItems));
+      return newItems;
+    });
   }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((item) => item.id !== id));
-    } else {
-      setItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, quantity } : item))
-      );
-    }
+    setItems((prev) => {
+      let newItems;
+      if (quantity <= 0) {
+        newItems = prev.filter((item) => item.id !== id);
+      } else {
+        newItems = prev.map((item) => (item.id === id ? { ...item, quantity } : item));
+      }
+      localStorage.setItem('shisha-cart', JSON.stringify(newItems));
+      return newItems;
+    });
   }, []);
 
   const clearCart = useCallback(() => {
     setItems([]);
+    localStorage.setItem('shisha-cart', JSON.stringify([]));
   }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
