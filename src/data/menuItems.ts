@@ -13,31 +13,31 @@ export interface MenuItem {
 
 export const menuItems: MenuItem[] = [
   // Ultra Light
-  { id: 'wl-vanilla', name: 'Whiteline Vanilla', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['vanilla', 'ваниль', 'vanila'] },
-  { id: 'wl-oolong', name: 'Whiteline Oolong Tea', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['oolong', 'tea', 'чай', 'улун', 'teh'] },
-  { id: 'hl-watermelon', name: 'Herbaline Watermelon', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['watermelon', 'арбуз', 'semangka'] },
-  { id: 'vanilla-breeze', name: 'Vanilla Breeze', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['vanilla', 'breeze', 'ваниль', 'бриз'] },
-  { id: 'watermelon-wave', name: 'Watermelon Wave', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['watermelon', 'wave', 'арбуз', 'волна'] },
+  { id: 'wl-vanilla', name: 'Whiteline Vanilla', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['vanilla', 'ваниль', 'vanila', 'whiteline vanilla', 'вайтлайн ваниль'] },
+  { id: 'wl-oolong', name: 'Whiteline Oolong Tea', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['oolong', 'tea', 'чай', 'улун', 'teh', 'whiteline oolong'] },
+  { id: 'hl-watermelon', name: 'Herbaline Watermelon', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['watermelon', 'арбуз', 'semangka', 'herbaline watermelon', 'гербалайн арбуз'] },
+  { id: 'vanilla-breeze', name: 'Vanilla Breeze', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['vanilla breeze', 'breeze', 'ваниль бриз', 'бриз'] },
+  { id: 'watermelon-wave', name: 'Watermelon Wave', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['watermelon wave', 'wave', 'арбуз волна', 'волна'] },
   
   // Light
-  { id: 'wl-mint', name: 'Whiteline Mint', price: 295000, priceDisplay: 'IDR 295K', strength: 'Light', itemType: 'hookah', keywords: ['mint', 'мята', 'мятный', 'мента'] },
-  { id: 'af-two-apple', name: 'Al Fakher Two Apple', price: 295000, priceDisplay: 'IDR 295K', strength: 'Light', itemType: 'hookah', keywords: ['apple', 'two apple', 'double apple', 'яблоко', 'два яблока', 'apel'] },
-  { id: 'minty-grapes', name: 'Minty Grapes', price: 335000, priceDisplay: 'IDR 335K', strength: 'Light', isSignature: true, itemType: 'hookah', keywords: ['grape', 'mint', 'виноград', 'мята', 'anggur'] },
-  { id: 'minty-gum', name: 'Minty Gum', price: 335000, priceDisplay: 'IDR 335K', strength: 'Light', isSignature: true, itemType: 'hookah', keywords: ['gum', 'mint', 'жвачка', 'мята', 'permen'] },
+  { id: 'wl-mint', name: 'Whiteline Mint', price: 295000, priceDisplay: 'IDR 295K', strength: 'Light', itemType: 'hookah', keywords: ['mint', 'мята', 'мятный', 'мента', 'whiteline mint', 'вайтлайн мята'] },
+  { id: 'af-two-apple', name: 'Al Fakher Two Apple', price: 295000, priceDisplay: 'IDR 295K', strength: 'Light', itemType: 'hookah', keywords: ['apple', 'two apple', 'double apple', 'яблоко', 'два яблока', 'apel', 'al fakher'] },
+  { id: 'minty-grapes', name: 'Minty Grapes', price: 335000, priceDisplay: 'IDR 335K', strength: 'Light', isSignature: true, itemType: 'hookah', keywords: ['minty grapes', 'grape', 'виноград мята', 'anggur'] },
+  { id: 'minty-gum', name: 'Minty Gum', price: 335000, priceDisplay: 'IDR 335K', strength: 'Light', isSignature: true, itemType: 'hookah', keywords: ['minty gum', 'gum', 'жвачка мята', 'permen'] },
   
   // Medium
-  { id: 'bl-african', name: 'Blackline African Queen', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['african', 'queen', 'tropical', 'африка', 'королева', 'тропик'] },
-  { id: 'bl-spicy-lime', name: 'Blackline Spicey Lime', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['lime', 'spicy', 'лайм', 'острый', 'jeruk'] },
-  { id: 'bl-booster', name: 'Blackline Booster', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['booster', 'energy', 'бустер', 'энергия'] },
-  { id: 'tipsy-lime', name: 'Tipsy Lime', price: 405000, priceDisplay: 'IDR 405K', strength: 'Medium', isSignature: true, itemType: 'hookah', keywords: ['tipsy', 'lime', 'лайм', 'коктейль'] },
-  { id: 'evening-moscow', name: 'Evening Moscow', price: 405000, priceDisplay: 'IDR 405K', strength: 'Medium', isSignature: true, itemType: 'hookah', keywords: ['moscow', 'evening', 'москва', 'вечер'] },
+  { id: 'bl-african', name: 'Blackline African Queen', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['african queen', 'african', 'queen', 'tropical', 'африка', 'королева', 'тропик', 'blackline african'] },
+  { id: 'bl-spicy-lime', name: 'Blackline Spicey Lime', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['spicey lime', 'spicy lime', 'lime', 'spicy', 'лайм', 'острый', 'jeruk', 'blackline spicy'] },
+  { id: 'bl-booster', name: 'Blackline Booster', price: 325000, priceDisplay: 'IDR 325K', strength: 'Medium', itemType: 'hookah', keywords: ['booster', 'energy', 'бустер', 'энергия', 'blackline booster'] },
+  { id: 'tipsy-lime', name: 'Tipsy Lime', price: 405000, priceDisplay: 'IDR 405K', strength: 'Medium', isSignature: true, itemType: 'hookah', keywords: ['tipsy lime', 'tipsy', 'лайм коктейль'] },
+  { id: 'evening-moscow', name: 'Evening Moscow', price: 405000, priceDisplay: 'IDR 405K', strength: 'Medium', isSignature: true, itemType: 'hookah', keywords: ['evening moscow', 'moscow', 'evening', 'москва', 'вечер'] },
   
   // Bold Strong
-  { id: 'tangiers-cooling', name: 'Tangiers Cooling', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['cooling', 'tangiers', 'холод', 'прохлада', 'dingin'] },
-  { id: 'tangiers-schnozz', name: 'Tangiers Schnozzberry', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['berry', 'schnozzberry', 'ягода', 'beri'] },
-  { id: 'darkside-polar', name: 'Darkside Polar Cream', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['cream', 'polar', 'крем', 'полярный', 'krim'] },
-  { id: 'berry-kiss', name: 'Berry Kiss', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['berry', 'kiss', 'ягода', 'поцелуй', 'beri'] },
-  { id: 'wild-heart', name: 'Wild Heart', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['wild', 'heart', 'дикий', 'сердце', 'liar'] },
+  { id: 'tangiers-cooling', name: 'Tangiers Cooling', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['tangiers cooling', 'cooling', 'tangiers', 'холод', 'прохлада', 'dingin'] },
+  { id: 'tangiers-schnozz', name: 'Tangiers Schnozzberry', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['schnozzberry', 'tangiers schnozzberry', 'berry', 'ягода', 'beri'] },
+  { id: 'darkside-polar', name: 'Darkside Polar Cream', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['polar cream', 'darkside polar', 'cream', 'polar', 'крем', 'полярный', 'krim'] },
+  { id: 'berry-kiss', name: 'Berry Kiss', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['berry kiss', 'kiss', 'ягода поцелуй'] },
+  { id: 'wild-heart', name: 'Wild Heart', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['wild heart', 'wild', 'heart', 'дикий', 'сердце', 'liar'] },
 ];
 
 export const findMenuItemByKeyword = (text: string): MenuItem | undefined => {

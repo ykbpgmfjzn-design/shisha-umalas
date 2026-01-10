@@ -465,8 +465,34 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('opening cart') ||
             transcriptLower.includes('открываю корзину')) {
           // Use ref for current state to avoid stale closure
-          const currentOrder = orderStateRef.current;
-          console.log('[VoiceAssistant] Current order state:', currentOrder);
+          let currentOrder = orderStateRef.current;
+          console.log('[VoiceAssistant] Current order state before AI parse:', currentOrder);
+          
+          // If no itemId, try to extract from AI's confirmation message
+          // AI says things like "1 Ultra Light Whiteline Vanilla, 280k. Added to cart!"
+          if (!currentOrder.itemId) {
+            console.log('[VoiceAssistant] No itemId, trying to extract from AI message:', event.transcript);
+            const menuItem = findMenuItemByKeyword(event.transcript || '');
+            if (menuItem) {
+              console.log('[VoiceAssistant] Found item from AI message:', menuItem.name);
+              updateOrderState(prev => ({ 
+                ...prev, 
+                itemId: menuItem.id,
+                flavor: menuItem.name,
+                strength: menuItem.strength,
+              }));
+              // Update ref immediately
+              orderStateRef.current = { 
+                ...orderStateRef.current, 
+                itemId: menuItem.id,
+                flavor: menuItem.name,
+                strength: menuItem.strength,
+              };
+              currentOrder = orderStateRef.current;
+            }
+          }
+          
+          console.log('[VoiceAssistant] Final order state:', currentOrder);
           
           // Add to cart FIRST if we have the order info
           if (currentOrder.itemId) {
