@@ -51,6 +51,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [user, setUser] = useState<any>(null);
   const isAiRespondingRef = useRef(false); // Track if AI is currently responding
   const pendingFollowUpRef = useRef<string | null>(null); // Queue for pending follow-up
+  const redirectingToAuthRef = useRef(false); // Prevent duplicate auth redirects
+  const submittingOrderRef = useRef(false); // Prevent duplicate order submissions
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -378,6 +380,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       setTranscript('');
       setAssistantMessage('');
       
+      // Reset action flags for new session
+      redirectingToAuthRef.current = false;
+      submittingOrderRef.current = false;
+      pendingAuthContinueRef.current = false;
+      
       // Set initial stage based on user status
       if (!isLoggedIn) {
         updateOrderState(() => ({ stage: 'login' }));
@@ -643,7 +650,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         processTranscript(transcriptText);
         
         // Detect user wants to register (when at login stage and not logged in)
+        // CRITICAL: Use flag to prevent duplicate redirects
         if (orderStateRef.current.stage === 'login' && 
+            !redirectingToAuthRef.current &&
             (userTextLower.includes('yes') || 
              userTextLower.includes('да') ||
              userTextLower.includes('готов') ||
@@ -658,6 +667,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
              userTextLower.includes('давай'))) {
           console.log('[VoiceAssistant] User wants to register, redirecting to auth page');
           
+          // Set flag to prevent duplicate redirects
+          redirectingToAuthRef.current = true;
+          
           // Set flag to continue conversation after login
           pendingAuthContinueRef.current = true;
           
@@ -671,7 +683,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         }
         
         // Detect user confirmation to submit order (only when in cart stage)
+        // CRITICAL: Use flag to prevent duplicate submissions
         if (orderStateRef.current.stage === 'cart' && 
+            !submittingOrderRef.current &&
             (userTextLower.includes('yes') || 
              userTextLower.includes('да') ||
              userTextLower.includes('confirm') ||
@@ -689,6 +703,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
              userTextLower.includes('хорошо'))) {
           console.log('[VoiceAssistant] User confirmed order, submitting...');
           
+          // Set flag to prevent duplicate submissions
+          submittingOrderRef.current = true;
+          
           // Tell user we're submitting
           sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
           
@@ -704,6 +721,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
                 updateOrderState(prev => ({ ...prev, stage: 'ready' }));
               } else {
                 console.log('[VoiceAssistant] Order submission failed');
+                submittingOrderRef.current = false; // Reset on failure to allow retry
                 sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
               }
             });
