@@ -53,6 +53,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const pendingFollowUpRef = useRef<string | null>(null); // Queue for pending follow-up
   const redirectingToAuthRef = useRef(false); // Prevent duplicate auth redirects
   const submittingOrderRef = useRef(false); // Prevent duplicate order submissions
+  const sessionStartingRef = useRef(false); // Prevent duplicate session starts (mutex)
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -309,23 +310,51 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   }, [extractRoomNumber, saveRoomNumber, updateOrderState]);
 
   const cleanup = useCallback(() => {
+    console.log('[VoiceAssistant] Cleanup called');
     stopAudioAnalysis();
+    
+    // Close data channel
     if (dataChannelRef.current) {
-      dataChannelRef.current.close();
+      try {
+        dataChannelRef.current.close();
+      } catch (e) {
+        console.log('[VoiceAssistant] Error closing data channel:', e);
+      }
       dataChannelRef.current = null;
     }
+    
+    // Close peer connection
     if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
+      try {
+        peerConnectionRef.current.close();
+      } catch (e) {
+        console.log('[VoiceAssistant] Error closing peer connection:', e);
+      }
       peerConnectionRef.current = null;
     }
+    
+    // Stop all media tracks
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('[VoiceAssistant] Stopped track:', track.kind);
+      });
       mediaStreamRef.current = null;
     }
+    
+    // Clean up audio element
     if (audioElementRef.current) {
+      audioElementRef.current.pause();
       audioElementRef.current.srcObject = null;
       audioElementRef.current = null;
     }
+    
+    // Reset all action flags
+    isAiRespondingRef.current = false;
+    pendingFollowUpRef.current = null;
+    redirectingToAuthRef.current = false;
+    submittingOrderRef.current = false;
+    sessionStartingRef.current = false; // Release mutex
   }, [stopAudioAnalysis]);
 
   // Add items to cart - returns true if added successfully
@@ -374,6 +403,20 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   }, [cleanup, updateOrderState]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
+    // CRITICAL: Prevent duplicate session starts using mutex
+    if (sessionStartingRef.current) {
+      console.log('[VoiceAssistant] Session already starting, ignoring duplicate call');
+      return;
+    }
+    
+    // CRITICAL: If already active, clean up first
+    if (peerConnectionRef.current || dataChannelRef.current) {
+      console.log('[VoiceAssistant] Existing session detected, cleaning up first');
+      cleanup();
+    }
+    
+    sessionStartingRef.current = true;
+    
     try {
       setState('connecting');
       setError(null);
@@ -384,6 +427,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       redirectingToAuthRef.current = false;
       submittingOrderRef.current = false;
       pendingAuthContinueRef.current = false;
+      isAiRespondingRef.current = false;
+      pendingFollowUpRef.current = null;
       
       // Set initial stage based on user status
       if (!isLoggedIn) {
@@ -498,12 +543,18 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         type: 'answer',
         sdp: answerSdp,
       });
+      
+      // Session started successfully, release mutex
+      sessionStartingRef.current = false;
+      console.log('[VoiceAssistant] Session started successfully');
 
     } catch (err) {
       console.error('Voice assistant error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start voice assistant');
       setState('error');
       cleanup();
+      // Release mutex on error
+      sessionStartingRef.current = false;
     }
   }, [cleanup, state, startAudioAnalysis, updateOrderState]);
 
