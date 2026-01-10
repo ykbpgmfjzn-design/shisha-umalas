@@ -546,13 +546,12 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             console.log('[VoiceAssistant] No itemId in order state, cannot add to cart');
           }
           
-          // Then open cart drawer after a small delay to ensure item is added
+          // Open cart drawer after a small delay to ensure item is added
+          // DO NOT send follow-up message here - let AI naturally ask for confirmation
+          // based on its prompt instructions
           setTimeout(() => {
             setCartOpen(true);
-            // Ask for order confirmation
-            setTimeout(() => {
-              sendFollowUpMessage('Cart is open. Ask user to confirm the order is correct and if they are ready to proceed to payment. Be brief, max 15 words. Example: "Your order is ready. Confirm to proceed to payment?"');
-            }, 1000);
+            console.log('[VoiceAssistant] Cart opened, waiting for AI to ask for confirmation');
           }, 300);
           updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
