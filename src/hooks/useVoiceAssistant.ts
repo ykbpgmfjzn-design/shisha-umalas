@@ -46,6 +46,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0.5);
   const [orderState, setOrderState] = useState<OrderState>({ stage: 'login' });
+  const orderStateRef = useRef<OrderState>({ stage: 'login' });
   const [user, setUser] = useState<any>(null);
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -152,22 +153,34 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     return true;
   }, [user]);
 
+  // Helper to update orderState and ref together
+  const updateOrderState = useCallback((updater: (prev: OrderState) => OrderState) => {
+    setOrderState(prev => {
+      const newState = updater(prev);
+      orderStateRef.current = newState;
+      return newState;
+    });
+  }, []);
+
   // Process user transcript and add to cart if order is complete
   const processTranscript = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
+    console.log('[VoiceAssistant] Processing transcript:', text);
     
     // Try to extract room number
     const roomNumber = extractRoomNumber(text);
     if (roomNumber) {
-      setOrderState(prev => ({ ...prev, roomNumber }));
+      console.log('[VoiceAssistant] Detected room number:', roomNumber);
+      updateOrderState(prev => ({ ...prev, roomNumber }));
       // Save to profile
       saveRoomNumber(roomNumber);
     }
     
-    // Try to find flavor
+    // Try to find flavor (search in full text)
     const menuItem = findMenuItemByKeyword(lowerText);
     if (menuItem) {
-      setOrderState(prev => ({ 
+      console.log('[VoiceAssistant] Detected menu item:', menuItem.name);
+      updateOrderState(prev => ({ 
         ...prev, 
         flavor: menuItem.name,
         itemId: menuItem.id,
@@ -178,24 +191,37 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     // Try to find strength
     const strength = getStrengthFromKeyword(lowerText);
     if (strength) {
-      setOrderState(prev => ({ ...prev, strength }));
+      console.log('[VoiceAssistant] Detected strength:', strength);
+      updateOrderState(prev => ({ ...prev, strength }));
     }
     
-    // Try to find quantity
-    const quantityMatch = lowerText.match(/(\d+)\s*(hookah|кальян|shisha)/i) ||
-                         lowerText.match(/(\d+)\s*штук/i) ||
-                         lowerText.match(/(one|two|three|four|five|один|два|три|четыре|пять)/i);
-    if (quantityMatch) {
-      const numMap: Record<string, number> = {
-        'one': 1, 'два': 2, 'один': 1, 'two': 2, 'три': 3, 'three': 3, 
-        'four': 4, 'четыре': 4, 'five': 5, 'пять': 5
-      };
-      const qty = numMap[quantityMatch[1].toLowerCase()] || parseInt(quantityMatch[1]);
-      if (qty > 0) {
-        setOrderState(prev => ({ ...prev, quantity: qty }));
+    // Try to find quantity - multiple patterns
+    const quantityPatterns = [
+      /(\d+)\s*(hookah|кальян|shisha|штук)/i,
+      /^(\d+)$/,  // Just a number
+      /(one|two|three|four|five|один|два|три|четыре|пять|1|2|3|4|5)\s*(hookah|кальян)?/i,
+    ];
+    
+    const numMap: Record<string, number> = {
+      'one': 1, 'один': 1, '1': 1,
+      'two': 2, 'два': 2, '2': 2,
+      'three': 3, 'три': 3, '3': 3,
+      'four': 4, 'четыре': 4, '4': 4,
+      'five': 5, 'пять': 5, '5': 5,
+    };
+    
+    for (const pattern of quantityPatterns) {
+      const match = lowerText.match(pattern);
+      if (match && match[1]) {
+        const qty = numMap[match[1].toLowerCase()] || parseInt(match[1]);
+        if (qty > 0 && qty <= 10) {
+          console.log('[VoiceAssistant] Detected quantity:', qty);
+          updateOrderState(prev => ({ ...prev, quantity: qty }));
+          break;
+        }
       }
     }
-  }, [extractRoomNumber, saveRoomNumber]);
+  }, [extractRoomNumber, saveRoomNumber, updateOrderState]);
 
   const cleanup = useCallback(() => {
     stopAudioAnalysis();
@@ -239,16 +265,20 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   }, [addItem]);
 
   const endSession = useCallback(() => {
+    // Use ref for current state to avoid stale closure
+    const currentOrder = orderStateRef.current;
+    
     // If we have a complete order, add to cart
-    if (orderState.itemId && orderState.quantity) {
-      addToCart(orderState.itemId, orderState.quantity);
+    if (currentOrder.itemId && currentOrder.quantity) {
+      console.log('[VoiceAssistant] End session - adding to cart:', currentOrder.itemId, currentOrder.quantity);
+      addToCart(currentOrder.itemId, currentOrder.quantity);
     }
     cleanup();
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
-    setOrderState({ stage: 'login' });
-  }, [cleanup, orderState, addToCart]);
+    updateOrderState(() => ({ stage: 'login' }));
+  }, [cleanup, addToCart, updateOrderState]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
     try {
@@ -259,11 +289,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       
       // Set initial stage based on user status
       if (!isLoggedIn) {
-        setOrderState({ stage: 'login' });
+        updateOrderState(() => ({ stage: 'login' }));
       } else if (!roomNumber) {
-        setOrderState({ stage: 'room' });
+        updateOrderState(() => ({ stage: 'room' }));
       } else {
-        setOrderState({ stage: 'ordering' });
+        updateOrderState(() => ({ stage: 'ordering' }));
       }
 
       // Request microphone permission
@@ -377,7 +407,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       setState('error');
       cleanup();
     }
-  }, [cleanup, state]);
+  }, [cleanup, state, startAudioAnalysis, updateOrderState]);
 
   const handleRealtimeEvent = useCallback((event: any) => {
     switch (event.type) {
@@ -388,20 +418,21 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         
       case 'response.audio_transcript.done':
         const transcriptLower = (event.transcript || '').toLowerCase();
+        console.log('[VoiceAssistant] AI said:', event.transcript);
         
         // Detect registration/login needed
         if (transcriptLower.includes('need to register') || 
             transcriptLower.includes('нужно зарегистрироваться') ||
             transcriptLower.includes('please log in') ||
             transcriptLower.includes('войдите')) {
-          setOrderState(prev => ({ ...prev, stage: 'login' }));
+          updateOrderState(prev => ({ ...prev, stage: 'login' }));
         }
         
         // Detect opening registration page
         if (transcriptLower.includes('opening registration') || 
             transcriptLower.includes('открываю регистрацию')) {
           navigate('/auth');
-          setOrderState(prev => ({ ...prev, stage: 'login' }));
+          updateOrderState(prev => ({ ...prev, stage: 'login' }));
         }
         
         // Detect room number request - user logged in, need room
@@ -409,7 +440,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('какой номер комнаты') ||
             transcriptLower.includes('номер комнаты') ||
             transcriptLower.includes('room number')) {
-          setOrderState(prev => ({ ...prev, stage: 'room' }));
+          updateOrderState(prev => ({ ...prev, stage: 'room' }));
         }
         
         // Detect room confirmed, moving to ordering
@@ -417,7 +448,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
             transcriptLower.includes("let's order") ||
             transcriptLower.includes('давайте закажем')) {
-          setOrderState(prev => ({ ...prev, stage: 'ordering' }));
+          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
         }
         
         // Detect strength/flavor selection - we're in ordering stage
@@ -425,7 +456,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('какую крепость') ||
             transcriptLower.includes('which flavor') ||
             transcriptLower.includes('какой вкус')) {
-          setOrderState(prev => ({ ...prev, stage: 'ordering' }));
+          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
         }
         
         // Detect "added to cart" - ADD FIRST then open cart
@@ -433,17 +464,24 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('добавлено в корзину') ||
             transcriptLower.includes('opening cart') ||
             transcriptLower.includes('открываю корзину')) {
+          // Use ref for current state to avoid stale closure
+          const currentOrder = orderStateRef.current;
+          console.log('[VoiceAssistant] Current order state:', currentOrder);
+          
           // Add to cart FIRST if we have the order info
-          if (orderState.itemId) {
-            const qty = orderState.quantity || 1;
-            console.log('[VoiceAssistant] Adding to cart before opening:', orderState.itemId, qty);
-            addToCart(orderState.itemId, qty);
+          if (currentOrder.itemId) {
+            const qty = currentOrder.quantity || 1;
+            console.log('[VoiceAssistant] Adding to cart:', currentOrder.itemId, qty);
+            addToCart(currentOrder.itemId, qty);
+          } else {
+            console.log('[VoiceAssistant] No itemId in order state, cannot add to cart');
           }
+          
           // Then open cart drawer after a small delay to ensure item is added
           setTimeout(() => {
             setCartOpen(true);
           }, 300);
-          setOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
         // Detect ready for payment - auto close after 3 seconds
@@ -455,7 +493,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('готово к оплате') ||
             transcriptLower.includes('press submit') ||
             transcriptLower.includes('нажмите отправить')) {
-          setOrderState(prev => ({ ...prev, stage: 'ready' }));
+          updateOrderState(prev => ({ ...prev, stage: 'ready' }));
           setState('complete');
         }
         break;
@@ -467,6 +505,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         
       case 'conversation.item.input_audio_transcription.completed':
         const transcriptText = event.transcript || '';
+        console.log('[VoiceAssistant] User said:', transcriptText);
         setTranscript(transcriptText);
         // Process the transcript to extract order info
         processTranscript(transcriptText);
@@ -486,7 +525,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setState('error');
         break;
     }
-  }, [state, orderState, addToCart, processTranscript, setCartOpen, navigate]);
+  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState]);
 
   useEffect(() => {
     return () => {
