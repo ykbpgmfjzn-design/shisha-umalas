@@ -19,6 +19,7 @@ export const GlobalVoiceAssistant = () => {
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const wasActiveBeforeLogin = useRef(false);
+  const orderCompletedRef = useRef(false); // Track if order was completed
   
   const {
     state,
@@ -59,14 +60,24 @@ export const GlobalVoiceAssistant = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const loggedIn = !!session?.user;
-      console.log('[GlobalVoiceAssistant] Auth event:', event, 'loggedIn:', loggedIn, 'wasNotLoggedIn:', wasNotLoggedIn, 'wasActiveBeforeLogin:', wasActiveBeforeLogin.current);
+      console.log('[GlobalVoiceAssistant] Auth event:', event, 'loggedIn:', loggedIn, 'wasNotLoggedIn:', wasNotLoggedIn, 'wasActiveBeforeLogin:', wasActiveBeforeLogin.current, 'orderCompleted:', orderCompletedRef.current);
       
-      // User just logged in
-      if (loggedIn && wasNotLoggedIn && session?.user) {
+      // CRITICAL: Don't restart voice session if order was already completed
+      if (orderCompletedRef.current) {
+        console.log('[GlobalVoiceAssistant] Order already completed, ignoring auth change');
+        setIsLoggedIn(loggedIn);
+        if (session?.user) {
+          fetchRoomNumber(session.user.id);
+        }
+        return;
+      }
+      
+      // User just logged in (only handle SIGNED_IN event, not token refreshes)
+      if (event === 'SIGNED_IN' && loggedIn && wasNotLoggedIn && session?.user) {
         const room = await fetchRoomNumber(session.user.id);
         
         // If voice assistant was active before login, continue the conversation
-        if (wasActiveBeforeLogin.current || showVoiceAssistant) {
+        if (wasActiveBeforeLogin.current && showVoiceAssistant) {
           console.log('[GlobalVoiceAssistant] User logged in, restarting voice session to continue conversation');
           setPendingLoginContinue(true);
         } else if (cartItems.length > 0) {
@@ -86,7 +97,7 @@ export const GlobalVoiceAssistant = () => {
       } else {
         setRoomNumber(null);
         // Track if assistant was active when user logged out/not logged in
-        if (isActive) {
+        if (isActive && !orderCompletedRef.current) {
           wasActiveBeforeLogin.current = true;
         }
       }
@@ -97,6 +108,12 @@ export const GlobalVoiceAssistant = () => {
 
   // Handle pending login continuation - restart session after login
   useEffect(() => {
+    // CRITICAL: Don't continue if order was completed
+    if (orderCompletedRef.current) {
+      setPendingLoginContinue(false);
+      return;
+    }
+    
     if (pendingLoginContinue && isLoggedIn && !isActive) {
       console.log('[GlobalVoiceAssistant] Continuing voice session after login');
       setPendingLoginContinue(false);
@@ -110,9 +127,16 @@ export const GlobalVoiceAssistant = () => {
     }
   }, [pendingLoginContinue, isLoggedIn, isActive, language, roomNumber, startSession]);
 
-  // Auto-close when stage is 'ready' or state is 'complete'
+  // Auto-close when stage is 'ready' or state is 'complete' - MARK ORDER AS COMPLETED
   useEffect(() => {
     if (currentStage === 'ready' || state === 'complete') {
+      // Mark order as completed to prevent restart
+      orderCompletedRef.current = true;
+      wasActiveBeforeLogin.current = false;
+      setPendingLoginContinue(false);
+      
+      console.log('[GlobalVoiceAssistant] Order completed, marking orderCompletedRef=true');
+      
       autoCloseTimerRef.current = setTimeout(() => {
         handleEndVoice();
       }, 4000);
@@ -126,6 +150,8 @@ export const GlobalVoiceAssistant = () => {
   }, [currentStage, state]);
 
   const handleStartVoice = () => {
+    // Reset order completed flag when starting a new session
+    orderCompletedRef.current = false;
     setShowVoiceAssistant(true);
     wasActiveBeforeLogin.current = true; // Track that voice was started
     // Pass current login status and room number to the session
@@ -148,28 +174,45 @@ export const GlobalVoiceAssistant = () => {
     }
   };
 
-  // Check if we're on auth page - position differently
+  // Check if we're on special pages
   const isAuthPage = location.pathname === '/auth';
+  const isOrderConfirmationPage = location.pathname === '/order-confirmation';
   
   // Force minimize when cart is open or when on auth page at login stage
   const shouldMinimize = isCartOpen || (isAuthPage && currentStage === 'login');
+  
+  // Hide voice assistant completely on order confirmation page
+  const hideVoiceAssistant = isOrderConfirmationPage;
+
+  // Auto-end session when navigating to order confirmation
+  useEffect(() => {
+    if (isOrderConfirmationPage && isActive) {
+      console.log('[GlobalVoiceAssistant] On order confirmation page, ending voice session');
+      orderCompletedRef.current = true;
+      handleEndVoice();
+    }
+  }, [isOrderConfirmationPage, isActive]);
 
   return (
     <>
-      {/* Voice Assistant Overlay (once per session) */}
-      <VoiceAssistantOverlay
-        onStart={handleStartVoice}
-        onDismiss={() => {}}
-      />
+      {/* Voice Assistant Overlay (once per session) - hide on order confirmation */}
+      {!hideVoiceAssistant && (
+        <VoiceAssistantOverlay
+          onStart={handleStartVoice}
+          onDismiss={() => {}}
+        />
+      )}
       
-      {/* Voice Assistant Button - always visible */}
-      <VoiceAssistantButton
-        isActive={isActive}
-        onClick={handleToggleVoice}
-      />
+      {/* Voice Assistant Button - hide on order confirmation */}
+      {!hideVoiceAssistant && (
+        <VoiceAssistantButton
+          isActive={isActive}
+          onClick={handleToggleVoice}
+        />
+      )}
       
       {/* Voice Assistant Active Panel - positioned differently on auth page */}
-      {showVoiceAssistant && isActive && (
+      {!hideVoiceAssistant && showVoiceAssistant && isActive && (
         <div className={isAuthPage ? "fixed top-4 left-4 right-4 z-[40] max-w-sm" : ""}>
           <VoiceAssistantActive
             state={state}
