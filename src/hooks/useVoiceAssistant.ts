@@ -19,6 +19,8 @@ interface OrderState {
   strength?: string;
   quantity?: number;
   itemId?: string;
+  stage: 'ordering' | 'cart' | 'login' | 'room' | 'ready';
+  cartOpened?: boolean;
 }
 
 interface UseVoiceAssistantReturn {
@@ -30,6 +32,7 @@ interface UseVoiceAssistantReturn {
   endSession: () => void;
   isActive: boolean;
   audioLevel: number;
+  currentStage: string;
 }
 
 export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
@@ -38,7 +41,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [assistantMessage, setAssistantMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0.5);
-  const [orderState, setOrderState] = useState<OrderState>({});
+  const [orderState, setOrderState] = useState<OrderState>({ stage: 'ordering' });
+  const [user, setUser] = useState<any>(null);
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -48,8 +52,21 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   
-  const { addItem } = useCart();
+  const { addItem, setIsOpen: setCartOpen } = useCart();
   const navigate = useNavigate();
+
+  // Listen for auth changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Audio level analyzer for visualization
   const startAudioAnalysis = useCallback((stream: MediaStream) => {
@@ -178,7 +195,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
-    setOrderState({});
+    setOrderState({ stage: 'ordering' });
   }, [cleanup, orderState, addToCart]);
 
   const startSession = useCallback(async (language: string = 'en') => {
@@ -300,15 +317,49 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         break;
         
       case 'response.audio_transcript.done':
-        // Check if order is complete - add to cart automatically
-        if (event.transcript?.toLowerCase().includes('order complete') || 
-            event.transcript?.toLowerCase().includes('заказ готов') ||
-            event.transcript?.toLowerCase().includes('pesanan selesai')) {
+        const transcriptLower = (event.transcript || '').toLowerCase();
+        
+        // Detect "added to cart" - open cart and move to cart stage
+        if (transcriptLower.includes('added to cart') || 
+            transcriptLower.includes('добавлено в корзину') ||
+            transcriptLower.includes('opening cart') ||
+            transcriptLower.includes('открываю корзину')) {
           // Add to cart if we have the order info
           if (orderState.itemId && orderState.quantity) {
             addToCart(orderState.itemId, orderState.quantity);
-            setOrderState({});
           }
+          // Open cart drawer
+          setTimeout(() => setCartOpen(true), 500);
+          setOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+        }
+        
+        // Detect login needed
+        if (transcriptLower.includes('need to log in') || 
+            transcriptLower.includes('нужно войти') ||
+            transcriptLower.includes('click login') ||
+            transcriptLower.includes('нажмите войти')) {
+          setOrderState(prev => ({ ...prev, stage: 'login' }));
+        }
+        
+        // Detect opening registration page
+        if (transcriptLower.includes('opening registration') || 
+            transcriptLower.includes('открываю регистрацию')) {
+          navigate('/auth');
+        }
+        
+        // Detect room number stage
+        if (transcriptLower.includes("what's your room") || 
+            transcriptLower.includes('какой номер комнаты') ||
+            transcriptLower.includes('номер комнаты')) {
+          setOrderState(prev => ({ ...prev, stage: 'room' }));
+        }
+        
+        // Detect ready for payment
+        if (transcriptLower.includes('order guide complete') || 
+            transcriptLower.includes('сопровождение заказа завершено') ||
+            transcriptLower.includes('everything ready') ||
+            transcriptLower.includes('всё готово')) {
+          setOrderState(prev => ({ ...prev, stage: 'ready' }));
           setState('complete');
         }
         break;
@@ -339,7 +390,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setState('error');
         break;
     }
-  }, [state, orderState, addToCart, processTranscript]);
+  }, [state, orderState, addToCart, processTranscript, setCartOpen, navigate]);
 
   useEffect(() => {
     return () => {
@@ -356,5 +407,6 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     endSession,
     isActive: state !== 'idle' && state !== 'error',
     audioLevel,
+    currentStage: orderState.stage,
   };
 };
