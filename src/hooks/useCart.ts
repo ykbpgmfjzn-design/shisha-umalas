@@ -49,7 +49,40 @@ export const useCartState = (): CartContextType => {
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
+    console.log('[Cart] Saving to localStorage:', items);
     localStorage.setItem('shisha-cart', JSON.stringify(items));
+  }, [items]);
+
+  // Listen for storage changes (from other tabs or page refresh)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'shisha-cart' && e.newValue) {
+        try {
+          const newItems = JSON.parse(e.newValue);
+          console.log('[Cart] Storage event - updating items:', newItems);
+          setItems(newItems);
+        } catch (err) {
+          console.error('[Cart] Error parsing storage event:', err);
+        }
+      }
+    };
+
+    // Also sync on focus (in case localStorage changed while tab was inactive)
+    const handleFocus = () => {
+      const currentItems = loadCartFromStorage();
+      console.log('[Cart] Window focus - checking localStorage:', currentItems);
+      if (JSON.stringify(currentItems) !== JSON.stringify(items)) {
+        setItems(currentItems);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [items]);
 
   const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
