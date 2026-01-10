@@ -100,11 +100,23 @@ serve(async (req) => {
 
     const invoiceNumber = `INV-${Date.now()}-${purchaseId.slice(0, 8)}`;
     
-    // Get the host for callback URLs
-    const origin = req.headers.get("origin") || "https://hkgscohedqgxrhmbryww.lovable.app";
+    // Get the host for callback URLs - prioritize custom domain for production
+    const requestOrigin = req.headers.get("origin") || "";
+    
+    // Use production domain if request comes from it, otherwise use the origin header or fallback
+    let baseUrl: string;
+    if (requestOrigin.includes("shisha.cool")) {
+      baseUrl = "https://shisha.cool";
+    } else if (requestOrigin && requestOrigin.startsWith("http")) {
+      baseUrl = requestOrigin;
+    } else {
+      baseUrl = "https://shisha.cool"; // Default to production domain
+    }
     
     // Construct the order confirmation URL with all params
-    const orderConfirmationUrl = `${origin}/order-confirmation?id=${purchaseId}`;
+    const orderConfirmationUrl = `${baseUrl}/order-confirmation?id=${purchaseId}`;
+    
+    console.log("Using callback URL:", orderConfirmationUrl);
     
     const requestBody = {
       order: {
