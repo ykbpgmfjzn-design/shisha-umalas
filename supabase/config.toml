@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.check-qris-status]
 verify_jwt = false
+
+[functions.create-card-payment]
+verify_jwt = false
