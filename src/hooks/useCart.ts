@@ -1,4 +1,4 @@
-import { useState, useCallback, createContext, useContext } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export type ItemType = "hookah" | "drink" | "snack" | "extra";
 
@@ -27,9 +27,24 @@ interface CartContextType {
   setIsOpen: (open: boolean) => void;
 }
 
+// Load cart from localStorage on init
+const loadCartFromStorage = (): CartItem[] => {
+  try {
+    const saved = localStorage.getItem('shisha-cart');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const useCartState = (): CartContextType => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadCartFromStorage);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Save cart to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem('shisha-cart', JSON.stringify(items));
+  }, [items]);
 
   const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
