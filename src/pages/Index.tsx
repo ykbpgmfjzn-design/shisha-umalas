@@ -7,9 +7,9 @@ import FooterSection from "@/components/FooterSection";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
-import WhatsAppChat from "@/components/WhatsAppChat";
 import { VoiceAssistantOverlay } from "@/components/VoiceAssistantOverlay";
 import { VoiceAssistantActive } from "@/components/VoiceAssistantActive";
+import { VoiceAssistantButton } from "@/components/VoiceAssistantButton";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -51,6 +51,14 @@ const Index = () => {
     setShowVoiceAssistant(false);
   };
 
+  const handleToggleVoice = () => {
+    if (isActive) {
+      handleEndVoice();
+    } else {
+      handleStartVoice();
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background pb-20">
       <LanguageSelector />
@@ -58,15 +66,21 @@ const Index = () => {
       <MenuSection />
       <FooterSection />
       <Cart />
-      <WhatsAppChat />
       <BottomNavigation />
       
-      {/* Voice Assistant */}
+      {/* Voice Assistant Overlay (first visit only) */}
       <VoiceAssistantOverlay
         onStart={handleStartVoice}
         onDismiss={() => {}}
       />
       
+      {/* Voice Assistant Button (replaces WhatsApp) */}
+      <VoiceAssistantButton
+        isActive={isActive}
+        onClick={handleToggleVoice}
+      />
+      
+      {/* Voice Assistant Active Panel */}
       {showVoiceAssistant && isActive && (
         <VoiceAssistantActive
           state={state}
