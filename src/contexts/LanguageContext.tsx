@@ -58,6 +58,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.payLater": "Pay Later",
     "cart.paymentError": "Payment failed. Please try again.",
     "cart.submit": "Send Order",
+    "cart.payment": "Payment",
     
     // Navigation
     "nav.home": "Home",
@@ -476,6 +477,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.payLater": "Оплатить позже",
     "cart.paymentError": "Ошибка оплаты. Попробуйте ещё раз.",
     "cart.submit": "Отправить заказ",
+    "cart.payment": "Оплата",
     
     // Navigation
     "nav.home": "Главная",
@@ -857,6 +859,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.title": "SHISHA",
     "hero.subtitle": "MENU",
     "cart.submit": "Kirim Pesanan",
+    "cart.payment": "Pembayaran",
     "nav.home": "Beranda",
     "nav.reservation": "Reservasi",
     "nav.feedback": "Ulasan",
@@ -1136,6 +1139,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.title": "КАЛЬЯН",
     "hero.subtitle": "МЕНЮ",
     "cart.submit": "Надіслати замовлення",
+    "cart.payment": "Оплата",
     "nav.home": "Головна",
     "nav.reservation": "Бронювання",
     "nav.feedback": "Відгуки",
@@ -1379,6 +1383,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.subtitle": "MENU",
     "hero.tagline": "L'Art de la Fumée",
     "cart.submit": "Envoyer la commande",
+    "cart.payment": "Paiement",
     "nav.home": "Accueil",
     "nav.reservation": "Réservation",
     "nav.feedback": "Avis",
@@ -1620,6 +1625,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.title": "हुक्का",
     "hero.subtitle": "मेन्यू",
     "cart.submit": "ऑर्डर भेजें",
+    "cart.payment": "भुगतान",
     "nav.home": "होम",
     "nav.reservation": "आरक्षण",
     "nav.feedback": "प्रतिक्रिया",
@@ -1856,6 +1862,7 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.title": "水烟",
     "hero.subtitle": "菜单",
     "cart.submit": "发送订单",
+    "cart.payment": "付款",
     "nav.home": "首页",
     "nav.reservation": "预订",
     "nav.feedback": "反馈",

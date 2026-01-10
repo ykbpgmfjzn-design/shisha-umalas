@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, X, Plus, Minus, Trash2, Send } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -336,8 +336,8 @@ const Cart = () => {
                         />
                       ) : (
                         <>
-                          <Send className="w-5 h-5 mr-2" />
-                          {t("cart.submit")}
+                          <CreditCard className="w-5 h-5 mr-2" />
+                          {t("cart.payment")}
                         </>
                       )}
                     </Button>

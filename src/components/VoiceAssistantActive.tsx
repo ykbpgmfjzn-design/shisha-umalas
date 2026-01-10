@@ -103,6 +103,47 @@ export const VoiceAssistantActive = ({
 
   if (state === 'idle') return null;
 
+  // When forceMinimized, show only a small floating circle
+  if (forceMinimized) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        className="fixed bottom-40 left-6 z-[40] pointer-events-auto"
+      >
+        <motion.button
+          onClick={() => setIsExpanded(true)}
+          className="relative w-14 h-14 rounded-full bg-card/95 backdrop-blur-lg border border-border shadow-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+          animate={{
+            boxShadow: state === 'listening' 
+              ? ['0 0 0 0 rgba(34, 197, 94, 0.4)', '0 0 0 12px rgba(34, 197, 94, 0)', '0 0 0 0 rgba(34, 197, 94, 0.4)']
+              : state === 'speaking'
+              ? ['0 0 0 0 rgba(var(--primary), 0.4)', '0 0 0 12px rgba(var(--primary), 0)', '0 0 0 0 rgba(var(--primary), 0.4)']
+              : undefined
+          }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <div className={`${stateInfo.color} transition-colors`}>
+            {state === 'connecting' || state === 'processing' ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : state === 'complete' ? (
+              <CheckCircle className="w-6 h-6" />
+            ) : state === 'error' ? (
+              <AlertCircle className="w-6 h-6" />
+            ) : (
+              <Mic className="w-6 h-6" />
+            )}
+          </div>
+          {/* Stage indicator dot */}
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+            {currentStageIndex + 1}
+          </span>
+        </motion.button>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
