@@ -7,6 +7,7 @@ import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import voiceAssistantSingleton from "@/hooks/useVoiceAssistantSingleton";
 
 export const GlobalVoiceAssistant = () => {
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
@@ -19,8 +20,10 @@ export const GlobalVoiceAssistant = () => {
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const wasActiveBeforeLogin = useRef(false);
-  const orderCompletedRef = useRef(false); // Track if order was completed
-  const startingSessionRef = useRef(false); // Prevent double start calls
+  const orderCompletedRef = useRef(false);
+  
+  // CRITICAL: Track if we're the one starting the session
+  const isInitiatingSessionRef = useRef(false);
   
   const {
     state,
@@ -47,7 +50,7 @@ export const GlobalVoiceAssistant = () => {
     return room;
   };
 
-  // Track authentication status and handle post-login flow
+  // Track authentication status
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const loggedIn = !!session?.user;
@@ -61,11 +64,11 @@ export const GlobalVoiceAssistant = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const loggedIn = !!session?.user;
-      console.log('[GlobalVoiceAssistant] Auth event:', event, 'loggedIn:', loggedIn, 'wasNotLoggedIn:', wasNotLoggedIn, 'wasActiveBeforeLogin:', wasActiveBeforeLogin.current, 'orderCompleted:', orderCompletedRef.current);
+      console.log('[GlobalVoiceAssistant] Auth event:', event, 'loggedIn:', loggedIn, 'orderCompleted:', orderCompletedRef.current);
       
-      // CRITICAL: Don't restart voice session if order was already completed
+      // CRITICAL: Don't restart if order completed
       if (orderCompletedRef.current) {
-        console.log('[GlobalVoiceAssistant] Order already completed, ignoring auth change');
+        console.log('[GlobalVoiceAssistant] Order completed, ignoring auth change');
         setIsLoggedIn(loggedIn);
         if (session?.user) {
           fetchRoomNumber(session.user.id);
@@ -73,16 +76,15 @@ export const GlobalVoiceAssistant = () => {
         return;
       }
       
-      // User just logged in (only handle SIGNED_IN event, not token refreshes)
+      // User just logged in
       if (event === 'SIGNED_IN' && loggedIn && wasNotLoggedIn && session?.user) {
         const room = await fetchRoomNumber(session.user.id);
         
-        // If voice assistant was active before login, continue the conversation
-        if (wasActiveBeforeLogin.current && showVoiceAssistant) {
-          console.log('[GlobalVoiceAssistant] User logged in, restarting voice session to continue conversation');
+        // If voice was active, continue conversation
+        if (wasActiveBeforeLogin.current && showVoiceAssistant && !isInitiatingSessionRef.current) {
+          console.log('[GlobalVoiceAssistant] User logged in, will restart voice session');
           setPendingLoginContinue(true);
         } else if (cartItems.length > 0) {
-          // Open cart if there are items
           setTimeout(() => {
             setCartOpen(true);
           }, 500);
@@ -97,7 +99,6 @@ export const GlobalVoiceAssistant = () => {
         fetchRoomNumber(session.user.id);
       } else {
         setRoomNumber(null);
-        // Track if assistant was active when user logged out/not logged in
         if (isActive && !orderCompletedRef.current) {
           wasActiveBeforeLogin.current = true;
         }
@@ -107,39 +108,41 @@ export const GlobalVoiceAssistant = () => {
     return () => subscription.unsubscribe();
   }, [wasNotLoggedIn, cartItems.length, setCartOpen, showVoiceAssistant, isActive]);
 
-  // Handle pending login continuation - restart session after login
+  // Handle pending login continuation
   useEffect(() => {
-    // CRITICAL: Don't continue if order was completed
     if (orderCompletedRef.current) {
       setPendingLoginContinue(false);
       return;
     }
     
-    if (pendingLoginContinue && isLoggedIn && !isActive && !startingSessionRef.current) {
+    // CRITICAL: Check singleton state before starting
+    if (pendingLoginContinue && isLoggedIn && !isActive && !isInitiatingSessionRef.current && !voiceAssistantSingleton.isActive() && !voiceAssistantSingleton.isStarting()) {
       console.log('[GlobalVoiceAssistant] Continuing voice session after login');
       setPendingLoginContinue(false);
       wasActiveBeforeLogin.current = false;
-      startingSessionRef.current = true;
+      isInitiatingSessionRef.current = true;
       
-      // Small delay to ensure auth state is fully settled
       setTimeout(() => {
         setShowVoiceAssistant(true);
         startSession(language, true, roomNumber);
-        startingSessionRef.current = false;
+        
+        // Release after delay
+        setTimeout(() => {
+          isInitiatingSessionRef.current = false;
+        }, 2000);
       }, 500);
     }
   }, [pendingLoginContinue, isLoggedIn, isActive, language, roomNumber, startSession]);
 
-  // Auto-close when stage is 'ready' or state is 'complete' - MARK ORDER AS COMPLETED
+  // Auto-close when order ready
   useEffect(() => {
     if (currentStage === 'ready' || state === 'complete') {
-      // Mark order as completed to prevent restart
       orderCompletedRef.current = true;
       wasActiveBeforeLogin.current = false;
       setPendingLoginContinue(false);
-      startingSessionRef.current = false;
+      isInitiatingSessionRef.current = false;
       
-      console.log('[GlobalVoiceAssistant] Order completed, marking orderCompletedRef=true');
+      console.log('[GlobalVoiceAssistant] Order completed');
       
       autoCloseTimerRef.current = setTimeout(() => {
         handleEndVoice();
@@ -154,30 +157,40 @@ export const GlobalVoiceAssistant = () => {
   }, [currentStage, state]);
 
   const handleStartVoice = () => {
-    // CRITICAL: Prevent double starts
-    if (isActive || startingSessionRef.current) {
-      console.log('[GlobalVoiceAssistant] Already starting or active, ignoring');
+    // CRITICAL: Multiple checks to prevent duplicate starts
+    if (isActive) {
+      console.log('[GlobalVoiceAssistant] Already active, ignoring start');
       return;
     }
     
-    startingSessionRef.current = true;
-    // Reset order completed flag when starting a new session
+    if (isInitiatingSessionRef.current) {
+      console.log('[GlobalVoiceAssistant] Already initiating, ignoring start');
+      return;
+    }
+    
+    if (voiceAssistantSingleton.isActive() || voiceAssistantSingleton.isStarting()) {
+      console.log('[GlobalVoiceAssistant] Singleton busy, ignoring start');
+      return;
+    }
+    
+    isInitiatingSessionRef.current = true;
     orderCompletedRef.current = false;
     setShowVoiceAssistant(true);
-    wasActiveBeforeLogin.current = true; // Track that voice was started
-    // Pass current login status and room number to the session
+    wasActiveBeforeLogin.current = true;
+    
     startSession(language, isLoggedIn, roomNumber);
     
-    // Release after a short delay
+    // Release after delay
     setTimeout(() => {
-      startingSessionRef.current = false;
-    }, 1000);
+      isInitiatingSessionRef.current = false;
+    }, 2000);
   };
 
   const handleEndVoice = () => {
     if (autoCloseTimerRef.current) {
       clearTimeout(autoCloseTimerRef.current);
     }
+    isInitiatingSessionRef.current = false;
     endSession();
     setShowVoiceAssistant(false);
   };
@@ -194,16 +207,16 @@ export const GlobalVoiceAssistant = () => {
   const isAuthPage = location.pathname === '/auth';
   const isOrderConfirmationPage = location.pathname === '/order-confirmation';
   
-  // Force minimize when cart is open or when on auth page at login stage
+  // Force minimize when cart is open
   const shouldMinimize = isCartOpen || (isAuthPage && currentStage === 'login');
   
-  // Hide voice assistant completely on order confirmation page
+  // Hide on order confirmation
   const hideVoiceAssistant = isOrderConfirmationPage;
 
-  // Auto-end session when navigating to order confirmation
+  // Auto-end on order confirmation
   useEffect(() => {
     if (isOrderConfirmationPage && isActive) {
-      console.log('[GlobalVoiceAssistant] On order confirmation page, ending voice session');
+      console.log('[GlobalVoiceAssistant] On order confirmation, ending session');
       orderCompletedRef.current = true;
       handleEndVoice();
     }
@@ -211,7 +224,7 @@ export const GlobalVoiceAssistant = () => {
 
   return (
     <>
-      {/* Voice Assistant Overlay (once per session) - hide on order confirmation */}
+      {/* Voice Assistant Overlay */}
       {!hideVoiceAssistant && (
         <VoiceAssistantOverlay
           onStart={handleStartVoice}
@@ -219,15 +232,15 @@ export const GlobalVoiceAssistant = () => {
         />
       )}
       
-      {/* Voice Assistant Button - ONLY show when NOT active to prevent duplicate UI */}
-      {!hideVoiceAssistant && !isActive && (
+      {/* Voice Button - ONLY when NOT active */}
+      {!hideVoiceAssistant && !isActive && !showVoiceAssistant && (
         <VoiceAssistantButton
           isActive={isActive}
           onClick={handleToggleVoice}
         />
       )}
       
-      {/* Voice Assistant Active Panel - this is the ONLY UI when active */}
+      {/* Active Panel - ONLY ONE UI element when active */}
       {!hideVoiceAssistant && showVoiceAssistant && isActive && (
         <div className={isAuthPage ? "fixed top-4 left-4 right-4 z-[40] max-w-sm" : ""}>
           <VoiceAssistantActive
