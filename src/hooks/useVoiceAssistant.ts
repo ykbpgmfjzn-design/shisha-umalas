@@ -14,12 +14,14 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
+export type OrderStage = 'ordering' | 'cart' | 'login' | 'room' | 'ready';
+
 interface OrderState {
   flavor?: string;
   strength?: string;
   quantity?: number;
   itemId?: string;
-  stage: 'ordering' | 'cart' | 'login' | 'room' | 'ready';
+  stage: OrderStage;
   cartOpened?: boolean;
   autoCloseTimer?: NodeJS.Timeout;
 }
@@ -33,7 +35,7 @@ interface UseVoiceAssistantReturn {
   endSession: () => void;
   isActive: boolean;
   audioLevel: number;
-  currentStage: string;
+  currentStage: OrderStage;
 }
 
 export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
