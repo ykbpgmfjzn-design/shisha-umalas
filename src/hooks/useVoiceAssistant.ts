@@ -24,6 +24,7 @@ interface OrderState {
   stage: OrderStage;
   cartOpened?: boolean;
   autoCloseTimer?: NodeJS.Timeout;
+  roomNumber?: string;
 }
 
 interface UseVoiceAssistantReturn {
@@ -111,9 +112,57 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     analyserRef.current = null;
   }, []);
 
+  // Extract room number from text
+  const extractRoomNumber = useCallback((text: string): string | null => {
+    const lowerText = text.toLowerCase();
+    
+    // Match patterns like "room 101", "номер 205", "комната 303", or just numbers
+    const patterns = [
+      /room\s*(\d+)/i,
+      /номер\s*(\d+)/i,
+      /комната\s*(\d+)/i,
+      /(\d{2,4})/,  // 2-4 digit numbers
+    ];
+    
+    for (const pattern of patterns) {
+      const match = lowerText.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  }, []);
+
+  // Save room number to profile
+  const saveRoomNumber = useCallback(async (roomNumber: string) => {
+    if (!user) return false;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ room_number: roomNumber })
+      .eq('id', user.id);
+    
+    if (error) {
+      console.error('Failed to save room number:', error);
+      return false;
+    }
+    
+    console.log('[VoiceAssistant] Room number saved:', roomNumber);
+    toast.success(`Room ${roomNumber} saved to your profile!`);
+    return true;
+  }, [user]);
+
   // Process user transcript and add to cart if order is complete
   const processTranscript = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
+    
+    // Try to extract room number
+    const roomNumber = extractRoomNumber(text);
+    if (roomNumber) {
+      setOrderState(prev => ({ ...prev, roomNumber }));
+      // Save to profile
+      saveRoomNumber(roomNumber);
+    }
     
     // Try to find flavor
     const menuItem = findMenuItemByKeyword(lowerText);
@@ -146,7 +195,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setOrderState(prev => ({ ...prev, quantity: qty }));
       }
     }
-  }, []);
+  }, [extractRoomNumber, saveRoomNumber]);
 
   const cleanup = useCallback(() => {
     stopAudioAnalysis();
