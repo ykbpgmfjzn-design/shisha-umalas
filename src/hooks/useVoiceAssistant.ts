@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { menuItems, findMenuItemByKeyword, getStrengthFromKeyword } from '@/data/menuItems';
+import { toast } from 'sonner';
 
 export type VoiceAssistantState = 
   | 'idle' 
@@ -12,6 +14,13 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
+interface OrderState {
+  flavor?: string;
+  strength?: string;
+  quantity?: number;
+  itemId?: string;
+}
+
 interface UseVoiceAssistantReturn {
   state: VoiceAssistantState;
   transcript: string;
@@ -20,6 +29,7 @@ interface UseVoiceAssistantReturn {
   startSession: (language?: string) => Promise<void>;
   endSession: () => void;
   isActive: boolean;
+  audioLevel: number;
 }
 
 export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
@@ -27,16 +37,99 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [transcript, setTranscript] = useState('');
   const [assistantMessage, setAssistantMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0.5);
+  const [orderState, setOrderState] = useState<OrderState>({});
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   
   const { addItem } = useCart();
   const navigate = useNavigate();
 
+  // Audio level analyzer for visualization
+  const startAudioAnalysis = useCallback((stream: MediaStream) => {
+    try {
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+      
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const updateLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setAudioLevel(Math.min(1, average / 128));
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+      
+      updateLevel();
+    } catch (e) {
+      console.error('Audio analysis error:', e);
+    }
+  }, []);
+
+  const stopAudioAnalysis = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+  }, []);
+
+  // Process user transcript and add to cart if order is complete
+  const processTranscript = useCallback((text: string) => {
+    const lowerText = text.toLowerCase();
+    
+    // Try to find flavor
+    const menuItem = findMenuItemByKeyword(lowerText);
+    if (menuItem) {
+      setOrderState(prev => ({ 
+        ...prev, 
+        flavor: menuItem.name,
+        itemId: menuItem.id,
+        strength: menuItem.strength,
+      }));
+    }
+    
+    // Try to find strength
+    const strength = getStrengthFromKeyword(lowerText);
+    if (strength) {
+      setOrderState(prev => ({ ...prev, strength }));
+    }
+    
+    // Try to find quantity
+    const quantityMatch = lowerText.match(/(\d+)\s*(hookah|кальян|shisha)/i) ||
+                         lowerText.match(/(\d+)\s*штук/i) ||
+                         lowerText.match(/(one|two|three|four|five|один|два|три|четыре|пять)/i);
+    if (quantityMatch) {
+      const numMap: Record<string, number> = {
+        'one': 1, 'два': 2, 'один': 1, 'two': 2, 'три': 3, 'three': 3, 
+        'four': 4, 'четыре': 4, 'five': 5, 'пять': 5
+      };
+      const qty = numMap[quantityMatch[1].toLowerCase()] || parseInt(quantityMatch[1]);
+      if (qty > 0) {
+        setOrderState(prev => ({ ...prev, quantity: qty }));
+      }
+    }
+  }, []);
+
   const cleanup = useCallback(() => {
+    stopAudioAnalysis();
     if (dataChannelRef.current) {
       dataChannelRef.current.close();
       dataChannelRef.current = null;
@@ -53,14 +146,40 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       audioElementRef.current.srcObject = null;
       audioElementRef.current = null;
     }
-  }, []);
+  }, [stopAudioAnalysis]);
+
+  // Add items to cart
+  const addToCart = useCallback((itemId: string, quantity: number) => {
+    const item = menuItems.find(m => m.id === itemId);
+    if (item) {
+      for (let i = 0; i < quantity; i++) {
+        addItem({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          priceDisplay: item.priceDisplay,
+          strength: item.strength,
+          isSignature: item.isSignature,
+          itemType: item.itemType,
+        });
+      }
+      toast.success(`Added ${quantity}x ${item.name} to cart!`);
+      return true;
+    }
+    return false;
+  }, [addItem]);
 
   const endSession = useCallback(() => {
+    // If we have a complete order, add to cart
+    if (orderState.itemId && orderState.quantity) {
+      addToCart(orderState.itemId, orderState.quantity);
+    }
     cleanup();
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
-  }, [cleanup]);
+    setOrderState({});
+  }, [cleanup, orderState, addToCart]);
 
   const startSession = useCallback(async (language: string = 'en') => {
     try {
@@ -95,10 +214,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         audioEl.srcObject = event.streams[0];
       };
 
-      // Add local audio track
+      // Add local audio track and start analysis
       stream.getTracks().forEach(track => {
         pc.addTrack(track, stream);
       });
+      startAudioAnalysis(stream);
 
       // Create data channel for events
       const dc = pc.createDataChannel('oai-events');
@@ -180,8 +300,15 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         break;
         
       case 'response.audio_transcript.done':
-        // Check if order is complete
-        if (event.transcript?.toLowerCase().includes('order complete')) {
+        // Check if order is complete - add to cart automatically
+        if (event.transcript?.toLowerCase().includes('order complete') || 
+            event.transcript?.toLowerCase().includes('заказ готов') ||
+            event.transcript?.toLowerCase().includes('pesanan selesai')) {
+          // Add to cart if we have the order info
+          if (orderState.itemId && orderState.quantity) {
+            addToCart(orderState.itemId, orderState.quantity);
+            setOrderState({});
+          }
           setState('complete');
         }
         break;
@@ -192,7 +319,10 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         break;
         
       case 'conversation.item.input_audio_transcription.completed':
-        setTranscript(event.transcript || '');
+        const transcriptText = event.transcript || '';
+        setTranscript(transcriptText);
+        // Process the transcript to extract order info
+        processTranscript(transcriptText);
         setState('processing');
         break;
         
@@ -209,7 +339,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setState('error');
         break;
     }
-  }, [state]);
+  }, [state, orderState, addToCart, processTranscript]);
 
   useEffect(() => {
     return () => {
@@ -225,5 +355,6 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     startSession,
     endSession,
     isActive: state !== 'idle' && state !== 'error',
+    audioLevel,
   };
 };
