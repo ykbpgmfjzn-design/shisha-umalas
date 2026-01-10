@@ -15,7 +15,7 @@ export const GlobalVoiceAssistant = () => {
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [pendingLoginContinue, setPendingLoginContinue] = useState(false);
   const { language } = useLanguage();
-  const { setIsOpen: setCartOpen, items: cartItems } = useCart();
+  const { setIsOpen: setCartOpen, items: cartItems, isOpen: isCartOpen } = useCart();
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const wasActiveBeforeLogin = useRef(false);
@@ -150,6 +150,9 @@ export const GlobalVoiceAssistant = () => {
 
   // Check if we're on auth page - position differently
   const isAuthPage = location.pathname === '/auth';
+  
+  // Force minimize when cart is open or when on auth page at login stage
+  const shouldMinimize = isCartOpen || (isAuthPage && currentStage === 'login');
 
   return (
     <>
@@ -176,6 +179,7 @@ export const GlobalVoiceAssistant = () => {
             onEnd={handleEndVoice}
             audioLevel={audioLevel}
             currentStage={currentStage}
+            forceMinimized={shouldMinimize}
           />
         </div>
       )}

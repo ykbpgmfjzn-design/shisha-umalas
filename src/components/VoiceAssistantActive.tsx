@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, X, Loader2, CheckCircle, AlertCircle, ChevronUp, ChevronDown, ShoppingCart, UserPlus, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ interface VoiceAssistantActiveProps {
   onEnd: () => void;
   audioLevel?: number;
   currentStage?: OrderStage;
+  forceMinimized?: boolean; // External control to force minimized state
 }
 
 const stages: { key: OrderStage; labelKey: string; icon: React.ReactNode }[] = [
@@ -33,9 +34,17 @@ export const VoiceAssistantActive = ({
   onEnd,
   audioLevel = 0.5,
   currentStage = 'ordering',
+  forceMinimized = false,
 }: VoiceAssistantActiveProps) => {
   const { t, language } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // Auto-minimize when forceMinimized changes
+  useEffect(() => {
+    if (forceMinimized) {
+      setIsExpanded(false);
+    }
+  }, [forceMinimized]);
 
   const getStateInfo = () => {
     switch (state) {
