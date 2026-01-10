@@ -176,9 +176,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
       toast.success(`Комната ${roomNumber} сохранена в профиле!`);
       
-      // Continue conversation - ask about order
+      // Continue conversation - ask about order strength ONLY
       setTimeout(() => {
-        sendFollowUpMessage(`Room ${roomNumber} confirmed and saved. Now ask what strength hookah they want: Ultra Light, Light, Medium, or Bold Strong? Be brief, max 12 words.`);
+        sendFollowUpMessage(`Room ${roomNumber} saved. Say ONLY: "Отлично, комната ${roomNumber}! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?" Then STOP and wait for answer.`);
       }, 500);
       
       return true;
@@ -200,15 +200,18 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   // Process user transcript and add to cart if order is complete
   const processTranscript = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
-    console.log('[VoiceAssistant] Processing transcript:', text);
+    console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', orderStateRef.current.stage);
     
-    // Try to extract room number
-    const roomNumber = extractRoomNumber(text);
-    if (roomNumber) {
-      console.log('[VoiceAssistant] Detected room number:', roomNumber);
-      updateOrderState(prev => ({ ...prev, roomNumber }));
-      // Save to profile
-      saveRoomNumber(roomNumber);
+    // Try to extract room number - only when we're at 'room' stage
+    if (orderStateRef.current.stage === 'room') {
+      const roomNumber = extractRoomNumber(text);
+      if (roomNumber) {
+        console.log('[VoiceAssistant] Detected room number at room stage:', roomNumber);
+        updateOrderState(prev => ({ ...prev, roomNumber, stage: 'ordering' }));
+        // Save to profile
+        saveRoomNumber(roomNumber);
+        return; // Don't process other patterns when we got room number
+      }
     }
     
     // Try to find flavor (search in full text)
