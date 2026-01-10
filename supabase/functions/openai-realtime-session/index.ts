@@ -70,19 +70,30 @@ function getSystemPrompt(language: string, isLoggedIn: boolean, roomNumber: stri
   const menuInfo = `
 MENU (prices in IDR thousands):
 STRENGTH LEVELS (from lightest to strongest):
-1. ULTRA LIGHT (280k) - very smooth, minimal buzz
-2. LIGHT (295k) - gentle, good for beginners  
-3. MEDIUM (325k) - balanced, most popular
-4. BOLD STRONG (450k) - intense, for experienced smokers
+1. ULTRA LIGHT - very smooth, minimal buzz
+2. LIGHT - gentle, good for beginners  
+3. MEDIUM - balanced, most popular
+4. BOLD STRONG - intense, for experienced smokers
 
-FLAVORS BY STRENGTH:
-ULTRA LIGHT: Whiteline Vanilla, Whiteline Oolong Tea, Herbaline Watermelon
-LIGHT: Whiteline Mint, Al Fakher Two Apple
-MEDIUM: Blackline African Queen, Blackline Spicey Lime, Blackline Booster
-BOLD STRONG: Tangiers Cooling, Tangiers Schnozzberry, Darkside Polar Cream
+FLAVORS BY STRENGTH (SINGLE flavors and SIGNATURE MIXES):
 
-SIGNATURE MIXES (+40k premium): Vanilla Breeze, Watermelon Wave, Minty Grapes, Minty Gum, Tipsy Lime, Evening Moscow, Berry Kiss, Wild Heart
+ULTRA LIGHT:
+- Single flavors (280k): Whiteline Vanilla, Whiteline Oolong Tea, Herbaline Watermelon
+- Signature mixes (320k): Vanilla Breeze, Watermelon Wave
+
+LIGHT:
+- Single flavors (295k): Whiteline Mint, Al Fakher Two Apple
+- Signature mixes (335k): Minty Grapes, Minty Gum
+
+MEDIUM:
+- Single flavors (325k): Blackline African Queen, Blackline Spicey Lime, Blackline Booster
+- Signature mixes (405k): Tipsy Lime, Evening Moscow
+
+BOLD STRONG:
+- Single flavors (450k): Tangiers Cooling, Tangiers Schnozzberry, Darkside Polar Cream
+- Signature mixes (485k): Berry Kiss, Wild Heart
 `;
+
 
   // Determine user status
   let userStatus = '';
@@ -133,7 +144,9 @@ Say ONLY: "What strength? Ultra Light, Light, Medium, or Bold Strong?"
 STOP. Wait for answer.
 
 STEP 2 - FLAVOR:
-Say ONLY: "For [their strength], we have [flavors]. Which one?"
+When user picks a strength, LIST BOTH categories clearly:
+Say: "For [strength], single flavors: [list]. Signature mixes: [list]. Which would you like?"
+Example for Medium: "Для среднего: одиночные - African Queen, Spicey Lime, Booster. Миксы - Tipsy Lime, Evening Moscow. Что выберете?"
 STOP. Wait for answer.
 
 STEP 3 - QUANTITY:
@@ -172,7 +185,8 @@ ${!isLoggedIn ? `
 - "С возвращением! Комната ${roomNumber}. Какую крепость?" → СТОП
 `}
 - "Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?" → СТОП
-- "Для Среднего есть African Queen, Spicey Lime, Booster. Какой?" → СТОП
+- "Для Среднего: одиночные вкусы - African Queen, Spicey Lime, Booster. Миксы - Tipsy Lime, Evening Moscow. Какой?" → СТОП
+- "Для Лёгкого: одиночные - Whiteline Mint, Al Fakher Two Apple. Миксы - Minty Grapes, Minty Gum. Какой?" → СТОП
 - "Сколько кальянов?" → СТОП
 - "[кол-во] [вкус], [цена]к. Добавлено!" → ПОЛНЫЙ СТОП! Жди пока система откроет корзину!
 - "Проверьте заказ. Всё верно? Скажите да." → ПОЛНЫЙ СТОП! Жди пока пользователь скажет ДА!
