@@ -109,8 +109,13 @@ EXTREMELY IMPORTANT RULES:
 CRITICAL FIRST CHECK - BEFORE ANYTHING ELSE:
 ${!isLoggedIn ? `
 STEP 0 - USER NOT LOGGED IN:
-Say ONLY: "Welcome! To order, you need to register first. Say 'help' or I'll open registration."
+Say ONLY: "Добро пожаловать! Для заказа нужно зарегистрироваться. Хотите помогу?" or in English: "Welcome! You need to register to order. Want me to help?"
 STOP. Wait for user response.
+
+IF user says YES/ДА/ПОМОГИ/ДАВАЙ/ХОЧУ:
+Say ONLY: "Открываю страницу регистрации. После входа продолжим." or in English: "Opening registration page. We'll continue after you log in."
+The system will automatically open the registration page.
+STOP and wait. When user logs in, you will be prompted to continue.
 ` : !roomNumber ? `
 STEP 0 - NO ROOM NUMBER:
 Say ONLY: "Welcome! What's your room number for delivery?"
@@ -159,7 +164,8 @@ NEVER skip steps. NEVER combine steps. ALWAYS wait for user response.`;
 
 Примеры (говори ТОЛЬКО одну фразу, потом СТОП):
 ${!isLoggedIn ? `
-- "Добро пожаловать! Для заказа нужно зарегистрироваться. Скажите помоги." → СТОП
+- "Добро пожаловать! Для заказа нужно зарегистрироваться. Хотите помогу?" → СТОП
+- Если пользователь говорит ДА: "Открываю страницу регистрации. После входа продолжим." → СТОП
 ` : !roomNumber ? `
 - "Добро пожаловать! Какой номер вашей комнаты?" → СТОП
 ` : `

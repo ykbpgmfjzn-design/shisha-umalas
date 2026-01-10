@@ -61,7 +61,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const { addItem, setIsOpen: setCartOpen, submitOrderProgrammatically } = useCart();
   const navigate = useNavigate();
 
-  // Listen for auth changes
+  // Track if session was started before auth change (for continuing after login)
+  const wasActiveBeforeAuthRef = useRef(false);
+  const pendingAuthContinueRef = useRef(false);
+
+  // Listen for auth changes - basic setup (continuation logic moved after function definitions)
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
@@ -205,6 +209,27 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       return newState;
     });
   }, []);
+
+  // Effect to continue conversation after user logs in
+  useEffect(() => {
+    // Check if user just logged in and we have a pending continue request
+    if (user && pendingAuthContinueRef.current && dataChannelRef.current?.readyState === 'open') {
+      console.log('[VoiceAssistant] User logged in, continuing conversation');
+      pendingAuthContinueRef.current = false;
+      
+      // Navigate back to home and show toast
+      toast.success('Вход выполнен! Продолжаем заказ...');
+      navigate('/');
+      
+      // Update stage to room (need to get room number)
+      updateOrderState(prev => ({ ...prev, stage: 'room' }));
+      
+      // Send follow-up to continue the conversation
+      setTimeout(() => {
+        sendFollowUpMessage('User just logged in successfully. Say ONLY: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" or in English: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait.');
+      }, 1000);
+    }
+  }, [user, navigate, updateOrderState, sendFollowUpMessage]);
 
   // Process user transcript and add to cart if order is complete
   const processTranscript = useCallback((text: string) => {
@@ -601,6 +626,34 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setTranscript(transcriptText);
         // Process the transcript to extract order info
         processTranscript(transcriptText);
+        
+        // Detect user wants to register (when at login stage and not logged in)
+        if (orderStateRef.current.stage === 'login' && 
+            (userTextLower.includes('yes') || 
+             userTextLower.includes('да') ||
+             userTextLower.includes('готов') ||
+             userTextLower.includes('хочу') ||
+             userTextLower.includes('register') ||
+             userTextLower.includes('регистр') ||
+             userTextLower.includes('sign up') ||
+             userTextLower.includes('help') ||
+             userTextLower.includes('помог') ||
+             userTextLower.includes('okay') ||
+             userTextLower.includes('ок') ||
+             userTextLower.includes('давай'))) {
+          console.log('[VoiceAssistant] User wants to register, redirecting to auth page');
+          
+          // Set flag to continue conversation after login
+          pendingAuthContinueRef.current = true;
+          
+          // Tell user we're opening registration
+          sendFollowUpMessage('Opening registration page now. Say ONLY: "Открываю страницу регистрации. После входа продолжим." or in English: "Opening registration. We will continue after you log in." Then STOP.');
+          
+          // Navigate to auth page
+          setTimeout(() => {
+            navigate('/auth');
+          }, 500);
+        }
         
         // Detect user confirmation to submit order (only when in cart stage)
         if (orderStateRef.current.stage === 'cart' && 
