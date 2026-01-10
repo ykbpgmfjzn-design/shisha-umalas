@@ -389,6 +389,25 @@ const translations: Record<Language, Record<string, string>> = {
     "whatsapp.placeholder": "Write a message...",
     "whatsapp.defaultMessage": "I want Shisha, need advice",
     
+    // Voice Assistant
+    "voice.welcomeTitle": "Voice Order Assistant",
+    "voice.welcomeSubtitle": "Order your hookah in 30 seconds using just your voice",
+    "voice.feature1": "Tell us what flavor you want",
+    "voice.feature2": "We'll handle the rest",
+    "voice.startButton": "Start Voice Ordering",
+    "voice.skipText": "Or tap anywhere to browse the menu",
+    "voice.connecting": "Connecting...",
+    "voice.listening": "Listening...",
+    "voice.speaking": "Assistant speaking...",
+    "voice.processing": "Processing...",
+    "voice.complete": "Order complete!",
+    "voice.error": "Connection error",
+    "voice.youSaid": "You said:",
+    "voice.assistant": "Assistant:",
+    "voice.orderAdded": "Your order has been added!",
+    "voice.continueShopping": "Continue Shopping",
+    "voice.tryAgain": "Try Again",
+    
     // Profile
     "profile.hotelGuest": "Hotel Guest",
     "profile.guest": "Guest",
@@ -781,6 +800,25 @@ const translations: Record<Language, Record<string, string>> = {
     "whatsapp.placeholder": "Напишите сообщение...",
     "whatsapp.defaultMessage": "Хочу Shisha, нужен совет",
     
+    // Voice Assistant
+    "voice.welcomeTitle": "Голосовой помощник",
+    "voice.welcomeSubtitle": "Закажите кальян за 30 секунд голосом",
+    "voice.feature1": "Скажите, какой вкус хотите",
+    "voice.feature2": "Мы сделаем остальное",
+    "voice.startButton": "Начать голосовой заказ",
+    "voice.skipText": "Или нажмите, чтобы посмотреть меню",
+    "voice.connecting": "Подключение...",
+    "voice.listening": "Слушаю...",
+    "voice.speaking": "Ассистент говорит...",
+    "voice.processing": "Обрабатываю...",
+    "voice.complete": "Заказ оформлен!",
+    "voice.error": "Ошибка подключения",
+    "voice.youSaid": "Вы сказали:",
+    "voice.assistant": "Ассистент:",
+    "voice.orderAdded": "Ваш заказ добавлен!",
+    "voice.continueShopping": "Продолжить",
+    "voice.tryAgain": "Попробовать снова",
+    
     // Profile
     "profile.hotelGuest": "Гость отеля",
     "profile.guest": "Гость",
@@ -1040,6 +1078,25 @@ const translations: Record<Language, Record<string, string>> = {
     "whatsapp.greeting": "👋 Hai! Bagaimana kami bisa membantu Anda?",
     "whatsapp.placeholder": "Tulis pesan...",
     "whatsapp.defaultMessage": "Saya ingin Shisha, butuh saran",
+    
+    // Voice Assistant
+    "voice.welcomeTitle": "Asisten Suara",
+    "voice.welcomeSubtitle": "Pesan shisha dalam 30 detik dengan suara Anda",
+    "voice.feature1": "Katakan rasa yang Anda inginkan",
+    "voice.feature2": "Kami akan menangani sisanya",
+    "voice.startButton": "Mulai Pemesanan Suara",
+    "voice.skipText": "Atau ketuk di mana saja untuk melihat menu",
+    "voice.connecting": "Menghubungkan...",
+    "voice.listening": "Mendengarkan...",
+    "voice.speaking": "Asisten berbicara...",
+    "voice.processing": "Memproses...",
+    "voice.complete": "Pesanan selesai!",
+    "voice.error": "Kesalahan koneksi",
+    "voice.youSaid": "Anda berkata:",
+    "voice.assistant": "Asisten:",
+    "voice.orderAdded": "Pesanan Anda telah ditambahkan!",
+    "voice.continueShopping": "Lanjutkan Belanja",
+    "voice.tryAgain": "Coba Lagi",
     
     // Profile
     "profile.hotelGuest": "Tamu Hotel",
