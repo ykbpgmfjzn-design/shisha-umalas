@@ -271,12 +271,5 @@ const AuthContent = () => {
   );
 };
 
-const Auth = () => {
-  return (
-    <LanguageProvider>
-      <AuthContent />
-    </LanguageProvider>
-  );
-};
-
-export default Auth;
+// Auth already wrapped by LanguageProvider in App.tsx
+export default AuthContent;
