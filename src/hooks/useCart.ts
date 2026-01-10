@@ -71,9 +71,12 @@ export const useCartState = (): CartContextType => {
     const handleFocus = () => {
       const currentItems = loadCartFromStorage();
       console.log('[Cart] Window focus - checking localStorage:', currentItems);
-      if (JSON.stringify(currentItems) !== JSON.stringify(items)) {
-        setItems(currentItems);
-      }
+      setItems(prev => {
+        if (JSON.stringify(currentItems) !== JSON.stringify(prev)) {
+          return currentItems;
+        }
+        return prev;
+      });
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -83,7 +86,7 @@ export const useCartState = (): CartContextType => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [items]);
+  }, []); // Empty dependency - only set up listeners once
 
   const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
