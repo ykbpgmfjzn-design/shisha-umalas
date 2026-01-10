@@ -25,6 +25,8 @@ interface CartContextType {
   hookahCount: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  submitOrderProgrammatically: () => Promise<boolean>;
+  setSubmitHandler: (handler: () => Promise<boolean>) => void;
 }
 
 // Load cart from localStorage on init
@@ -46,6 +48,20 @@ const loadCartFromStorage = (): CartItem[] => {
 export const useCartState = (): CartContextType => {
   const [items, setItems] = useState<CartItem[]>(loadCartFromStorage);
   const [isOpen, setIsOpen] = useState(false);
+  const [submitHandler, setSubmitHandlerState] = useState<(() => Promise<boolean>) | null>(null);
+
+  const setSubmitHandler = useCallback((handler: () => Promise<boolean>) => {
+    setSubmitHandlerState(() => handler);
+  }, []);
+
+  const submitOrderProgrammatically = useCallback(async (): Promise<boolean> => {
+    if (submitHandler) {
+      console.log('[Cart] Submitting order programmatically');
+      return await submitHandler();
+    }
+    console.log('[Cart] No submit handler registered');
+    return false;
+  }, [submitHandler]);
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
@@ -154,5 +170,7 @@ export const useCartState = (): CartContextType => {
     hookahCount,
     isOpen,
     setIsOpen,
+    submitOrderProgrammatically,
+    setSubmitHandler,
   };
 };

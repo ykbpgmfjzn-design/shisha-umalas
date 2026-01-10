@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,15 +66,15 @@ const Cart = () => {
     setRoomNumber(data?.room_number || null);
   };
 
-  const handleSubmitOrder = async () => {
+  const handleSubmitOrder = useCallback(async (): Promise<boolean> => {
     if (!user) {
       toast.error(t("cart.loginRequired"));
-      return;
+      return false;
     }
 
     if (items.length === 0) {
       toast.error(t("cart.emptyCart"));
-      return;
+      return false;
     }
 
     // Check if room number is set
@@ -82,7 +82,7 @@ const Cart = () => {
       toast.error(t("cart.roomRequired"));
       navigate("/profile?focus=room&returnToCart=true");
       setIsOpen(false);
-      return;
+      return false;
     }
 
     setIsSubmitting(true);
@@ -140,13 +140,20 @@ const Cart = () => {
       clearCart();
       setIsOpen(false);
       navigate(`/order-confirmation?${params.toString()}`);
+      return true;
     } catch (error) {
       console.error("Order error:", error);
       toast.error(t("cart.orderError"));
+      return false;
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [user, items, roomNumber, hookahCount, totalPrice, t, navigate, setIsOpen, clearCart]);
+
+  // Register submit handler for programmatic submission
+  useEffect(() => {
+    setSubmitHandler(handleSubmitOrder);
+  }, [handleSubmitOrder, setSubmitHandler]);
 
   return (
     <>
