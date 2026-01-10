@@ -596,11 +596,14 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           }
           
           // Open cart drawer after a small delay to ensure item is added
-          // DO NOT send follow-up message here - let AI naturally ask for confirmation
-          // based on its prompt instructions
+          // Then send follow-up to ask for confirmation
           setTimeout(() => {
             setCartOpen(true);
-            console.log('[VoiceAssistant] Cart opened, waiting for AI to ask for confirmation');
+            console.log('[VoiceAssistant] Cart opened, sending confirmation request');
+            // Wait a bit for cart to fully open, then ask for confirmation
+            setTimeout(() => {
+              sendFollowUpMessage('The order has been added to cart. Now ask the user to confirm: "Check your order. Is everything correct? Say yes to proceed to payment." Be brief, max 15 words. Use the same language as the conversation.');
+            }, 800);
           }, 300);
           updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
