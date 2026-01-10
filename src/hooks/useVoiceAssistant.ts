@@ -567,33 +567,58 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         // Detect user wants to register - only if registration was offered by AI
         if (orderStateRef.current.stage === 'login' && 
             orderStateRef.current.registrationOffered &&
-            !redirectingToAuthRef.current &&
-            (userTextLower.includes('yes') || 
-             userTextLower.includes('да') ||
-             userTextLower.includes('готов') ||
-             userTextLower.includes('хочу') ||
-             userTextLower.includes('register') ||
-             userTextLower.includes('регистр') ||
-             userTextLower.includes('sign up') ||
-             userTextLower.includes('help') ||
-             userTextLower.includes('помог') ||
-             userTextLower.includes('okay') ||
-             userTextLower.includes('ок') ||
-             userTextLower.includes('давай') ||
-             userTextLower.includes('конечно') ||
-             userTextLower.includes('sure') ||
-             userTextLower.includes('let\'s go') ||
-             userTextLower.includes('поехали'))) {
-          console.log('[VoiceAssistant] User confirmed registration, redirecting to auth page');
+            !redirectingToAuthRef.current) {
           
-          redirectingToAuthRef.current = true;
-          pendingAuthContinueRef.current = true;
-          
-          // Navigate immediately without waiting for AI
-          navigate('/auth');
-          
-          // Also send follow-up for voice feedback
-          sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
+          // User DECLINES registration - wants to order as guest
+          if (userTextLower.includes('no') || 
+              userTextLower.includes('нет') ||
+              userTextLower.includes('не хочу') ||
+              userTextLower.includes('не надо') ||
+              userTextLower.includes('без регистрации') ||
+              userTextLower.includes('without') ||
+              userTextLower.includes('skip') ||
+              userTextLower.includes('пропустить') ||
+              userTextLower.includes('потом') ||
+              userTextLower.includes('later') ||
+              userTextLower.includes('just browse') ||
+              userTextLower.includes('просто посмотреть') ||
+              userTextLower.includes('меню')) {
+            console.log('[VoiceAssistant] User declined registration, switching to guest mode');
+            
+            // Switch to ordering mode as guest
+            updateOrderState(prev => ({ ...prev, stage: 'ordering', registrationOffered: false }));
+            
+            // Tell user they can order as guest
+            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Можете заказать по меню и оплатить на ресепшене отеля. Какую крепость кальяна хотите? Ультра лёгкий, Лёгкий, Средний или Крепкий?" or in English: "No problem! You can order from the menu and pay at the hotel reception. What hookah strength? Ultra Light, Light, Medium, or Bold Strong?" Then STOP and wait.');
+          }
+          // User ACCEPTS registration
+          else if (userTextLower.includes('yes') || 
+              userTextLower.includes('да') ||
+              userTextLower.includes('готов') ||
+              userTextLower.includes('хочу') ||
+              userTextLower.includes('register') ||
+              userTextLower.includes('регистр') ||
+              userTextLower.includes('sign up') ||
+              userTextLower.includes('help') ||
+              userTextLower.includes('помог') ||
+              userTextLower.includes('okay') ||
+              userTextLower.includes('ок') ||
+              userTextLower.includes('давай') ||
+              userTextLower.includes('конечно') ||
+              userTextLower.includes('sure') ||
+              userTextLower.includes('let\'s go') ||
+              userTextLower.includes('поехали')) {
+            console.log('[VoiceAssistant] User confirmed registration, redirecting to auth page');
+            
+            redirectingToAuthRef.current = true;
+            pendingAuthContinueRef.current = true;
+            
+            // Navigate immediately without waiting for AI
+            navigate('/auth');
+            
+            // Also send follow-up for voice feedback
+            sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
+          }
         }
         
         // Detect user confirmation to submit order
