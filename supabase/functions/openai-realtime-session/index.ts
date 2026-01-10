@@ -128,9 +128,9 @@ Say ONLY: "Открываю страницу регистрации. После 
 The system will automatically open the registration page.
 STOP and wait. When user logs in, you will be prompted to continue.
 
-IF user says NO/НЕТ/БЕЗ РЕГИСТРАЦИИ/ПРОПУСТИТЬ (declines registration):
-Say ONLY: "Без проблем! Можете заказать по меню и оплатить на ресепшене отеля. Какую крепость кальяна хотите? Ультра лёгкий, Лёгкий, Средний или Крепкий?" or in English: "No problem! You can order from the menu and pay at the hotel reception. What hookah strength? Ultra Light, Light, Medium, or Bold Strong?"
-STOP and proceed to ordering without room delivery.
+IF user says NO/НЕТ/БЕЗ РЕГИСТРАЦИИ/ПРОПУСТИТЬ/САМ (declines registration):
+Say ONLY: "Без проблем! Выбирайте кальян в меню, а оплатить можно на ресепшене отеля. Приятного выбора!" or in English: "No problem! Browse the menu and you can pay at the hotel reception. Enjoy browsing!"
+STOP. The session will end after this.
 ` : !roomNumber ? `
 STEP 0 - NO ROOM NUMBER:
 Say ONLY: "Welcome! What's your room number for delivery?"
@@ -183,7 +183,7 @@ NEVER skip steps. NEVER combine steps. ALWAYS wait for user response.`;
 ${!isLoggedIn ? `
 - "Добро пожаловать! Для заказа с доставкой в номер нужно зарегистрироваться. Хотите помогу? Или можете заказать без регистрации и оплатить на ресепшене." → СТОП
 - Если пользователь говорит ДА: "Открываю страницу регистрации. После входа продолжим." → СТОП
-- Если пользователь говорит НЕТ/БЕЗ РЕГИСТРАЦИИ: "Без проблем! Можете заказать по меню и оплатить на ресепшене отеля. Какую крепость кальяна?" → СТОП
+- Если пользователь говорит НЕТ/БЕЗ РЕГИСТРАЦИИ/САМ: "Без проблем! Выбирайте кальян в меню, а оплатить можно на ресепшене отеля. Приятного выбора!" → СТОП, сессия завершится
 ` : !roomNumber ? `
 - "Добро пожаловать! Какой номер вашей комнаты?" → СТОП
 ` : `
