@@ -6,6 +6,7 @@ import { VoiceAssistantButton } from "@/components/VoiceAssistantButton";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 export const GlobalVoiceAssistant = () => {
@@ -14,6 +15,7 @@ export const GlobalVoiceAssistant = () => {
   const [wasNotLoggedIn, setWasNotLoggedIn] = useState(false);
   const { language } = useLanguage();
   const { setIsOpen: setCartOpen, items: cartItems } = useCart();
+  const { profile } = useProfile();
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -73,8 +75,8 @@ export const GlobalVoiceAssistant = () => {
 
   const handleStartVoice = () => {
     setShowVoiceAssistant(true);
-    // Pass current login status to the session
-    startSession(language, isLoggedIn);
+    // Pass current login status and room number to the session
+    startSession(language, isLoggedIn, profile?.room_number || null);
   };
 
   const handleEndVoice = () => {

@@ -16,7 +16,7 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    const { language = 'en', isLoggedIn = false } = await req.json().catch(() => ({}));
+    const { language = 'en', isLoggedIn = false, roomNumber = null } = await req.json().catch(() => ({}));
 
     // Create ephemeral token for WebRTC connection
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -28,7 +28,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
         voice: 'alloy',
-        instructions: getSystemPrompt(language, isLoggedIn),
+        instructions: getSystemPrompt(language, isLoggedIn, roomNumber),
         input_audio_transcription: {
           model: 'whisper-1',
         },
@@ -66,7 +66,7 @@ serve(async (req) => {
   }
 });
 
-function getSystemPrompt(language: string, isLoggedIn: boolean): string {
+function getSystemPrompt(language: string, isLoggedIn: boolean, roomNumber: string | null): string {
   const menuInfo = `
 MENU (prices in IDR thousands):
 STRENGTH LEVELS (from lightest to strongest):
@@ -84,61 +84,65 @@ BOLD STRONG: Tangiers Cooling, Tangiers Schnozzberry, Darkside Polar Cream
 SIGNATURE MIXES (+40k premium): Vanilla Breeze, Watermelon Wave, Minty Grapes, Minty Gum, Tipsy Lime, Evening Moscow, Berry Kiss, Wild Heart
 `;
 
-  const authStatus = isLoggedIn 
-    ? "USER IS LOGGED IN"
-    : "USER IS NOT LOGGED IN";
+  // Determine user status
+  let userStatus = '';
+  if (!isLoggedIn) {
+    userStatus = 'USER IS NOT LOGGED IN - needs to register first';
+  } else if (!roomNumber) {
+    userStatus = 'USER IS LOGGED IN but NO ROOM NUMBER set - needs to provide room number';
+  } else {
+    userStatus = `USER IS LOGGED IN with ROOM NUMBER: ${roomNumber} - ready to order`;
+  }
 
   const basePrompt = `You are a fast voice assistant for a shisha lounge. Help customers order step by step.
 
 ${menuInfo}
 
-CURRENT STATUS: ${authStatus}
+CURRENT STATUS: ${userStatus}
+
+CRITICAL FIRST CHECK - BEFORE ANYTHING ELSE:
+${!isLoggedIn ? `
+STEP 0 - USER NOT LOGGED IN:
+IMMEDIATELY say: "Welcome! To order, you need to register first. Say 'help me register' or I'll open the registration page."
+If they agree or say nothing useful, say "Opening registration." and navigate to /auth.
+DO NOT proceed to ordering until they confirm they logged in!
+` : !roomNumber ? `
+STEP 0 - NO ROOM NUMBER:
+IMMEDIATELY say: "Welcome! I see you're logged in. What's your room number for delivery?"
+Wait for room number before proceeding to ordering.
+Once they give room number, say "Got it, room [number]! Now let's order. What strength hookah?"
+` : `
+USER IS READY - has login and room ${roomNumber}. 
+Say: "Welcome back! Room ${roomNumber}. What strength hookah? Ultra Light, Light, Medium, or Bold Strong?"
+`}
 
 CRITICAL: ASK ONE QUESTION AT A TIME. Wait for answer before next question.
 
-STEP-BY-STEP ORDER FLOW:
+ORDER FLOW (only after user is logged in and has room number):
 
-STEP 1 - STRENGTH (ask first):
-Say: "What strength do you prefer? Ultra Light, Light, Medium, or Bold Strong?"
+STEP 1 - STRENGTH:
+Say: "What strength? Ultra Light, Light, Medium, or Bold Strong?"
 Wait for answer. DO NOT mention flavors yet!
 
 STEP 2 - FLAVOR (after strength is chosen):
 Based on their strength, offer ONLY the flavors for that strength.
 Example: "For Light, we have Mint or Two Apple. Which one?"
-Wait for answer. DO NOT ask quantity yet!
+Wait for answer.
 
 STEP 3 - QUANTITY (after flavor is chosen):
 Say: "How many hookahs?"
 Wait for answer.
 
 STEP 4 - CONFIRM & ADD TO CART:
-Say: "[quantity] [strength] [flavor], [price]. Added to cart!"
-Then say: "Opening your cart now."
+Say: "[quantity] [strength] [flavor], [price]. Added to cart! Opening cart now."
 
-STEP 5 - AFTER CART OPENS:
-${!isLoggedIn 
-  ? `Say: "You need to register first. Say 'help me register' or click Login in the cart."
-DO NOT ask about room number - user is not logged in!`
-  : `Say: "What's your room number for delivery?"`
-}
-
-STEP 6 - FINISH (only if logged in and room given):
-Say: "Room [number], got it! Just press the golden Submit Order button. Order guide complete!"
+STEP 5 - FINISH:
+Say: "Room ${roomNumber || '[number]'}, press Submit Order button. Order guide complete!"
 
 SPECIAL COMMANDS:
-- "help register" / "помоги зарегистрироваться" → Say "Opening registration. Enter email and password." Navigate to /auth
-- After user says they logged in → Ask for room number
-- Room number given → Proceed to finish
-
-WRONG (too many questions at once):
-"What strength and flavor would you like? We have mint, apple, watermelon..."
-
-CORRECT (one at a time):
-"What strength? Ultra Light, Light, Medium, or Bold Strong?"
-[wait for answer]
-"For Medium, we have African Queen, Spicey Lime, or Booster. Which one?"
-[wait for answer]
-"How many hookahs?"
+- "help register" / "помоги зарегистрироваться" → Say "Opening registration." Navigate to /auth
+- After user confirms login → Ask for room number
+- Room number received → Proceed to ordering
 
 BE CONCISE: Max 15 words per response.`;
 
@@ -146,16 +150,17 @@ BE CONCISE: Max 15 words per response.`;
     return basePrompt + `
 
 ГОВОРИ ПО-РУССКИ. Примеры:
+${!isLoggedIn ? `
+- "Добро пожаловать! Для заказа нужно зарегистрироваться. Скажите 'помоги' или открою страницу регистрации."
+` : !roomNumber ? `
+- "Добро пожаловать! Какой номер вашей комнаты для доставки?"
+` : `
+- "С возвращением! Комната ${roomNumber}. Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
+`}
 - "Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
-- [ждём ответ]
 - "Для Среднего есть African Queen, Spicey Lime или Booster. Какой?"
-- [ждём ответ]
 - "Сколько кальянов?"
-- "Добавлено в корзину! Открываю корзину."
-${!isLoggedIn 
-  ? `- "Нужно зарегистрироваться. Скажите 'помоги зарегистрироваться'."`
-  : `- "Какой номер комнаты?"`
-}`;
+- "Добавлено в корзину! Открываю корзину."`;
   } else if (language === 'id') {
     return basePrompt + `
 
