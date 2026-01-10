@@ -45,7 +45,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [assistantMessage, setAssistantMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0.5);
-  const [orderState, setOrderState] = useState<OrderState>({ stage: 'ordering' });
+  const [orderState, setOrderState] = useState<OrderState>({ stage: 'login' });
   const [user, setUser] = useState<any>(null);
   
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -247,7 +247,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
-    setOrderState({ stage: 'ordering' });
+    setOrderState({ stage: 'login' });
   }, [cleanup, orderState, addToCart]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
@@ -256,6 +256,15 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       setError(null);
       setTranscript('');
       setAssistantMessage('');
+      
+      // Set initial stage based on user status
+      if (!isLoggedIn) {
+        setOrderState({ stage: 'login' });
+      } else if (!roomNumber) {
+        setOrderState({ stage: 'room' });
+      } else {
+        setOrderState({ stage: 'ordering' });
+      }
 
       // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -371,25 +380,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       case 'response.audio_transcript.done':
         const transcriptLower = (event.transcript || '').toLowerCase();
         
-        // Detect "added to cart" - open cart and move to cart stage
-        if (transcriptLower.includes('added to cart') || 
-            transcriptLower.includes('добавлено в корзину') ||
-            transcriptLower.includes('opening cart') ||
-            transcriptLower.includes('открываю корзину')) {
-          // Add to cart if we have the order info
-          if (orderState.itemId && orderState.quantity) {
-            addToCart(orderState.itemId, orderState.quantity);
-          }
-          // Open cart drawer
-          setTimeout(() => setCartOpen(true), 500);
-          setOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-        }
-        
-        // Detect login needed
-        if (transcriptLower.includes('need to log in') || 
-            transcriptLower.includes('нужно войти') ||
-            transcriptLower.includes('click login') ||
-            transcriptLower.includes('нажмите войти')) {
+        // Detect registration/login needed
+        if (transcriptLower.includes('need to register') || 
+            transcriptLower.includes('нужно зарегистрироваться') ||
+            transcriptLower.includes('please log in') ||
+            transcriptLower.includes('войдите')) {
           setOrderState(prev => ({ ...prev, stage: 'login' }));
         }
         
@@ -397,13 +392,49 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         if (transcriptLower.includes('opening registration') || 
             transcriptLower.includes('открываю регистрацию')) {
           navigate('/auth');
+          setOrderState(prev => ({ ...prev, stage: 'login' }));
         }
         
-        // Detect room number stage
+        // Detect room number request - user logged in, need room
         if (transcriptLower.includes("what's your room") || 
             transcriptLower.includes('какой номер комнаты') ||
-            transcriptLower.includes('номер комнаты')) {
+            transcriptLower.includes('номер комнаты') ||
+            transcriptLower.includes('room number')) {
           setOrderState(prev => ({ ...prev, stage: 'room' }));
+        }
+        
+        // Detect room confirmed, moving to ordering
+        if (transcriptLower.includes('got it, room') || 
+            transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
+            transcriptLower.includes("let's order") ||
+            transcriptLower.includes('давайте закажем')) {
+          setOrderState(prev => ({ ...prev, stage: 'ordering' }));
+        }
+        
+        // Detect strength/flavor selection - we're in ordering stage
+        if (transcriptLower.includes('what strength') || 
+            transcriptLower.includes('какую крепость') ||
+            transcriptLower.includes('which flavor') ||
+            transcriptLower.includes('какой вкус')) {
+          setOrderState(prev => ({ ...prev, stage: 'ordering' }));
+        }
+        
+        // Detect "added to cart" - ADD FIRST then open cart
+        if (transcriptLower.includes('added to cart') || 
+            transcriptLower.includes('добавлено в корзину') ||
+            transcriptLower.includes('opening cart') ||
+            transcriptLower.includes('открываю корзину')) {
+          // Add to cart FIRST if we have the order info
+          if (orderState.itemId) {
+            const qty = orderState.quantity || 1;
+            console.log('[VoiceAssistant] Adding to cart before opening:', orderState.itemId, qty);
+            addToCart(orderState.itemId, qty);
+          }
+          // Then open cart drawer after a small delay to ensure item is added
+          setTimeout(() => {
+            setCartOpen(true);
+          }, 300);
+          setOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
         // Detect ready for payment - auto close after 3 seconds
@@ -413,8 +444,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
             transcriptLower.includes('всё готово') ||
             transcriptLower.includes('ready to pay') ||
             transcriptLower.includes('готово к оплате') ||
-            transcriptLower.includes('click pay') ||
-            transcriptLower.includes('нажмите оплатить')) {
+            transcriptLower.includes('press submit') ||
+            transcriptLower.includes('нажмите отправить')) {
           setOrderState(prev => ({ ...prev, stage: 'ready' }));
           setState('complete');
         }
