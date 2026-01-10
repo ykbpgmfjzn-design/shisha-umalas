@@ -13,10 +13,12 @@ export const GlobalVoiceAssistant = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [wasNotLoggedIn, setWasNotLoggedIn] = useState(false);
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
+  const [pendingLoginContinue, setPendingLoginContinue] = useState(false);
   const { language } = useLanguage();
   const { setIsOpen: setCartOpen, items: cartItems } = useCart();
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wasActiveBeforeLogin = useRef(false);
   
   const {
     state,
@@ -31,19 +33,19 @@ export const GlobalVoiceAssistant = () => {
   } = useVoiceAssistant();
 
   // Fetch room number when user is logged in
-  const fetchRoomNumber = async (userId: string) => {
+  const fetchRoomNumber = async (userId: string): Promise<string | null> => {
     const { data } = await supabase
       .from('profiles')
       .select('room_number')
       .eq('id', userId)
       .maybeSingle();
     
-    if (data?.room_number) {
-      setRoomNumber(data.room_number);
-    }
+    const room = data?.room_number || null;
+    setRoomNumber(room);
+    return room;
   };
 
-  // Track authentication status and auto-open cart after login
+  // Track authentication status and handle post-login flow
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const loggedIn = !!session?.user;
@@ -55,14 +57,25 @@ export const GlobalVoiceAssistant = () => {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const loggedIn = !!session?.user;
+      console.log('[GlobalVoiceAssistant] Auth event:', event, 'loggedIn:', loggedIn, 'wasNotLoggedIn:', wasNotLoggedIn, 'wasActiveBeforeLogin:', wasActiveBeforeLogin.current);
       
-      // User just logged in and has items in cart - open cart
-      if (loggedIn && wasNotLoggedIn && cartItems.length > 0) {
-        setTimeout(() => {
-          setCartOpen(true);
-        }, 500);
+      // User just logged in
+      if (loggedIn && wasNotLoggedIn && session?.user) {
+        const room = await fetchRoomNumber(session.user.id);
+        
+        // If voice assistant was active before login, continue the conversation
+        if (wasActiveBeforeLogin.current || showVoiceAssistant) {
+          console.log('[GlobalVoiceAssistant] User logged in, restarting voice session to continue conversation');
+          setPendingLoginContinue(true);
+        } else if (cartItems.length > 0) {
+          // Open cart if there are items
+          setTimeout(() => {
+            setCartOpen(true);
+          }, 500);
+        }
+        
         setWasNotLoggedIn(false);
       }
       
@@ -72,11 +85,30 @@ export const GlobalVoiceAssistant = () => {
         fetchRoomNumber(session.user.id);
       } else {
         setRoomNumber(null);
+        // Track if assistant was active when user logged out/not logged in
+        if (isActive) {
+          wasActiveBeforeLogin.current = true;
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [wasNotLoggedIn, cartItems.length, setCartOpen]);
+  }, [wasNotLoggedIn, cartItems.length, setCartOpen, showVoiceAssistant, isActive]);
+
+  // Handle pending login continuation - restart session after login
+  useEffect(() => {
+    if (pendingLoginContinue && isLoggedIn && !isActive) {
+      console.log('[GlobalVoiceAssistant] Continuing voice session after login');
+      setPendingLoginContinue(false);
+      wasActiveBeforeLogin.current = false;
+      
+      // Small delay to ensure auth state is fully settled
+      setTimeout(() => {
+        setShowVoiceAssistant(true);
+        startSession(language, true, roomNumber);
+      }, 500);
+    }
+  }, [pendingLoginContinue, isLoggedIn, isActive, language, roomNumber, startSession]);
 
   // Auto-close when stage is 'ready' or state is 'complete'
   useEffect(() => {
@@ -95,6 +127,7 @@ export const GlobalVoiceAssistant = () => {
 
   const handleStartVoice = () => {
     setShowVoiceAssistant(true);
+    wasActiveBeforeLogin.current = true; // Track that voice was started
     // Pass current login status and room number to the session
     startSession(language, isLoggedIn, roomNumber);
   };

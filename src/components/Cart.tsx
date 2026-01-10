@@ -72,7 +72,19 @@ const Cart = () => {
       return false;
     }
 
-    if (items.length === 0) {
+    // Re-read items from localStorage to ensure we have the latest state
+    let currentItems = items;
+    try {
+      const savedCart = localStorage.getItem('shisha-cart');
+      if (savedCart) {
+        currentItems = JSON.parse(savedCart);
+        console.log('[Cart] Re-read items from localStorage:', currentItems);
+      }
+    } catch (e) {
+      console.error('[Cart] Error reading cart from localStorage:', e);
+    }
+
+    if (currentItems.length === 0) {
       toast.error(t("cart.emptyCart"));
       return false;
     }
@@ -88,12 +100,19 @@ const Cart = () => {
     setIsSubmitting(true);
 
     try {
-      const orderNotes = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
+      // Calculate totals from currentItems (fresh from localStorage)
+      const currentTotalPrice = currentItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+      const currentHookahCount = currentItems
+        .filter((item: any) => item.itemType === "hookah")
+        .reduce((sum: number, item: any) => sum + item.quantity, 0);
+      const orderNotes = currentItems.map((item: any) => `${item.quantity}x ${item.name}`).join(", ");
+      
+      console.log('[Cart] Submitting order:', { currentTotalPrice, currentHookahCount, orderNotes });
       
       const { data, error } = await supabase.from("purchases").insert({
         user_id: user.id,
-        hookah_count: hookahCount,
-        amount: totalPrice,
+        hookah_count: currentHookahCount,
+        amount: currentTotalPrice,
         notes: orderNotes,
       }).select().single();
 
@@ -102,8 +121,8 @@ const Cart = () => {
       // Log order creation
       await logActivity('order', 'Новый заказ создан', {
         purchase_id: data.id,
-        hookah_count: hookahCount,
-        amount: totalPrice,
+        hookah_count: currentHookahCount,
+        amount: currentTotalPrice,
         items: orderNotes,
         room_number: roomNumber,
       });
@@ -115,9 +134,9 @@ const Cart = () => {
             orderId: data.id,
             roomNumber: roomNumber,
             userEmail: user.email,
-            hookahCount: hookahCount,
-            totalAmount: totalPrice,
-            items: items.map(item => ({
+            hookahCount: currentHookahCount,
+            totalAmount: currentTotalPrice,
+            items: currentItems.map((item: any) => ({
               name: item.name,
               quantity: item.quantity,
               price: item.price * item.quantity,
@@ -132,9 +151,9 @@ const Cart = () => {
       // Navigate to confirmation page with order details
       const params = new URLSearchParams({
         id: data.id,
-        total: (totalPrice / 1000).toFixed(0),
+        total: (currentTotalPrice / 1000).toFixed(0),
         items: orderNotes,
-        count: hookahCount.toString(),
+        count: currentHookahCount.toString(),
       });
       
       clearCart();
@@ -148,7 +167,7 @@ const Cart = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, items, roomNumber, hookahCount, totalPrice, t, navigate, setIsOpen, clearCart]);
+  }, [user, roomNumber, t, navigate, setIsOpen, clearCart]);
 
   // Register submit handler for programmatic submission
   useEffect(() => {
