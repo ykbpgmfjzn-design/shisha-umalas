@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CreditCard, Lock, CheckCircle, XCircle, Loader2, ShieldCheck } from "lucide-react";
+import { CreditCard, Lock, CheckCircle, XCircle, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -340,15 +340,16 @@ const CardPayment = ({
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Back button */}
         {(status === "form" || status === "failed") && (
           <div className="px-6 pb-6">
             <Button
               onClick={onCancel}
-              variant="ghost"
-              className="w-full text-muted-foreground"
+              variant="outline"
+              className="w-full h-12 border-border/50 hover:bg-muted/50"
             >
-              {t("card.cancel")}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t("card.back")}
             </Button>
           </div>
         )}
