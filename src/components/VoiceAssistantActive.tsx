@@ -100,7 +100,7 @@ export const VoiceAssistantActive = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="fixed top-20 left-4 right-4 z-[40] max-w-sm mx-auto pointer-events-auto"
+      className="fixed top-20 left-4 right-4 z-[100] max-w-sm mx-auto pointer-events-auto"
     >
       <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-lg overflow-hidden">
         {/* Header - always visible, clickable to expand/collapse */}

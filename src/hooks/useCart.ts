@@ -31,8 +31,14 @@ interface CartContextType {
 const loadCartFromStorage = (): CartItem[] => {
   try {
     const saved = localStorage.getItem('shisha-cart');
-    return saved ? JSON.parse(saved) : [];
-  } catch {
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      console.log('[Cart] Loaded from localStorage:', parsed);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
+  } catch (e) {
+    console.error('[Cart] Error loading from localStorage:', e);
     return [];
   }
 };
