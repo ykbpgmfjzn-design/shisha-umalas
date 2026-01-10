@@ -12,6 +12,8 @@ interface CartContextType {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   hookahCount: number;
+  submitOrderProgrammatically: () => Promise<boolean>;
+  setSubmitHandler: (handler: () => Promise<boolean>) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);

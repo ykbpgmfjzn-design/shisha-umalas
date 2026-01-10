@@ -57,7 +57,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   
-  const { addItem, setIsOpen: setCartOpen } = useCart();
+  const { addItem, setIsOpen: setCartOpen, submitOrderProgrammatically } = useCart();
   const navigate = useNavigate();
 
   // Listen for auth changes
@@ -540,19 +540,58 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           // Then open cart drawer after a small delay to ensure item is added
           setTimeout(() => {
             setCartOpen(true);
+            // Ask for order confirmation
+            setTimeout(() => {
+              sendFollowUpMessage('Cart is open. Ask user to confirm the order is correct and if they are ready to proceed to payment. Be brief, max 15 words. Example: "Your order is ready. Confirm to proceed to payment?"');
+            }, 1000);
           }, 300);
           updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
-        // Detect ready for payment - auto close after 3 seconds
+        // Detect user confirmation to submit order
+        if (orderStateRef.current.stage === 'cart' && 
+            (transcriptLower.includes('yes') || 
+             transcriptLower.includes('да') ||
+             transcriptLower.includes('confirm') ||
+             transcriptLower.includes('подтвержда') ||
+             transcriptLower.includes('согласен') ||
+             transcriptLower.includes('верно') ||
+             transcriptLower.includes('correct') ||
+             transcriptLower.includes('proceed') ||
+             transcriptLower.includes('готов') ||
+             transcriptLower.includes('оформ') ||
+             transcriptLower.includes('submit') ||
+             transcriptLower.includes('отправ'))) {
+          console.log('[VoiceAssistant] User confirmed order, submitting...');
+          // Submit order programmatically
+          submitOrderProgrammatically().then((success) => {
+            if (success) {
+              console.log('[VoiceAssistant] Order submitted successfully');
+              // Send farewell message
+              setTimeout(() => {
+                sendFollowUpMessage('Order submitted successfully! Thank the user, wish them a great time with their hookah, and say goodbye warmly. Be brief and friendly, max 20 words.');
+              }, 500);
+              updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+            } else {
+              console.log('[VoiceAssistant] Order submission failed');
+              sendFollowUpMessage('There was an issue submitting the order. Ask user to try again or submit manually.');
+            }
+          });
+        }
+        
+        // Detect ready for payment / farewell - auto close after 3 seconds
         if (transcriptLower.includes('order guide complete') || 
             transcriptLower.includes('сопровождение заказа завершено') ||
             transcriptLower.includes('everything ready') ||
             transcriptLower.includes('всё готово') ||
-            transcriptLower.includes('ready to pay') ||
-            transcriptLower.includes('готово к оплате') ||
-            transcriptLower.includes('press submit') ||
-            transcriptLower.includes('нажмите отправить')) {
+            transcriptLower.includes('enjoy your hookah') ||
+            transcriptLower.includes('приятного') ||
+            transcriptLower.includes('goodbye') ||
+            transcriptLower.includes('до свидания') ||
+            transcriptLower.includes('see you') ||
+            transcriptLower.includes('до встречи') ||
+            transcriptLower.includes('have a great') ||
+            transcriptLower.includes('хорошего')) {
           updateOrderState(prev => ({ ...prev, stage: 'ready' }));
           setState('complete');
         }
@@ -585,7 +624,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setState('error');
         break;
     }
-  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState]);
+  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState, sendFollowUpMessage, submitOrderProgrammatically]);
 
   useEffect(() => {
     return () => {
