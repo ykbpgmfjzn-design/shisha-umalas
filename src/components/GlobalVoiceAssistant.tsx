@@ -20,6 +20,7 @@ export const GlobalVoiceAssistant = () => {
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const wasActiveBeforeLogin = useRef(false);
   const orderCompletedRef = useRef(false); // Track if order was completed
+  const startingSessionRef = useRef(false); // Prevent double start calls
   
   const {
     state,
@@ -114,15 +115,17 @@ export const GlobalVoiceAssistant = () => {
       return;
     }
     
-    if (pendingLoginContinue && isLoggedIn && !isActive) {
+    if (pendingLoginContinue && isLoggedIn && !isActive && !startingSessionRef.current) {
       console.log('[GlobalVoiceAssistant] Continuing voice session after login');
       setPendingLoginContinue(false);
       wasActiveBeforeLogin.current = false;
+      startingSessionRef.current = true;
       
       // Small delay to ensure auth state is fully settled
       setTimeout(() => {
         setShowVoiceAssistant(true);
         startSession(language, true, roomNumber);
+        startingSessionRef.current = false;
       }, 500);
     }
   }, [pendingLoginContinue, isLoggedIn, isActive, language, roomNumber, startSession]);
@@ -134,6 +137,7 @@ export const GlobalVoiceAssistant = () => {
       orderCompletedRef.current = true;
       wasActiveBeforeLogin.current = false;
       setPendingLoginContinue(false);
+      startingSessionRef.current = false;
       
       console.log('[GlobalVoiceAssistant] Order completed, marking orderCompletedRef=true');
       
@@ -150,12 +154,24 @@ export const GlobalVoiceAssistant = () => {
   }, [currentStage, state]);
 
   const handleStartVoice = () => {
+    // CRITICAL: Prevent double starts
+    if (isActive || startingSessionRef.current) {
+      console.log('[GlobalVoiceAssistant] Already starting or active, ignoring');
+      return;
+    }
+    
+    startingSessionRef.current = true;
     // Reset order completed flag when starting a new session
     orderCompletedRef.current = false;
     setShowVoiceAssistant(true);
     wasActiveBeforeLogin.current = true; // Track that voice was started
     // Pass current login status and room number to the session
     startSession(language, isLoggedIn, roomNumber);
+    
+    // Release after a short delay
+    setTimeout(() => {
+      startingSessionRef.current = false;
+    }, 1000);
   };
 
   const handleEndVoice = () => {
@@ -203,15 +219,15 @@ export const GlobalVoiceAssistant = () => {
         />
       )}
       
-      {/* Voice Assistant Button - hide on order confirmation */}
-      {!hideVoiceAssistant && (
+      {/* Voice Assistant Button - ONLY show when NOT active to prevent duplicate UI */}
+      {!hideVoiceAssistant && !isActive && (
         <VoiceAssistantButton
           isActive={isActive}
           onClick={handleToggleVoice}
         />
       )}
       
-      {/* Voice Assistant Active Panel - positioned differently on auth page */}
+      {/* Voice Assistant Active Panel - this is the ONLY UI when active */}
       {!hideVoiceAssistant && showVoiceAssistant && isActive && (
         <div className={isAuthPage ? "fixed top-4 left-4 right-4 z-[40] max-w-sm" : ""}>
           <VoiceAssistantActive
