@@ -16,7 +16,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (item: Omit<CartItem, "quantity">, openCart?: boolean) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -104,8 +104,8 @@ export const useCartState = (): CartContextType => {
     };
   }, []); // Empty dependency - only set up listeners once
 
-  const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
-    console.log('[Cart] Adding item:', newItem.name);
+  const addItem = useCallback((newItem: Omit<CartItem, "quantity">, openCart: boolean = true) => {
+    console.log('[Cart] Adding item:', newItem.name, 'openCart:', openCart);
     setItems((prev) => {
       const existingItem = prev.find((item) => item.id === newItem.id);
       let newItems;
@@ -124,7 +124,9 @@ export const useCartState = (): CartContextType => {
       console.log('[Cart] Saved to localStorage immediately');
       return newItems;
     });
-    setIsOpen(true);
+    if (openCart) {
+      setIsOpen(true);
+    }
   }, []);
 
   const removeItem = useCallback((id: string) => {

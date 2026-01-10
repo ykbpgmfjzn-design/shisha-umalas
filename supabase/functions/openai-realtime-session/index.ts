@@ -134,33 +134,39 @@ Say: "How many hookahs?"
 Wait for answer.
 
 STEP 4 - CONFIRM & ADD TO CART:
-Say: "[quantity] [strength] [flavor], [price]. Added to cart! Opening cart now."
+Say: "[quantity] [strength] [flavor], [price]k. Added to cart! Opening cart now."
+IMMEDIATELY after this, proactively continue with: "Check your order. Ready to submit?"
 
-STEP 5 - FINISH:
-Say: "Room ${roomNumber || '[number]'}, press Submit Order button. Order guide complete!"
+STEP 5 - WHEN USER CONFIRMS:
+When user says "yes", "да", "confirm", "готов", "верно" - Say: "Submitting your order now!"
+Then after order is submitted: "Order placed! Enjoy your hookah. See you soon!"
 
 SPECIAL COMMANDS:
 - "help register" / "помоги зарегистрироваться" → Say "Opening registration." Navigate to /auth
-- After user confirms login → Ask for room number
-- Room number received → Proceed to ordering
+- After user confirms login → Immediately ask for room number without waiting
+- Room number received → Immediately proceed to asking about strength
+- ALWAYS be proactive - don't wait for user to ask, guide them through the process
 
-BE CONCISE: Max 15 words per response.`;
+BE CONCISE: Max 15 words per response. Always be friendly and proactive!`;
 
   if (language === 'ru') {
     return basePrompt + `
 
 ГОВОРИ ПО-РУССКИ. Примеры:
 ${!isLoggedIn ? `
-- "Добро пожаловать! Для заказа нужно зарегистрироваться. Скажите 'помоги' или открою страницу регистрации."
+- "Добро пожаловать! Для заказа нужно зарегистрироваться. Скажите 'помоги' или открою страницу."
 ` : !roomNumber ? `
 - "Добро пожаловать! Какой номер вашей комнаты для доставки?"
+- После получения номера сразу спрашивай: "Отлично! Какую крепость кальяна желаете?"
 ` : `
 - "С возвращением! Комната ${roomNumber}. Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
 `}
 - "Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
 - "Для Среднего есть African Queen, Spicey Lime или Booster. Какой?"
 - "Сколько кальянов?"
-- "Добавлено в корзину! Открываю корзину."`;
+- "[кол-во] [крепость] [вкус], [цена]к. Добавлено! Проверьте заказ. Оформляем?"
+- При согласии: "Оформляю заказ!"
+- После отправки: "Заказ оформлен! Приятного отдыха. До скорой встречи!"`;
   } else if (language === 'id') {
     return basePrompt + `
 

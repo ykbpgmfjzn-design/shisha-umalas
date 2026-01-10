@@ -25,6 +25,7 @@ interface OrderState {
   cartOpened?: boolean;
   autoCloseTimer?: NodeJS.Timeout;
   roomNumber?: string;
+  addedToCart?: boolean;  // Flag to prevent duplicate additions
 }
 
 interface UseVoiceAssistantReturn {
@@ -277,10 +278,18 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     }
   }, [stopAudioAnalysis]);
 
-  // Add items to cart
-  const addToCart = useCallback((itemId: string, quantity: number) => {
+  // Add items to cart - returns true if added successfully
+  const addToCart = useCallback((itemId: string, quantity: number): boolean => {
+    // Check if already added to prevent duplicates
+    if (orderStateRef.current.addedToCart) {
+      console.log('[VoiceAssistant] Already added to cart, skipping duplicate');
+      return false;
+    }
+    
     const item = menuItems.find(m => m.id === itemId);
     if (item) {
+      console.log('[VoiceAssistant] Adding to cart:', item.name, 'x', quantity);
+      // Add items with quantity directly (not in a loop)
       for (let i = 0; i < quantity; i++) {
         addItem({
           id: item.id,
@@ -290,29 +299,29 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           strength: item.strength,
           isSignature: item.isSignature,
           itemType: item.itemType,
-        });
+        }, false); // Don't auto-open cart - we'll do it manually
       }
-      toast.success(`Added ${quantity}x ${item.name} to cart!`);
+      
+      // Mark as added to prevent duplicates
+      orderStateRef.current = { ...orderStateRef.current, addedToCart: true };
+      updateOrderState(prev => ({ ...prev, addedToCart: true }));
+      
+      toast.success(`Добавлено ${quantity}x ${item.name}!`);
       return true;
     }
     return false;
-  }, [addItem]);
+  }, [addItem, updateOrderState]);
 
   const endSession = useCallback(() => {
-    // Use ref for current state to avoid stale closure
-    const currentOrder = orderStateRef.current;
-    
-    // If we have a complete order, add to cart
-    if (currentOrder.itemId && currentOrder.quantity) {
-      console.log('[VoiceAssistant] End session - adding to cart:', currentOrder.itemId, currentOrder.quantity);
-      addToCart(currentOrder.itemId, currentOrder.quantity);
-    }
+    // NOTE: Don't add to cart here - it was already added when AI said "added to cart"
+    // This prevents duplicate additions
+    console.log('[VoiceAssistant] Ending session, state:', orderStateRef.current);
     cleanup();
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
     updateOrderState(() => ({ stage: 'login' }));
-  }, [cleanup, addToCart, updateOrderState]);
+  }, [cleanup, updateOrderState]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
     try {
