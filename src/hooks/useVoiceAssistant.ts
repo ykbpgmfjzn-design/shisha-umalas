@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { menuItems, findMenuItemByKeyword, getStrengthFromKeyword } from '@/data/menuItems';
 import { toast } from 'sonner';
 import voiceAssistantSingleton from './useVoiceAssistantSingleton';
+import { Language } from '@/contexts/LanguageContext';
 
 export type VoiceAssistantState = 
   | 'idle' 
@@ -30,6 +31,10 @@ interface OrderState {
   registrationOffered?: boolean;
 }
 
+interface UseVoiceAssistantProps {
+  onLanguageDetected?: (language: Language) => void;
+}
+
 interface UseVoiceAssistantReturn {
   state: VoiceAssistantState;
   transcript: string;
@@ -42,9 +47,58 @@ interface UseVoiceAssistantReturn {
   currentStage: OrderStage;
 }
 
-export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
+// Detect language from text based on character patterns
+const detectLanguageFromText = (text: string): Language | null => {
+  const lowerText = text.toLowerCase();
+  
+  // Russian - Cyrillic characters
+  if (/[а-яё]/i.test(text)) {
+    // Ukrainian has specific letters: і, ї, є, ґ
+    if (/[іїєґ]/i.test(text)) {
+      return 'uk';
+    }
+    return 'ru';
+  }
+  
+  // Chinese characters
+  if (/[\u4e00-\u9fff]/.test(text)) {
+    return 'zh';
+  }
+  
+  // Hindi/Devanagari script
+  if (/[\u0900-\u097F]/.test(text)) {
+    return 'hi';
+  }
+  
+  // Indonesian keywords
+  const indonesianKeywords = ['terima kasih', 'tolong', 'saya mau', 'berapa', 'harga', 'pesan', 'shisha', 'hookah', 'enak', 'bagus', 'minta', 'apa', 'bisa', 'tidak', 'iya', 'ya'];
+  if (indonesianKeywords.some(kw => lowerText.includes(kw))) {
+    return 'id';
+  }
+  
+  // French keywords
+  const frenchKeywords = ['bonjour', 'merci', 's\'il vous plaît', 'je veux', 'comment', 'combien', 'chicha', 'oui', 'non', 'd\'accord', 'c\'est'];
+  if (frenchKeywords.some(kw => lowerText.includes(kw))) {
+    return 'fr';
+  }
+  
+  // English fallback (or if explicitly English)
+  const englishKeywords = ['hello', 'please', 'thank', 'want', 'order', 'hookah', 'shisha', 'yes', 'no', 'okay'];
+  if (englishKeywords.some(kw => lowerText.includes(kw))) {
+    return 'en';
+  }
+  
+  return null;
+};
+
+export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssistantReturn => {
+  const { onLanguageDetected } = props || {};
+  
   // Generate unique instance ID for this hook instance
   const instanceId = useMemo(() => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, []);
+  
+  // Track detected language to avoid duplicate callbacks
+  const detectedLanguageRef = useRef<Language | null>(null);
   
   const [state, setState] = useState<VoiceAssistantState>('idle');
   const [transcript, setTranscript] = useState('');
@@ -478,6 +532,16 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setTranscript(transcriptText);
         processTranscript(transcriptText);
         
+        // Detect language from user speech and switch app language
+        if (transcriptText.length > 3 && onLanguageDetected) {
+          const detectedLang = detectLanguageFromText(transcriptText);
+          if (detectedLang && detectedLang !== detectedLanguageRef.current) {
+            console.log('[VoiceAssistant] Detected language:', detectedLang);
+            detectedLanguageRef.current = detectedLang;
+            onLanguageDetected(detectedLang);
+          }
+        }
+        
         // Detect user wants to register - only if registration was offered by AI
         if (orderStateRef.current.stage === 'login' && 
             orderStateRef.current.registrationOffered &&
@@ -577,7 +641,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setState('error');
         break;
     }
-  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState, sendFollowUpMessage, submitOrderProgrammatically]);
+  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState, sendFollowUpMessage, submitOrderProgrammatically, onLanguageDetected]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
     // CRITICAL: Use singleton to prevent duplicate sessions
@@ -591,6 +655,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       setError(null);
       setTranscript('');
       setAssistantMessage('');
+      
+      // Reset detected language on new session
+      detectedLanguageRef.current = null;
       
       // Reset action flags
       redirectingToAuthRef.current = false;
