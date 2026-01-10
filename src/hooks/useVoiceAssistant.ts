@@ -27,6 +27,7 @@ interface OrderState {
   autoCloseTimer?: NodeJS.Timeout;
   roomNumber?: string;
   addedToCart?: boolean;
+  registrationOffered?: boolean;
 }
 
 interface UseVoiceAssistantReturn {
@@ -365,8 +366,14 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         if (transcriptLower.includes('need to register') || 
             transcriptLower.includes('нужно зарегистрироваться') ||
             transcriptLower.includes('please log in') ||
-            transcriptLower.includes('войдите')) {
-          updateOrderState(prev => ({ ...prev, stage: 'login' }));
+            transcriptLower.includes('войдите') ||
+            transcriptLower.includes('want to register') ||
+            transcriptLower.includes('хотите зарегистрироваться') ||
+            transcriptLower.includes('would you like to') ||
+            transcriptLower.includes('sign up') ||
+            transcriptLower.includes('создать аккаунт')) {
+          console.log('[VoiceAssistant] AI offered registration');
+          updateOrderState(prev => ({ ...prev, stage: 'login', registrationOffered: true }));
         }
         
         if (transcriptLower.includes('opening registration') || 
@@ -466,8 +473,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         setTranscript(transcriptText);
         processTranscript(transcriptText);
         
-        // Detect user wants to register
+        // Detect user wants to register - only if registration was offered by AI
         if (orderStateRef.current.stage === 'login' && 
+            orderStateRef.current.registrationOffered &&
             !redirectingToAuthRef.current &&
             (userTextLower.includes('yes') || 
              userTextLower.includes('да') ||
@@ -480,17 +488,21 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
              userTextLower.includes('помог') ||
              userTextLower.includes('okay') ||
              userTextLower.includes('ок') ||
-             userTextLower.includes('давай'))) {
-          console.log('[VoiceAssistant] User wants to register, redirecting to auth page');
+             userTextLower.includes('давай') ||
+             userTextLower.includes('конечно') ||
+             userTextLower.includes('sure') ||
+             userTextLower.includes('let\'s go') ||
+             userTextLower.includes('поехали'))) {
+          console.log('[VoiceAssistant] User confirmed registration, redirecting to auth page');
           
           redirectingToAuthRef.current = true;
           pendingAuthContinueRef.current = true;
           
-          sendFollowUpMessage('Opening registration page now. Say ONLY: "Открываю страницу регистрации. После входа продолжим." or in English: "Opening registration. We will continue after you log in." Then STOP.');
+          // Navigate immediately without waiting for AI
+          navigate('/auth');
           
-          setTimeout(() => {
-            navigate('/auth');
-          }, 500);
+          // Also send follow-up for voice feedback
+          sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
         }
         
         // Detect user confirmation to submit order
