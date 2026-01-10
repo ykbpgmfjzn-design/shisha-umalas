@@ -1,12 +1,10 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2, QrCode } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2, Copy, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import PaymentMethods from "@/components/PaymentMethods";
-import QrisPayment from "@/components/QrisPayment";
 import CardPayment from "@/components/CardPayment";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +29,6 @@ const OrderConfirmationContent = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [showQrisPayment, setShowQrisPayment] = useState(false);
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -129,31 +126,6 @@ const OrderConfirmationContent = () => {
     }
   };
 
-  const handlePayWithQris = () => {
-    if (!orderId || !userEmail) {
-      toast({
-        title: t("order.paymentError"),
-        description: t("order.loginRequired"),
-        variant: "destructive",
-      });
-      return;
-    }
-    setShowQrisPayment(true);
-  };
-
-  const handleQrisSuccess = () => {
-    setShowQrisPayment(false);
-    toast({
-      title: t("qris.success"),
-      description: t("qris.successDesc"),
-    });
-    // Refresh the page to show updated payment status
-    window.location.reload();
-  };
-
-  const handleQrisCancel = () => {
-    setShowQrisPayment(false);
-  };
 
   const handlePayWithCard = () => {
     if (!orderId || !userEmail) {
@@ -382,57 +354,113 @@ const OrderConfirmationContent = () => {
                 </div>
               </div>
 
-              {/* Payment Methods */}
+              {/* Payment Methods - Unified List */}
               <div className="space-y-4">
-                {/* QRIS Payment Button - Primary */}
-                <Button
-                  onClick={handlePayWithQris}
-                  disabled={!userEmail}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white h-14 text-lg font-display shadow-lg"
-                >
-                  <QrCode className="w-5 h-5 mr-2" />
-                  {t("qris.payWithQris")}
-                </Button>
+                <h3 className="text-sm text-muted-foreground uppercase tracking-wider">
+                  {t("payment.methods")}
+                </h3>
                 
-                {/* Card Payment Button */}
-                <Button
-                  onClick={handlePayWithCard}
-                  disabled={!userEmail}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12"
-                >
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  {t("card.payWithCard")}
-                </Button>
-                
-                {/* Online Payment Button - DOKU Checkout fallback */}
-                <Button
-                  onClick={handlePayOnline}
-                  disabled={isProcessingPayment || !userEmail}
-                  variant="outline"
-                  className="w-full border-border/50 text-muted-foreground hover:bg-muted/50 h-10 text-sm"
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t("order.processing")}
-                    </>
-                  ) : (
-                    <>
-                      {t("order.payOnline")}
-                    </>
-                  )}
-                </Button>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/50" />
+                <div className="space-y-3">
+                  {/* Card Payment */}
+                  <button
+                    onClick={handlePayWithCard}
+                    disabled={!userEmail}
+                    className="w-full p-4 bg-muted/30 rounded-xl border border-border/30 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground group-hover:text-blue-500 transition-colors">
+                          {t("card.payWithCard")}
+                        </span>
+                        <p className="text-xs text-muted-foreground">Visa, Mastercard, JCB</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Online Payment - DOKU */}
+                  <button
+                    onClick={handlePayOnline}
+                    disabled={isProcessingPayment || !userEmail}
+                    className="w-full p-4 bg-muted/30 rounded-xl border border-border/30 hover:border-golden/50 hover:bg-golden/5 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-golden/20 flex items-center justify-center">
+                        {isProcessingPayment ? (
+                          <Loader2 className="w-5 h-5 text-golden animate-spin" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-golden" />
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground group-hover:text-golden transition-colors">
+                          {isProcessingPayment ? t("order.processing") : t("order.payOnline")}
+                        </span>
+                        <p className="text-xs text-muted-foreground">Virtual Account, E-Wallet</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Bank Transfer with Details */}
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-amber-500" />
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">{t("payment.bankTransfer")}</span>
+                        <p className="text-xs text-muted-foreground">Manual transfer (IDR)</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm pl-13">
+                      <div className="flex flex-col gap-1 p-3 bg-background/50 rounded-lg">
+                        <span className="text-xs text-muted-foreground">{t("payment.bankName")}</span>
+                        <span className="text-foreground font-medium">Bank Mandiri</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1 p-3 bg-background/50 rounded-lg">
+                        <span className="text-xs text-muted-foreground">{t("payment.accountName")}</span>
+                        <span className="text-foreground font-medium text-sm">PT. SAMAHITA UMALAS PRASADA</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1 p-3 bg-background/50 rounded-lg">
+                        <span className="text-xs text-muted-foreground">{t("payment.accountNumber")}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-golden font-mono font-bold text-lg">1750002625779</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText("1750002625779");
+                              toast({
+                                title: t("payment.copied"),
+                                description: "1750002625779",
+                              });
+                            }}
+                            className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          >
+                            <Copy className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">{t("order.orPayWith")}</span>
+
+                  {/* Cash Payment */}
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                        <Banknote className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">{t("payment.cash")}</span>
+                        <p className="text-xs text-muted-foreground">{t("payment.cashDescription")}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <PaymentMethods compact />
               </div>
 
               {/* Actions */}
@@ -481,18 +509,6 @@ const OrderConfirmationContent = () => {
         </motion.div>
       </div>
 
-      {/* QRIS Payment Modal */}
-      {showQrisPayment && userEmail && (
-        <QrisPayment
-          purchaseId={orderId}
-          amount={parseInt(total) * 1000}
-          description={items}
-          customerName={userName || "Guest"}
-          customerEmail={userEmail}
-          onSuccess={handleQrisSuccess}
-          onCancel={handleQrisCancel}
-        />
-      )}
 
       {/* Card Payment Modal */}
       {showCardPayment && userEmail && (
