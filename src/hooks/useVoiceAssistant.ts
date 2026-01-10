@@ -532,13 +532,41 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         setTranscript(transcriptText);
         processTranscript(transcriptText);
         
-        // Detect language from user speech and switch app language
-        if (transcriptText.length > 3 && onLanguageDetected) {
+        // Detect language from user speech and switch app language + AI language
+        if (transcriptText.length > 3) {
           const detectedLang = detectLanguageFromText(transcriptText);
           if (detectedLang && detectedLang !== detectedLanguageRef.current) {
             console.log('[VoiceAssistant] Detected language:', detectedLang);
             detectedLanguageRef.current = detectedLang;
-            onLanguageDetected(detectedLang);
+            
+            // Switch app UI language
+            if (onLanguageDetected) {
+              onLanguageDetected(detectedLang);
+            }
+            
+            // Send language switch instruction to OpenAI
+            const languageNames: Record<Language, string> = {
+              'en': 'English',
+              'ru': 'Russian',
+              'uk': 'Ukrainian', 
+              'id': 'Indonesian',
+              'fr': 'French',
+              'hi': 'Hindi',
+              'zh': 'Chinese',
+            };
+            const langName = languageNames[detectedLang] || 'English';
+            
+            // Update session with new language preference
+            const dc = voiceAssistantSingleton.getDataChannel();
+            if (dc && dc.readyState === 'open') {
+              dc.send(JSON.stringify({
+                type: 'session.update',
+                session: {
+                  instructions: `IMPORTANT: The user is speaking ${langName}. From now on, respond ONLY in ${langName}. Continue the shisha ordering conversation in ${langName}.`,
+                },
+              }));
+              console.log('[VoiceAssistant] Sent language switch to AI:', langName);
+            }
           }
         }
         
