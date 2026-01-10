@@ -497,20 +497,22 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
-        if (transcriptLower.includes('order guide complete') || 
-            transcriptLower.includes('сопровождение заказа завершено') ||
-            transcriptLower.includes('everything ready') ||
-            transcriptLower.includes('всё готово') ||
-            transcriptLower.includes('enjoy your hookah') ||
-            transcriptLower.includes('приятного') ||
-            transcriptLower.includes('goodbye') ||
-            transcriptLower.includes('до свидания') ||
-            transcriptLower.includes('see you') ||
-            transcriptLower.includes('до встречи') ||
-            transcriptLower.includes('have a great') ||
-            transcriptLower.includes('хорошего')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-          setState('complete');
+        // ONLY mark as complete if order was actually submitted (stage is cart and submitting was triggered)
+        // Don't end session just because AI said goodbye-like words
+        if (orderStateRef.current.stage === 'cart' && submittingOrderRef.current) {
+          if (transcriptLower.includes('order guide complete') || 
+              transcriptLower.includes('сопровождение заказа завершено') ||
+              transcriptLower.includes('order placed') ||
+              transcriptLower.includes('заказ оформлен') ||
+              transcriptLower.includes('order submitted') ||
+              transcriptLower.includes('заказ отправлен') ||
+              transcriptLower.includes('enjoy your hookah') ||
+              transcriptLower.includes('приятного отдыха') ||
+              transcriptLower.includes('приятного курения')) {
+            console.log('[VoiceAssistant] Order confirmed complete, ending session');
+            updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+            setState('complete');
+          }
         }
         break;
         
