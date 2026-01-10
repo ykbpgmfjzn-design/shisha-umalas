@@ -376,10 +376,15 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           updateOrderState(prev => ({ ...prev, stage: 'login', registrationOffered: true }));
         }
         
-        if (transcriptLower.includes('opening registration') || 
-            transcriptLower.includes('открываю регистрацию')) {
+        // If AI says it's opening registration, do the redirect
+        if ((transcriptLower.includes('opening registration') || 
+            transcriptLower.includes('открываю регистрацию') ||
+            transcriptLower.includes('открываю страницу')) &&
+            !redirectingToAuthRef.current) {
+          console.log('[VoiceAssistant] AI announced registration redirect, navigating...');
+          redirectingToAuthRef.current = true;
+          pendingAuthContinueRef.current = true;
           navigate('/auth');
-          updateOrderState(prev => ({ ...prev, stage: 'login' }));
         }
         
         if (transcriptLower.includes("what's your room") || 
