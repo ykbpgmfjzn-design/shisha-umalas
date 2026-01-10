@@ -103,13 +103,17 @@ serve(async (req) => {
     // Get the host for callback URLs
     const origin = req.headers.get("origin") || "https://hkgscohedqgxrhmbryww.lovable.app";
     
+    // Construct the order confirmation URL with all params
+    const orderConfirmationUrl = `${origin}/order-confirmation?id=${purchaseId}`;
+    
     const requestBody = {
       order: {
         amount: Math.round(amount),
         invoice_number: invoiceNumber,
         currency: "IDR",
-        callback_url: `${origin}/order-confirmation?id=${purchaseId}`,
-        callback_url_cancel: `${origin}/?cancelled=true`,
+        callback_url: orderConfirmationUrl,
+        callback_url_cancel: orderConfirmationUrl,
+        callback_url_back: orderConfirmationUrl,
         line_items: items?.map(item => ({
           name: item.name,
           price: Math.round(item.price),
