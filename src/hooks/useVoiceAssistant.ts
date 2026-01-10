@@ -304,12 +304,21 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
 
       dc.onopen = () => {
         setState('listening');
-        // Send initial greeting request
+        // Send initial greeting based on user status
+        let greetingInstruction = '';
+        if (!isLoggedIn) {
+          greetingInstruction = 'Greet briefly and tell user they need to register first to order. Ask if they want help registering. Max 15 words.';
+        } else if (!roomNumber) {
+          greetingInstruction = 'Greet briefly and ask for room number for delivery. Max 15 words.';
+        } else {
+          greetingInstruction = `Greet briefly, mention room ${roomNumber}, and ask what strength hookah they want. Max 15 words.`;
+        }
+        
         dc.send(JSON.stringify({
           type: 'response.create',
           response: {
             modalities: ['audio', 'text'],
-            instructions: 'Greet the user briefly and ask what flavor hookah they want. Keep it under 10 words.',
+            instructions: greetingInstruction,
           },
         }));
       };
