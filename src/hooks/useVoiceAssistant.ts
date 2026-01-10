@@ -152,20 +152,28 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     }
   }, []);
 
-  // Save room number to profile
+  // Save room number to profile - get fresh session to ensure we have user
   const saveRoomNumber = useCallback(async (roomNumber: string) => {
-    console.log('[VoiceAssistant] Attempting to save room number:', roomNumber, 'User:', user?.id);
+    console.log('[VoiceAssistant] Attempting to save room number:', roomNumber);
     
-    if (!user) {
-      console.error('[VoiceAssistant] Cannot save room - no user logged in');
+    // Get fresh session to ensure we have the current user
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUser = session?.user;
+    
+    if (!currentUser) {
+      console.error('[VoiceAssistant] Cannot save room - no user logged in (fresh check)');
+      toast.error('Войдите в систему чтобы сохранить комнату');
       return false;
     }
     
+    console.log('[VoiceAssistant] Saving room for user:', currentUser.id, currentUser.email);
+    
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('profiles')
         .update({ room_number: roomNumber })
-        .eq('id', user.id);
+        .eq('id', currentUser.id)
+        .select();
       
       if (error) {
         console.error('[VoiceAssistant] Failed to save room number:', error);
@@ -173,8 +181,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         return false;
       }
       
-      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
-      toast.success(`Комната ${roomNumber} сохранена в профиле!`);
+      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber, 'Result:', data);
+      toast.success(`Комната ${roomNumber} сохранена!`);
       
       // Continue conversation - ask about order strength ONLY
       setTimeout(() => {
@@ -184,9 +192,10 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       return true;
     } catch (err) {
       console.error('[VoiceAssistant] Error saving room number:', err);
+      toast.error('Ошибка сохранения комнаты');
       return false;
     }
-  }, [user, sendFollowUpMessage]);
+  }, [sendFollowUpMessage]);
 
   // Helper to update orderState and ref together
   const updateOrderState = useCallback((updater: (prev: OrderState) => OrderState) => {
