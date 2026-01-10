@@ -31,7 +31,7 @@ interface UseVoiceAssistantReturn {
   transcript: string;
   assistantMessage: string;
   error: string | null;
-  startSession: (language?: string, isLoggedIn?: boolean) => Promise<void>;
+  startSession: (language?: string, isLoggedIn?: boolean, roomNumber?: string | null) => Promise<void>;
   endSession: () => void;
   isActive: boolean;
   audioLevel: number;
@@ -201,7 +201,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     setOrderState({ stage: 'ordering' });
   }, [cleanup, orderState, addToCart]);
 
-  const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false) => {
+  const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
     try {
       setState('connecting');
       setError(null);
@@ -212,9 +212,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
-      // Get ephemeral token from edge function with auth status
+      // Get ephemeral token from edge function with auth status and room number
       const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-session', {
-        body: { language, isLoggedIn },
+        body: { language, isLoggedIn, roomNumber },
       });
 
       if (fnError || !data?.client_secret) {
