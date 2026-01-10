@@ -1,8 +1,11 @@
-import { motion } from 'framer-motion';
-import { Mic, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, X, Loader2, CheckCircle, AlertCircle, ChevronUp, ChevronDown, ShoppingCart, UserPlus, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { VoiceAssistantState } from '@/hooks/useVoiceAssistant';
+import type { VoiceAssistantState, OrderStage } from '@/hooks/useVoiceAssistant';
+
+
 
 interface VoiceAssistantActiveProps {
   state: VoiceAssistantState;
@@ -11,7 +14,15 @@ interface VoiceAssistantActiveProps {
   error: string | null;
   onEnd: () => void;
   audioLevel?: number;
+  currentStage?: OrderStage;
 }
+
+const stages: { key: OrderStage; labelKey: string; icon: React.ReactNode }[] = [
+  { key: 'ordering', labelKey: 'voice.stageOrder', icon: <Mic className="w-3 h-3" /> },
+  { key: 'cart', labelKey: 'voice.stageCart', icon: <ShoppingCart className="w-3 h-3" /> },
+  { key: 'login', labelKey: 'voice.stageLogin', icon: <UserPlus className="w-3 h-3" /> },
+  { key: 'ready', labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },
+];
 
 export const VoiceAssistantActive = ({
   state,
@@ -20,55 +31,45 @@ export const VoiceAssistantActive = ({
   error,
   onEnd,
   audioLevel = 0.5,
+  currentStage = 'ordering',
 }: VoiceAssistantActiveProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const getStateInfo = () => {
     switch (state) {
       case 'connecting':
         return {
-          icon: <Loader2 className="w-8 h-8 animate-spin" />,
           text: t('voice.connecting'),
           color: 'text-muted-foreground',
         };
       case 'listening':
         return {
-          icon: <Mic className="w-8 h-8" />,
           text: t('voice.listening'),
           color: 'text-green-500',
         };
       case 'speaking':
         return {
-          icon: <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          >
-            <Mic className="w-8 h-8" />
-          </motion.div>,
           text: t('voice.speaking'),
           color: 'text-primary',
         };
       case 'processing':
         return {
-          icon: <Loader2 className="w-8 h-8 animate-spin" />,
           text: t('voice.processing'),
           color: 'text-yellow-500',
         };
       case 'complete':
         return {
-          icon: <CheckCircle className="w-8 h-8" />,
           text: t('voice.complete'),
           color: 'text-green-500',
         };
       case 'error':
         return {
-          icon: <AlertCircle className="w-8 h-8" />,
           text: error || t('voice.error'),
           color: 'text-destructive',
         };
       default:
         return {
-          icon: <Mic className="w-8 h-8" />,
           text: '',
           color: 'text-muted-foreground',
         };
@@ -77,19 +78,36 @@ export const VoiceAssistantActive = ({
 
   const stateInfo = getStateInfo();
 
+  const getStageIndex = (stage: OrderStage) => {
+    const index = stages.findIndex(s => s.key === stage);
+    // Handle 'room' stage as part of login/ready flow
+    if (stage === 'room') return 2;
+    return index >= 0 ? index : 0;
+  };
+
+  const currentStageIndex = getStageIndex(currentStage);
+
+  // Stage labels
+  const stageLabels: Record<string, Record<OrderStage, string>> = {
+    en: { ordering: 'Order', cart: 'Cart', login: 'Login', room: 'Room', ready: 'Payment' },
+    ru: { ordering: 'Заказ', cart: 'Корзина', login: 'Вход', room: 'Комната', ready: 'Оплата' },
+  };
+
   if (state === 'idle') return null;
 
-  // Compact mode - minimal floating bar
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 50 }}
+      exit={{ opacity: 0, y: -20 }}
       className="fixed top-20 left-4 right-4 z-[40] max-w-sm mx-auto pointer-events-auto"
     >
       <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-lg overflow-hidden">
-        {/* Compact Header with status */}
-        <div className="flex items-center justify-between px-3 py-2">
+        {/* Header - always visible, clickable to expand/collapse */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
+        >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className={`${stateInfo.color} transition-colors flex-shrink-0`}>
               {state === 'connecting' || state === 'processing' ? (
@@ -106,62 +124,121 @@ export const VoiceAssistantActive = ({
               {stateInfo.text}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onEnd}
-            className="h-7 w-7 rounded-full flex-shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Compact content - only show latest message */}
-        {(transcript || assistantMessage) && (
-          <div className="px-3 pb-2 space-y-1">
-            {transcript && (
-              <p className="text-xs text-muted-foreground truncate">
-                {t('voice.youSaid')}: {transcript}
-              </p>
+          <div className="flex items-center gap-1">
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
             )}
-            {assistantMessage && (
-              <p className="text-xs text-foreground line-clamp-2">
-                {assistantMessage}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Mini audio visualization */}
-        {(state === 'listening' || state === 'speaking') && (
-          <div className="px-3 pb-2">
-            <div className="flex items-center justify-center gap-1 h-4">
-              {[...Array(12)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className={`w-1 rounded-full ${state === 'speaking' ? 'bg-primary' : 'bg-green-500'}`}
-                  animate={{
-                    height: [4, 4 + Math.random() * 12 * audioLevel, 4],
-                  }}
-                  transition={{
-                    duration: 0.3,
-                    repeat: Infinity,
-                    delay: i * 0.05,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Error retry button */}
-        {state === 'error' && (
-          <div className="px-3 pb-2">
-            <Button onClick={onEnd} variant="outline" size="sm" className="w-full h-7 text-xs">
-              {t('voice.tryAgain')}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => { e.stopPropagation(); onEnd(); }}
+              className="h-7 w-7 rounded-full flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
             </Button>
           </div>
-        )}
+        </button>
+
+        {/* Stage Indicator - always visible */}
+        <div className="px-3 pb-2">
+          <div className="flex items-center justify-between gap-1">
+            {stages.map((stage, index) => {
+              const isCompleted = index < currentStageIndex;
+              const isCurrent = index === currentStageIndex;
+              
+              return (
+                <div key={stage.key} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="flex items-center w-full">
+                    {/* Step circle */}
+                    <div
+                      className={`
+                        w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-all
+                        ${isCompleted ? 'bg-green-500 text-white' : ''}
+                        ${isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}
+                        ${!isCompleted && !isCurrent ? 'bg-muted text-muted-foreground' : ''}
+                      `}
+                    >
+                      {isCompleted ? <CheckCircle className="w-3 h-3" /> : stage.icon}
+                    </div>
+                    {/* Connector line */}
+                    {index < stages.length - 1 && (
+                      <div
+                        className={`flex-1 h-0.5 mx-1 transition-colors ${
+                          index < currentStageIndex ? 'bg-green-500' : 'bg-muted'
+                        }`}
+                      />
+                    )}
+                  </div>
+                  <span className={`text-[10px] ${isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                    {stageLabels[language]?.[stage.key] || stageLabels.en[stage.key]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Expandable content */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {/* Transcript and assistant message */}
+              {(transcript || assistantMessage) && (
+                <div className="px-3 pb-2 space-y-1 border-t border-border pt-2">
+                  {transcript && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {t('voice.youSaid')}: {transcript}
+                    </p>
+                  )}
+                  {assistantMessage && (
+                    <p className="text-xs text-foreground line-clamp-2">
+                      {assistantMessage}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Mini audio visualization */}
+              {(state === 'listening' || state === 'speaking') && (
+                <div className="px-3 pb-2">
+                  <div className="flex items-center justify-center gap-1 h-4">
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className={`w-1 rounded-full ${state === 'speaking' ? 'bg-primary' : 'bg-green-500'}`}
+                        animate={{
+                          height: [4, 4 + Math.random() * 12 * audioLevel, 4],
+                        }}
+                        transition={{
+                          duration: 0.3,
+                          repeat: Infinity,
+                          delay: i * 0.05,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Error retry button */}
+              {state === 'error' && (
+                <div className="px-3 pb-2">
+                  <Button onClick={onEnd} variant="outline" size="sm" className="w-full h-7 text-xs">
+                    {t('voice.tryAgain')}
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

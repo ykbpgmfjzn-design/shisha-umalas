@@ -120,6 +120,7 @@ export const GlobalVoiceAssistant = () => {
             error={error}
             onEnd={handleEndVoice}
             audioLevel={audioLevel}
+            currentStage={currentStage}
           />
         </div>
       )}
