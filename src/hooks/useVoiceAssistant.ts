@@ -134,6 +134,23 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     return null;
   }, []);
 
+  // Send follow-up message to continue conversation
+  const sendFollowUpMessage = useCallback((instruction: string) => {
+    const dc = dataChannelRef.current;
+    if (dc && dc.readyState === 'open') {
+      console.log('[VoiceAssistant] Sending follow-up instruction:', instruction);
+      dc.send(JSON.stringify({
+        type: 'response.create',
+        response: {
+          modalities: ['audio', 'text'],
+          instructions: instruction,
+        },
+      }));
+    } else {
+      console.log('[VoiceAssistant] Data channel not ready for follow-up');
+    }
+  }, []);
+
   // Save room number to profile
   const saveRoomNumber = useCallback(async (roomNumber: string) => {
     console.log('[VoiceAssistant] Attempting to save room number:', roomNumber, 'User:', user?.id);
@@ -157,12 +174,18 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       
       console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
       toast.success(`Комната ${roomNumber} сохранена в профиле!`);
+      
+      // Continue conversation - ask about order
+      setTimeout(() => {
+        sendFollowUpMessage(`Room ${roomNumber} confirmed and saved. Now ask what strength hookah they want: Ultra Light, Light, Medium, or Bold Strong? Be brief, max 12 words.`);
+      }, 500);
+      
       return true;
     } catch (err) {
       console.error('[VoiceAssistant] Error saving room number:', err);
       return false;
     }
-  }, [user]);
+  }, [user, sendFollowUpMessage]);
 
   // Helper to update orderState and ref together
   const updateOrderState = useCallback((updater: (prev: OrderState) => OrderState) => {
