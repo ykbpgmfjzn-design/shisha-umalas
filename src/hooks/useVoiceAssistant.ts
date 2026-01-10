@@ -417,6 +417,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         const transcriptLower = (event.transcript || '').toLowerCase();
         console.log('[VoiceAssistant] AI said:', event.transcript);
         
+        // AI offered registration - set flag so we can detect user confirmation later
         if (transcriptLower.includes('need to register') || 
             transcriptLower.includes('нужно зарегистрироваться') ||
             transcriptLower.includes('please log in') ||
@@ -424,22 +425,15 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             transcriptLower.includes('want to register') ||
             transcriptLower.includes('хотите зарегистрироваться') ||
             transcriptLower.includes('would you like to') ||
+            transcriptLower.includes('хотите помогу') ||
             transcriptLower.includes('sign up') ||
             transcriptLower.includes('создать аккаунт')) {
           console.log('[VoiceAssistant] AI offered registration');
           updateOrderState(prev => ({ ...prev, stage: 'login', registrationOffered: true }));
         }
         
-        // If AI says it's opening registration, do the redirect
-        if ((transcriptLower.includes('opening registration') || 
-            transcriptLower.includes('открываю регистрацию') ||
-            transcriptLower.includes('открываю страницу')) &&
-            !redirectingToAuthRef.current) {
-          console.log('[VoiceAssistant] AI announced registration redirect, navigating...');
-          redirectingToAuthRef.current = true;
-          pendingAuthContinueRef.current = true;
-          navigate('/auth');
-        }
+        // NOTE: We do NOT auto-redirect when AI says "opening registration"
+        // The redirect only happens when USER explicitly confirms (see input_audio_transcription.completed handler)
         
         if (transcriptLower.includes("what's your room") || 
             transcriptLower.includes('какой номер комнаты') ||
