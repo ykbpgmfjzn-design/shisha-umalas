@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { menuItems, findMenuItemByKeyword, getStrengthFromKeyword } from '@/data/menuItems';
 import { toast } from 'sonner';
+import voiceAssistantSingleton from './useVoiceAssistantSingleton';
 
 export type VoiceAssistantState = 
   | 'idle' 
@@ -25,7 +26,7 @@ interface OrderState {
   cartOpened?: boolean;
   autoCloseTimer?: NodeJS.Timeout;
   roomNumber?: string;
-  addedToCart?: boolean;  // Flag to prevent duplicate additions
+  addedToCart?: boolean;
 }
 
 interface UseVoiceAssistantReturn {
@@ -41,6 +42,9 @@ interface UseVoiceAssistantReturn {
 }
 
 export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
+  // Generate unique instance ID for this hook instance
+  const instanceId = useMemo(() => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, []);
+  
   const [state, setState] = useState<VoiceAssistantState>('idle');
   const [transcript, setTranscript] = useState('');
   const [assistantMessage, setAssistantMessage] = useState('');
@@ -49,16 +53,14 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const [orderState, setOrderState] = useState<OrderState>({ stage: 'login' });
   const orderStateRef = useRef<OrderState>({ stage: 'login' });
   const [user, setUser] = useState<any>(null);
-  const isAiRespondingRef = useRef(false); // Track if AI is currently responding
-  const pendingFollowUpRef = useRef<string | null>(null); // Queue for pending follow-up
-  const redirectingToAuthRef = useRef(false); // Prevent duplicate auth redirects
-  const submittingOrderRef = useRef(false); // Prevent duplicate order submissions
-  const sessionStartingRef = useRef(false); // Prevent duplicate session starts (mutex)
   
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const dataChannelRef = useRef<RTCDataChannel | null>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  // Action flags to prevent duplicate operations
+  const isAiRespondingRef = useRef(false);
+  const pendingFollowUpRef = useRef<string | null>(null);
+  const redirectingToAuthRef = useRef(false);
+  const submittingOrderRef = useRef(false);
+  
+  // Audio analysis refs
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -66,11 +68,10 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const { addItem, setIsOpen: setCartOpen, submitOrderProgrammatically } = useCart();
   const navigate = useNavigate();
 
-  // Track if session was started before auth change (for continuing after login)
-  const wasActiveBeforeAuthRef = useRef(false);
+  // Track if session was started before auth change
   const pendingAuthContinueRef = useRef(false);
 
-  // Listen for auth changes - basic setup (continuation logic moved after function definitions)
+  // Listen for auth changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
@@ -83,7 +84,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Audio level analyzer for visualization
+  // Audio level analyzer
   const startAudioAnalysis = useCallback((stream: MediaStream) => {
     try {
       const audioContext = new AudioContext();
@@ -127,12 +128,11 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   const extractRoomNumber = useCallback((text: string): string | null => {
     const lowerText = text.toLowerCase();
     
-    // Match patterns like "room 101", "номер 205", "комната 303", or just numbers
     const patterns = [
       /room\s*(\d+)/i,
       /номер\s*(\d+)/i,
       /комната\s*(\d+)/i,
-      /(\d{2,4})/,  // 2-4 digit numbers
+      /(\d{2,4})/,
     ];
     
     for (const pattern of patterns) {
@@ -144,15 +144,14 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     return null;
   }, []);
 
-  // Send follow-up message to continue conversation (with queue to avoid conflicts)
+  // Send follow-up message with queue
   const sendFollowUpMessage = useCallback((instruction: string) => {
-    const dc = dataChannelRef.current;
+    const dc = voiceAssistantSingleton.getDataChannel();
     if (!dc || dc.readyState !== 'open') {
       console.log('[VoiceAssistant] Data channel not ready for follow-up');
       return;
     }
     
-    // If AI is currently responding, queue the message
     if (isAiRespondingRef.current) {
       console.log('[VoiceAssistant] AI is responding, queuing follow-up:', instruction);
       pendingFollowUpRef.current = instruction;
@@ -170,21 +169,18 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     }));
   }, []);
 
-  // Save room number to profile - get fresh session to ensure we have user
+  // Save room number to profile
   const saveRoomNumber = useCallback(async (roomNumber: string) => {
     console.log('[VoiceAssistant] Attempting to save room number:', roomNumber);
     
-    // Get fresh session to ensure we have the current user
     const { data: { session } } = await supabase.auth.getSession();
     const currentUser = session?.user;
     
     if (!currentUser) {
-      console.error('[VoiceAssistant] Cannot save room - no user logged in (fresh check)');
+      console.error('[VoiceAssistant] Cannot save room - no user logged in');
       toast.error('Войдите в систему чтобы сохранить комнату');
       return false;
     }
-    
-    console.log('[VoiceAssistant] Saving room for user:', currentUser.id, currentUser.email);
     
     try {
       const { error, data } = await supabase
@@ -199,10 +195,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         return false;
       }
       
-      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber, 'Result:', data);
+      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
       toast.success(`Комната ${roomNumber} сохранена!`);
       
-      // Continue conversation - ask about order strength ONLY
       setTimeout(() => {
         sendFollowUpMessage(`Room ${roomNumber} saved. Say ONLY: "Отлично, комната ${roomNumber}! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?" Then STOP and wait for answer.`);
       }, 500);
@@ -224,45 +219,38 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     });
   }, []);
 
-  // Effect to continue conversation after user logs in
+  // Continue conversation after user logs in
   useEffect(() => {
-    // Check if user just logged in and we have a pending continue request
-    if (user && pendingAuthContinueRef.current && dataChannelRef.current?.readyState === 'open') {
+    if (user && pendingAuthContinueRef.current && voiceAssistantSingleton.getDataChannel()?.readyState === 'open') {
       console.log('[VoiceAssistant] User logged in, continuing conversation');
       pendingAuthContinueRef.current = false;
       
-      // Navigate back to home and show toast
       toast.success('Вход выполнен! Продолжаем заказ...');
       navigate('/');
       
-      // Update stage to room (need to get room number)
       updateOrderState(prev => ({ ...prev, stage: 'room' }));
       
-      // Send follow-up to continue the conversation
       setTimeout(() => {
         sendFollowUpMessage('User just logged in successfully. Say ONLY: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" or in English: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait.');
       }, 1000);
     }
   }, [user, navigate, updateOrderState, sendFollowUpMessage]);
 
-  // Process user transcript and add to cart if order is complete
+  // Process user transcript
   const processTranscript = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
     console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', orderStateRef.current.stage);
     
-    // Try to extract room number - only when we're at 'room' stage
     if (orderStateRef.current.stage === 'room') {
       const roomNumber = extractRoomNumber(text);
       if (roomNumber) {
         console.log('[VoiceAssistant] Detected room number at room stage:', roomNumber);
         updateOrderState(prev => ({ ...prev, roomNumber, stage: 'ordering' }));
-        // Save to profile
         saveRoomNumber(roomNumber);
-        return; // Don't process other patterns when we got room number
+        return;
       }
     }
     
-    // Try to find flavor (search in full text)
     const menuItem = findMenuItemByKeyword(lowerText);
     if (menuItem) {
       console.log('[VoiceAssistant] Detected menu item:', menuItem.name);
@@ -274,17 +262,15 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       }));
     }
     
-    // Try to find strength
     const strength = getStrengthFromKeyword(lowerText);
     if (strength) {
       console.log('[VoiceAssistant] Detected strength:', strength);
       updateOrderState(prev => ({ ...prev, strength }));
     }
     
-    // Try to find quantity - multiple patterns
     const quantityPatterns = [
       /(\d+)\s*(hookah|кальян|shisha|штук)/i,
-      /^(\d+)$/,  // Just a number
+      /^(\d+)$/,
       /(one|two|three|four|five|один|два|три|четыре|пять|1|2|3|4|5)\s*(hookah|кальян)?/i,
     ];
     
@@ -309,57 +295,23 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     }
   }, [extractRoomNumber, saveRoomNumber, updateOrderState]);
 
+  // Cleanup function
   const cleanup = useCallback(() => {
-    console.log('[VoiceAssistant] Cleanup called');
+    console.log('[VoiceAssistant] Cleanup called for instance:', instanceId);
     stopAudioAnalysis();
     
-    // Close data channel
-    if (dataChannelRef.current) {
-      try {
-        dataChannelRef.current.close();
-      } catch (e) {
-        console.log('[VoiceAssistant] Error closing data channel:', e);
-      }
-      dataChannelRef.current = null;
-    }
-    
-    // Close peer connection
-    if (peerConnectionRef.current) {
-      try {
-        peerConnectionRef.current.close();
-      } catch (e) {
-        console.log('[VoiceAssistant] Error closing peer connection:', e);
-      }
-      peerConnectionRef.current = null;
-    }
-    
-    // Stop all media tracks
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => {
-        track.stop();
-        console.log('[VoiceAssistant] Stopped track:', track.kind);
-      });
-      mediaStreamRef.current = null;
-    }
-    
-    // Clean up audio element
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.srcObject = null;
-      audioElementRef.current = null;
-    }
+    // Release singleton session
+    voiceAssistantSingleton.releaseSession(instanceId);
     
     // Reset all action flags
     isAiRespondingRef.current = false;
     pendingFollowUpRef.current = null;
     redirectingToAuthRef.current = false;
     submittingOrderRef.current = false;
-    sessionStartingRef.current = false; // Release mutex
-  }, [stopAudioAnalysis]);
+  }, [instanceId, stopAudioAnalysis]);
 
-  // Add items to cart - returns true if added successfully
+  // Add items to cart
   const addToCart = useCallback((itemId: string, quantity: number): boolean => {
-    // Check if already added to prevent duplicates
     if (orderStateRef.current.addedToCart) {
       console.log('[VoiceAssistant] Already added to cart, skipping duplicate');
       return false;
@@ -368,7 +320,6 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
     const item = menuItems.find(m => m.id === itemId);
     if (item) {
       console.log('[VoiceAssistant] Adding to cart:', item.name, 'x', quantity);
-      // Add items with quantity directly (not in a loop)
       for (let i = 0; i < quantity; i++) {
         addItem({
           id: item.id,
@@ -378,10 +329,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           strength: item.strength,
           isSignature: item.isSignature,
           itemType: item.itemType,
-        }, false); // Don't auto-open cart - we'll do it manually
+        }, false);
       }
       
-      // Mark as added to prevent duplicates
       orderStateRef.current = { ...orderStateRef.current, addedToCart: true };
       updateOrderState(prev => ({ ...prev, addedToCart: true }));
       
@@ -392,30 +342,232 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
   }, [addItem, updateOrderState]);
 
   const endSession = useCallback(() => {
-    // NOTE: Don't add to cart here - it was already added when AI said "added to cart"
-    // This prevents duplicate additions
-    console.log('[VoiceAssistant] Ending session, state:', orderStateRef.current);
+    console.log('[VoiceAssistant] Ending session, instance:', instanceId);
     cleanup();
     setState('idle');
     setTranscript('');
     setAssistantMessage('');
     updateOrderState(() => ({ stage: 'login' }));
-  }, [cleanup, updateOrderState]);
+  }, [cleanup, updateOrderState, instanceId]);
+
+  const handleRealtimeEvent = useCallback((event: any) => {
+    switch (event.type) {
+      case 'response.audio_transcript.delta':
+        setAssistantMessage(prev => prev + (event.delta || ''));
+        setState('speaking');
+        isAiRespondingRef.current = true;
+        break;
+        
+      case 'response.audio_transcript.done':
+        const transcriptLower = (event.transcript || '').toLowerCase();
+        console.log('[VoiceAssistant] AI said:', event.transcript);
+        
+        if (transcriptLower.includes('need to register') || 
+            transcriptLower.includes('нужно зарегистрироваться') ||
+            transcriptLower.includes('please log in') ||
+            transcriptLower.includes('войдите')) {
+          updateOrderState(prev => ({ ...prev, stage: 'login' }));
+        }
+        
+        if (transcriptLower.includes('opening registration') || 
+            transcriptLower.includes('открываю регистрацию')) {
+          navigate('/auth');
+          updateOrderState(prev => ({ ...prev, stage: 'login' }));
+        }
+        
+        if (transcriptLower.includes("what's your room") || 
+            transcriptLower.includes('какой номер комнаты') ||
+            transcriptLower.includes('номер комнаты') ||
+            transcriptLower.includes('room number')) {
+          updateOrderState(prev => ({ ...prev, stage: 'room' }));
+        }
+        
+        if (transcriptLower.includes('got it, room') || 
+            transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
+            transcriptLower.includes("let's order") ||
+            transcriptLower.includes('давайте закажем')) {
+          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
+        }
+        
+        if (transcriptLower.includes('what strength') || 
+            transcriptLower.includes('какую крепость') ||
+            transcriptLower.includes('which flavor') ||
+            transcriptLower.includes('какой вкус')) {
+          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
+        }
+        
+        if (transcriptLower.includes('added to cart') || 
+            transcriptLower.includes('добавлено в корзину') ||
+            transcriptLower.includes('opening cart') ||
+            transcriptLower.includes('открываю корзину')) {
+          let currentOrder = orderStateRef.current;
+          console.log('[VoiceAssistant] Current order state before AI parse:', currentOrder);
+          
+          if (!currentOrder.itemId) {
+            const menuItem = findMenuItemByKeyword(event.transcript || '');
+            if (menuItem) {
+              console.log('[VoiceAssistant] Found item from AI message:', menuItem.name);
+              updateOrderState(prev => ({ 
+                ...prev, 
+                itemId: menuItem.id,
+                flavor: menuItem.name,
+                strength: menuItem.strength,
+              }));
+              orderStateRef.current = { 
+                ...orderStateRef.current, 
+                itemId: menuItem.id,
+                flavor: menuItem.name,
+                strength: menuItem.strength,
+              };
+              currentOrder = orderStateRef.current;
+            }
+          }
+          
+          if (currentOrder.itemId) {
+            const qty = currentOrder.quantity || 1;
+            addToCart(currentOrder.itemId, qty);
+          }
+          
+          setTimeout(() => {
+            setCartOpen(true);
+            setTimeout(() => {
+              sendFollowUpMessage('The order has been added to cart. Now ask the user to confirm: "Check your order. Is everything correct? Say yes to proceed to payment." Be brief, max 15 words. Use the same language as the conversation.');
+            }, 800);
+          }, 300);
+          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+        }
+        
+        if (transcriptLower.includes('order guide complete') || 
+            transcriptLower.includes('сопровождение заказа завершено') ||
+            transcriptLower.includes('everything ready') ||
+            transcriptLower.includes('всё готово') ||
+            transcriptLower.includes('enjoy your hookah') ||
+            transcriptLower.includes('приятного') ||
+            transcriptLower.includes('goodbye') ||
+            transcriptLower.includes('до свидания') ||
+            transcriptLower.includes('see you') ||
+            transcriptLower.includes('до встречи') ||
+            transcriptLower.includes('have a great') ||
+            transcriptLower.includes('хорошего')) {
+          updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+          setState('complete');
+        }
+        break;
+        
+      case 'input_audio_buffer.speech_started':
+        setState('listening');
+        setTranscript('');
+        break;
+        
+      case 'conversation.item.input_audio_transcription.completed':
+        const transcriptText = event.transcript || '';
+        const userTextLower = transcriptText.toLowerCase();
+        console.log('[VoiceAssistant] User said:', transcriptText);
+        setTranscript(transcriptText);
+        processTranscript(transcriptText);
+        
+        // Detect user wants to register
+        if (orderStateRef.current.stage === 'login' && 
+            !redirectingToAuthRef.current &&
+            (userTextLower.includes('yes') || 
+             userTextLower.includes('да') ||
+             userTextLower.includes('готов') ||
+             userTextLower.includes('хочу') ||
+             userTextLower.includes('register') ||
+             userTextLower.includes('регистр') ||
+             userTextLower.includes('sign up') ||
+             userTextLower.includes('help') ||
+             userTextLower.includes('помог') ||
+             userTextLower.includes('okay') ||
+             userTextLower.includes('ок') ||
+             userTextLower.includes('давай'))) {
+          console.log('[VoiceAssistant] User wants to register, redirecting to auth page');
+          
+          redirectingToAuthRef.current = true;
+          pendingAuthContinueRef.current = true;
+          
+          sendFollowUpMessage('Opening registration page now. Say ONLY: "Открываю страницу регистрации. После входа продолжим." or in English: "Opening registration. We will continue after you log in." Then STOP.');
+          
+          setTimeout(() => {
+            navigate('/auth');
+          }, 500);
+        }
+        
+        // Detect user confirmation to submit order
+        if (orderStateRef.current.stage === 'cart' && 
+            !submittingOrderRef.current &&
+            (userTextLower.includes('yes') || 
+             userTextLower.includes('да') ||
+             userTextLower.includes('confirm') ||
+             userTextLower.includes('подтвержда') ||
+             userTextLower.includes('согласен') ||
+             userTextLower.includes('верно') ||
+             userTextLower.includes('correct') ||
+             userTextLower.includes('proceed') ||
+             userTextLower.includes('готов') ||
+             userTextLower.includes('оформ') ||
+             userTextLower.includes('submit') ||
+             userTextLower.includes('отправ') ||
+             userTextLower.includes('okay') ||
+             userTextLower.includes('ок') ||
+             userTextLower.includes('хорошо'))) {
+          console.log('[VoiceAssistant] User confirmed order, submitting...');
+          
+          submittingOrderRef.current = true;
+          
+          sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
+          
+          setTimeout(() => {
+            submitOrderProgrammatically().then((success) => {
+              if (success) {
+                console.log('[VoiceAssistant] Order submitted successfully');
+                setTimeout(() => {
+                  sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
+                }, 800);
+                updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+              } else {
+                console.log('[VoiceAssistant] Order submission failed');
+                submittingOrderRef.current = false;
+                sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
+              }
+            });
+          }, 500);
+        }
+        
+        setState('processing');
+        break;
+        
+      case 'response.done':
+        isAiRespondingRef.current = false;
+        
+        if (pendingFollowUpRef.current) {
+          const pending = pendingFollowUpRef.current;
+          pendingFollowUpRef.current = null;
+          setTimeout(() => {
+            sendFollowUpMessage(pending);
+          }, 300);
+        }
+        
+        if (state !== 'complete') {
+          setState('listening');
+        }
+        setAssistantMessage('');
+        break;
+        
+      case 'error':
+        console.error('Realtime error:', event.error);
+        setError(event.error?.message || 'An error occurred');
+        setState('error');
+        break;
+    }
+  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState, sendFollowUpMessage, submitOrderProgrammatically]);
 
   const startSession = useCallback(async (language: string = 'en', isLoggedIn: boolean = false, roomNumber: string | null = null) => {
-    // CRITICAL: Prevent duplicate session starts using mutex
-    if (sessionStartingRef.current) {
-      console.log('[VoiceAssistant] Session already starting, ignoring duplicate call');
+    // CRITICAL: Use singleton to prevent duplicate sessions
+    if (!voiceAssistantSingleton.tryAcquireSession(instanceId)) {
+      console.log('[VoiceAssistant] Could not acquire session - another instance is active');
       return;
     }
-    
-    // CRITICAL: If already active, clean up first
-    if (peerConnectionRef.current || dataChannelRef.current) {
-      console.log('[VoiceAssistant] Existing session detected, cleaning up first');
-      cleanup();
-    }
-    
-    sessionStartingRef.current = true;
     
     try {
       setState('connecting');
@@ -423,14 +575,14 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       setTranscript('');
       setAssistantMessage('');
       
-      // Reset action flags for new session
+      // Reset action flags
       redirectingToAuthRef.current = false;
       submittingOrderRef.current = false;
       pendingAuthContinueRef.current = false;
       isAiRespondingRef.current = false;
       pendingFollowUpRef.current = null;
       
-      // Set initial stage based on user status
+      // Set initial stage
       if (!isLoggedIn) {
         updateOrderState(() => ({ stage: 'login' }));
       } else if (!roomNumber) {
@@ -441,9 +593,9 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
 
       // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
+      voiceAssistantSingleton.setMediaStream(stream);
 
-      // Get ephemeral token from edge function with auth status and room number
+      // Get ephemeral token
       const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-session', {
         body: { language, isLoggedIn, roomNumber },
       });
@@ -454,30 +606,32 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
 
       // Create WebRTC peer connection
       const pc = new RTCPeerConnection();
-      peerConnectionRef.current = pc;
+      voiceAssistantSingleton.setPeerConnection(pc);
 
-      // Set up audio element for playback
+      // Set up audio element
       const audioEl = document.createElement('audio');
       audioEl.autoplay = true;
-      audioElementRef.current = audioEl;
+      voiceAssistantSingleton.setAudioElement(audioEl);
 
       pc.ontrack = (event) => {
         audioEl.srcObject = event.streams[0];
       };
 
-      // Add local audio track and start analysis
+      // Add local audio track
       stream.getTracks().forEach(track => {
         pc.addTrack(track, stream);
       });
       startAudioAnalysis(stream);
 
-      // Create data channel for events
+      // Create data channel
       const dc = pc.createDataChannel('oai-events');
-      dataChannelRef.current = dc;
+      voiceAssistantSingleton.setDataChannel(dc);
 
       dc.onopen = () => {
         setState('listening');
-        // Send initial greeting based on user status
+        voiceAssistantSingleton.markSessionActive(instanceId);
+        
+        // Send initial greeting
         let greetingInstruction = '';
         if (!isLoggedIn) {
           greetingInstruction = 'Greet briefly and tell user they need to register first to order. Ask if they want help registering. Max 15 words.';
@@ -521,7 +675,7 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Send offer to OpenAI and get answer
+      // Send offer to OpenAI
       const sdpResponse = await fetch(
         `https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`,
         {
@@ -544,270 +698,17 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         sdp: answerSdp,
       });
       
-      // Session started successfully, release mutex
-      sessionStartingRef.current = false;
-      console.log('[VoiceAssistant] Session started successfully');
+      console.log('[VoiceAssistant] Session started successfully, instance:', instanceId);
 
     } catch (err) {
       console.error('Voice assistant error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start voice assistant');
       setState('error');
       cleanup();
-      // Release mutex on error
-      sessionStartingRef.current = false;
     }
-  }, [cleanup, state, startAudioAnalysis, updateOrderState]);
+  }, [cleanup, state, startAudioAnalysis, updateOrderState, instanceId, handleRealtimeEvent]);
 
-  const handleRealtimeEvent = useCallback((event: any) => {
-    switch (event.type) {
-      case 'response.audio_transcript.delta':
-        setAssistantMessage(prev => prev + (event.delta || ''));
-        setState('speaking');
-        isAiRespondingRef.current = true; // AI is responding
-        break;
-        
-      case 'response.audio_transcript.done':
-        const transcriptLower = (event.transcript || '').toLowerCase();
-        console.log('[VoiceAssistant] AI said:', event.transcript);
-        
-        // Detect registration/login needed
-        if (transcriptLower.includes('need to register') || 
-            transcriptLower.includes('нужно зарегистрироваться') ||
-            transcriptLower.includes('please log in') ||
-            transcriptLower.includes('войдите')) {
-          updateOrderState(prev => ({ ...prev, stage: 'login' }));
-        }
-        
-        // Detect opening registration page
-        if (transcriptLower.includes('opening registration') || 
-            transcriptLower.includes('открываю регистрацию')) {
-          navigate('/auth');
-          updateOrderState(prev => ({ ...prev, stage: 'login' }));
-        }
-        
-        // Detect room number request - user logged in, need room
-        if (transcriptLower.includes("what's your room") || 
-            transcriptLower.includes('какой номер комнаты') ||
-            transcriptLower.includes('номер комнаты') ||
-            transcriptLower.includes('room number')) {
-          updateOrderState(prev => ({ ...prev, stage: 'room' }));
-        }
-        
-        // Detect room confirmed, moving to ordering
-        if (transcriptLower.includes('got it, room') || 
-            transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
-            transcriptLower.includes("let's order") ||
-            transcriptLower.includes('давайте закажем')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
-        }
-        
-        // Detect strength/flavor selection - we're in ordering stage
-        if (transcriptLower.includes('what strength') || 
-            transcriptLower.includes('какую крепость') ||
-            transcriptLower.includes('which flavor') ||
-            transcriptLower.includes('какой вкус')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
-        }
-        
-        // Detect "added to cart" - ADD FIRST then open cart
-        if (transcriptLower.includes('added to cart') || 
-            transcriptLower.includes('добавлено в корзину') ||
-            transcriptLower.includes('opening cart') ||
-            transcriptLower.includes('открываю корзину')) {
-          // Use ref for current state to avoid stale closure
-          let currentOrder = orderStateRef.current;
-          console.log('[VoiceAssistant] Current order state before AI parse:', currentOrder);
-          
-          // If no itemId, try to extract from AI's confirmation message
-          // AI says things like "1 Ultra Light Whiteline Vanilla, 280k. Added to cart!"
-          if (!currentOrder.itemId) {
-            console.log('[VoiceAssistant] No itemId, trying to extract from AI message:', event.transcript);
-            const menuItem = findMenuItemByKeyword(event.transcript || '');
-            if (menuItem) {
-              console.log('[VoiceAssistant] Found item from AI message:', menuItem.name);
-              updateOrderState(prev => ({ 
-                ...prev, 
-                itemId: menuItem.id,
-                flavor: menuItem.name,
-                strength: menuItem.strength,
-              }));
-              // Update ref immediately
-              orderStateRef.current = { 
-                ...orderStateRef.current, 
-                itemId: menuItem.id,
-                flavor: menuItem.name,
-                strength: menuItem.strength,
-              };
-              currentOrder = orderStateRef.current;
-            }
-          }
-          
-          console.log('[VoiceAssistant] Final order state:', currentOrder);
-          
-          // Add to cart FIRST if we have the order info
-          if (currentOrder.itemId) {
-            const qty = currentOrder.quantity || 1;
-            console.log('[VoiceAssistant] Adding to cart:', currentOrder.itemId, qty);
-            addToCart(currentOrder.itemId, qty);
-          } else {
-            console.log('[VoiceAssistant] No itemId in order state, cannot add to cart');
-          }
-          
-          // Open cart drawer after a small delay to ensure item is added
-          // Then send follow-up to ask for confirmation
-          setTimeout(() => {
-            setCartOpen(true);
-            console.log('[VoiceAssistant] Cart opened, sending confirmation request');
-            // Wait a bit for cart to fully open, then ask for confirmation
-            setTimeout(() => {
-              sendFollowUpMessage('The order has been added to cart. Now ask the user to confirm: "Check your order. Is everything correct? Say yes to proceed to payment." Be brief, max 15 words. Use the same language as the conversation.');
-            }, 800);
-          }, 300);
-          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-        }
-        
-        // NOTE: User confirmation detection moved to 'conversation.item.input_audio_transcription.completed'
-        // because we need to detect what the USER says, not what the AI says
-        
-        // Detect ready for payment / farewell - auto close after 3 seconds
-        if (transcriptLower.includes('order guide complete') || 
-            transcriptLower.includes('сопровождение заказа завершено') ||
-            transcriptLower.includes('everything ready') ||
-            transcriptLower.includes('всё готово') ||
-            transcriptLower.includes('enjoy your hookah') ||
-            transcriptLower.includes('приятного') ||
-            transcriptLower.includes('goodbye') ||
-            transcriptLower.includes('до свидания') ||
-            transcriptLower.includes('see you') ||
-            transcriptLower.includes('до встречи') ||
-            transcriptLower.includes('have a great') ||
-            transcriptLower.includes('хорошего')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-          setState('complete');
-        }
-        break;
-        
-      case 'input_audio_buffer.speech_started':
-        setState('listening');
-        setTranscript('');
-        break;
-        
-      case 'conversation.item.input_audio_transcription.completed':
-        const transcriptText = event.transcript || '';
-        const userTextLower = transcriptText.toLowerCase();
-        console.log('[VoiceAssistant] User said:', transcriptText);
-        setTranscript(transcriptText);
-        // Process the transcript to extract order info
-        processTranscript(transcriptText);
-        
-        // Detect user wants to register (when at login stage and not logged in)
-        // CRITICAL: Use flag to prevent duplicate redirects
-        if (orderStateRef.current.stage === 'login' && 
-            !redirectingToAuthRef.current &&
-            (userTextLower.includes('yes') || 
-             userTextLower.includes('да') ||
-             userTextLower.includes('готов') ||
-             userTextLower.includes('хочу') ||
-             userTextLower.includes('register') ||
-             userTextLower.includes('регистр') ||
-             userTextLower.includes('sign up') ||
-             userTextLower.includes('help') ||
-             userTextLower.includes('помог') ||
-             userTextLower.includes('okay') ||
-             userTextLower.includes('ок') ||
-             userTextLower.includes('давай'))) {
-          console.log('[VoiceAssistant] User wants to register, redirecting to auth page');
-          
-          // Set flag to prevent duplicate redirects
-          redirectingToAuthRef.current = true;
-          
-          // Set flag to continue conversation after login
-          pendingAuthContinueRef.current = true;
-          
-          // Tell user we're opening registration
-          sendFollowUpMessage('Opening registration page now. Say ONLY: "Открываю страницу регистрации. После входа продолжим." or in English: "Opening registration. We will continue after you log in." Then STOP.');
-          
-          // Navigate to auth page
-          setTimeout(() => {
-            navigate('/auth');
-          }, 500);
-        }
-        
-        // Detect user confirmation to submit order (only when in cart stage)
-        // CRITICAL: Use flag to prevent duplicate submissions
-        if (orderStateRef.current.stage === 'cart' && 
-            !submittingOrderRef.current &&
-            (userTextLower.includes('yes') || 
-             userTextLower.includes('да') ||
-             userTextLower.includes('confirm') ||
-             userTextLower.includes('подтвержда') ||
-             userTextLower.includes('согласен') ||
-             userTextLower.includes('верно') ||
-             userTextLower.includes('correct') ||
-             userTextLower.includes('proceed') ||
-             userTextLower.includes('готов') ||
-             userTextLower.includes('оформ') ||
-             userTextLower.includes('submit') ||
-             userTextLower.includes('отправ') ||
-             userTextLower.includes('okay') ||
-             userTextLower.includes('ок') ||
-             userTextLower.includes('хорошо'))) {
-          console.log('[VoiceAssistant] User confirmed order, submitting...');
-          
-          // Set flag to prevent duplicate submissions
-          submittingOrderRef.current = true;
-          
-          // Tell user we're submitting
-          sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
-          
-          // Add delay to ensure cart state is fully synced before submitting
-          setTimeout(() => {
-            submitOrderProgrammatically().then((success) => {
-              if (success) {
-                console.log('[VoiceAssistant] Order submitted successfully');
-                // Send farewell message after successful submission
-                setTimeout(() => {
-                  sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
-                }, 800);
-                updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-              } else {
-                console.log('[VoiceAssistant] Order submission failed');
-                submittingOrderRef.current = false; // Reset on failure to allow retry
-                sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
-              }
-            });
-          }, 500);
-        }
-        
-        setState('processing');
-        break;
-        
-      case 'response.done':
-        isAiRespondingRef.current = false; // AI finished responding
-        
-        // Send any pending follow-up message
-        if (pendingFollowUpRef.current) {
-          const pending = pendingFollowUpRef.current;
-          pendingFollowUpRef.current = null;
-          setTimeout(() => {
-            sendFollowUpMessage(pending);
-          }, 300);
-        }
-        
-        if (state !== 'complete') {
-          setState('listening');
-        }
-        setAssistantMessage('');
-        break;
-        
-      case 'error':
-        console.error('Realtime error:', event.error);
-        setError(event.error?.message || 'An error occurred');
-        setState('error');
-        break;
-    }
-  }, [state, addToCart, processTranscript, setCartOpen, navigate, updateOrderState, sendFollowUpMessage, submitOrderProgrammatically]);
-
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       cleanup();
