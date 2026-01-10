@@ -113,7 +113,8 @@ serve(async (req) => {
         currency: "IDR",
         callback_url: orderConfirmationUrl,
         callback_url_cancel: orderConfirmationUrl,
-        callback_url_back: orderConfirmationUrl,
+        callback_url_result: orderConfirmationUrl,
+        auto_redirect: false,
         line_items: items?.map(item => ({
           name: item.name,
           price: Math.round(item.price),
