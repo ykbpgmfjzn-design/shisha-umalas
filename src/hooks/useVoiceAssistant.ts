@@ -557,36 +557,8 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
-        // Detect user confirmation to submit order
-        if (orderStateRef.current.stage === 'cart' && 
-            (transcriptLower.includes('yes') || 
-             transcriptLower.includes('да') ||
-             transcriptLower.includes('confirm') ||
-             transcriptLower.includes('подтвержда') ||
-             transcriptLower.includes('согласен') ||
-             transcriptLower.includes('верно') ||
-             transcriptLower.includes('correct') ||
-             transcriptLower.includes('proceed') ||
-             transcriptLower.includes('готов') ||
-             transcriptLower.includes('оформ') ||
-             transcriptLower.includes('submit') ||
-             transcriptLower.includes('отправ'))) {
-          console.log('[VoiceAssistant] User confirmed order, submitting...');
-          // Submit order programmatically
-          submitOrderProgrammatically().then((success) => {
-            if (success) {
-              console.log('[VoiceAssistant] Order submitted successfully');
-              // Send farewell message
-              setTimeout(() => {
-                sendFollowUpMessage('Order submitted successfully! Thank the user, wish them a great time with their hookah, and say goodbye warmly. Be brief and friendly, max 20 words.');
-              }, 500);
-              updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-            } else {
-              console.log('[VoiceAssistant] Order submission failed');
-              sendFollowUpMessage('There was an issue submitting the order. Ask user to try again or submit manually.');
-            }
-          });
-        }
+        // NOTE: User confirmation detection moved to 'conversation.item.input_audio_transcription.completed'
+        // because we need to detect what the USER says, not what the AI says
         
         // Detect ready for payment / farewell - auto close after 3 seconds
         if (transcriptLower.includes('order guide complete') || 
@@ -613,10 +585,52 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
         
       case 'conversation.item.input_audio_transcription.completed':
         const transcriptText = event.transcript || '';
+        const userTextLower = transcriptText.toLowerCase();
         console.log('[VoiceAssistant] User said:', transcriptText);
         setTranscript(transcriptText);
         // Process the transcript to extract order info
         processTranscript(transcriptText);
+        
+        // Detect user confirmation to submit order (only when in cart stage)
+        if (orderStateRef.current.stage === 'cart' && 
+            (userTextLower.includes('yes') || 
+             userTextLower.includes('да') ||
+             userTextLower.includes('confirm') ||
+             userTextLower.includes('подтвержда') ||
+             userTextLower.includes('согласен') ||
+             userTextLower.includes('верно') ||
+             userTextLower.includes('correct') ||
+             userTextLower.includes('proceed') ||
+             userTextLower.includes('готов') ||
+             userTextLower.includes('оформ') ||
+             userTextLower.includes('submit') ||
+             userTextLower.includes('отправ') ||
+             userTextLower.includes('okay') ||
+             userTextLower.includes('ок') ||
+             userTextLower.includes('хорошо'))) {
+          console.log('[VoiceAssistant] User confirmed order, submitting...');
+          
+          // Tell user we're submitting
+          sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
+          
+          // Add delay to ensure cart state is fully synced before submitting
+          setTimeout(() => {
+            submitOrderProgrammatically().then((success) => {
+              if (success) {
+                console.log('[VoiceAssistant] Order submitted successfully');
+                // Send farewell message after successful submission
+                setTimeout(() => {
+                  sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
+                }, 800);
+                updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+              } else {
+                console.log('[VoiceAssistant] Order submission failed');
+                sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
+              }
+            });
+          }, 500);
+        }
+        
         setState('processing');
         break;
         
