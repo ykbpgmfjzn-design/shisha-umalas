@@ -85,7 +85,8 @@ export const VoiceAssistantActive = ({
       initial={{ opacity: 0, y: 100 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 100 }}
-      className="fixed bottom-24 left-4 right-4 z-[90] max-w-md mx-auto"
+      className="fixed bottom-24 left-4 right-4 z-[40] max-w-md mx-auto pointer-events-auto"
+      style={{ maxHeight: 'calc(100vh - 200px)' }}
     >
       <div className="bg-card/95 backdrop-blur-lg border border-border rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}

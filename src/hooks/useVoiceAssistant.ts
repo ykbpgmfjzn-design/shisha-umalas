@@ -21,6 +21,7 @@ interface OrderState {
   itemId?: string;
   stage: 'ordering' | 'cart' | 'login' | 'room' | 'ready';
   cartOpened?: boolean;
+  autoCloseTimer?: NodeJS.Timeout;
 }
 
 interface UseVoiceAssistantReturn {
@@ -354,11 +355,15 @@ export const useVoiceAssistant = (): UseVoiceAssistantReturn => {
           setOrderState(prev => ({ ...prev, stage: 'room' }));
         }
         
-        // Detect ready for payment
+        // Detect ready for payment - auto close after 3 seconds
         if (transcriptLower.includes('order guide complete') || 
             transcriptLower.includes('сопровождение заказа завершено') ||
             transcriptLower.includes('everything ready') ||
-            transcriptLower.includes('всё готово')) {
+            transcriptLower.includes('всё готово') ||
+            transcriptLower.includes('ready to pay') ||
+            transcriptLower.includes('готово к оплате') ||
+            transcriptLower.includes('click pay') ||
+            transcriptLower.includes('нажмите оплатить')) {
           setOrderState(prev => ({ ...prev, stage: 'ready' }));
           setState('complete');
         }
