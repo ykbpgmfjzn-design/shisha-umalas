@@ -15,7 +15,7 @@ export const GlobalVoiceAssistant = () => {
   const [wasNotLoggedIn, setWasNotLoggedIn] = useState(false);
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [pendingLoginContinue, setPendingLoginContinue] = useState(false);
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { setIsOpen: setCartOpen, items: cartItems, isOpen: isCartOpen } = useCart();
   const location = useLocation();
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -35,7 +35,9 @@ export const GlobalVoiceAssistant = () => {
     isActive,
     audioLevel,
     currentStage,
-  } = useVoiceAssistant();
+  } = useVoiceAssistant({
+    onLanguageDetected: setLanguage,
+  });
 
   // Fetch room number when user is logged in
   const fetchRoomNumber = async (userId: string): Promise<string | null> => {
