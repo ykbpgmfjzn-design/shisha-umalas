@@ -1,8 +1,7 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mic, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { VoiceWaveVisualizer } from '@/components/VoiceWaveVisualizer';
 import type { VoiceAssistantState } from '@/hooks/useVoiceAssistant';
 
 interface VoiceAssistantActiveProps {
@@ -69,7 +68,7 @@ export const VoiceAssistantActive = ({
         };
       default:
         return {
-          icon: <MicOff className="w-8 h-8" />,
+          icon: <Mic className="w-8 h-8" />,
           text: '',
           color: 'text-muted-foreground',
         };
@@ -80,22 +79,30 @@ export const VoiceAssistantActive = ({
 
   if (state === 'idle') return null;
 
+  // Compact mode - minimal floating bar
   return (
     <motion.div
-      initial={{ opacity: 0, y: 100 }}
+      initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 100 }}
-      className="fixed bottom-24 left-4 right-4 z-[40] max-w-md mx-auto pointer-events-auto"
-      style={{ maxHeight: 'calc(100vh - 200px)' }}
+      exit={{ opacity: 0, y: 50 }}
+      className="fixed top-20 left-4 right-4 z-[40] max-w-sm mx-auto pointer-events-auto"
     >
-      <div className="bg-card/95 backdrop-blur-lg border border-border rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className={`${stateInfo.color} transition-colors`}>
-              {stateInfo.icon}
+      <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-lg overflow-hidden">
+        {/* Compact Header with status */}
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className={`${stateInfo.color} transition-colors flex-shrink-0`}>
+              {state === 'connecting' || state === 'processing' ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : state === 'complete' ? (
+                <CheckCircle className="w-5 h-5" />
+              ) : state === 'error' ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
             </div>
-            <span className={`font-medium ${stateInfo.color}`}>
+            <span className={`text-sm font-medium ${stateInfo.color} truncate`}>
               {stateInfo.text}
             </span>
           </div>
@@ -103,75 +110,58 @@ export const VoiceAssistantActive = ({
             variant="ghost"
             size="icon"
             onClick={onEnd}
-            className="h-8 w-8 rounded-full"
+            className="h-7 w-7 rounded-full flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-3">
-          {/* User transcript */}
-          {transcript && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-muted/50 rounded-lg p-3"
-            >
-              <p className="text-xs text-muted-foreground mb-1">{t('voice.youSaid')}</p>
-              <p className="text-foreground">{transcript}</p>
-            </motion.div>
-          )}
+        {/* Compact content - only show latest message */}
+        {(transcript || assistantMessage) && (
+          <div className="px-3 pb-2 space-y-1">
+            {transcript && (
+              <p className="text-xs text-muted-foreground truncate">
+                {t('voice.youSaid')}: {transcript}
+              </p>
+            )}
+            {assistantMessage && (
+              <p className="text-xs text-foreground line-clamp-2">
+                {assistantMessage}
+              </p>
+            )}
+          </div>
+        )}
 
-          {/* Assistant message */}
-          {assistantMessage && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-primary/10 rounded-lg p-3 border border-primary/20"
-            >
-              <p className="text-xs text-primary mb-1">{t('voice.assistant')}</p>
-              <p className="text-foreground">{assistantMessage}</p>
-            </motion.div>
-          )}
-
-          {/* Audio visualization when listening or speaking */}
-          {(state === 'listening' || state === 'speaking') && (
-            <VoiceWaveVisualizer 
-              isActive={true} 
-              variant={state === 'speaking' ? 'speaking' : 'listening'}
-              audioLevel={audioLevel}
-            />
-          )}
-
-          {/* Complete state */}
-          {state === 'complete' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-4"
-            >
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
-              <p className="text-foreground font-medium">{t('voice.orderAdded')}</p>
-              <Button
-                onClick={onEnd}
-                className="mt-4"
-                variant="default"
-              >
-                {t('voice.continueShopping')}
-              </Button>
-            </motion.div>
-          )}
-
-          {/* Error state */}
-          {state === 'error' && (
-            <div className="text-center py-2">
-              <Button onClick={onEnd} variant="outline">
-                {t('voice.tryAgain')}
-              </Button>
+        {/* Mini audio visualization */}
+        {(state === 'listening' || state === 'speaking') && (
+          <div className="px-3 pb-2">
+            <div className="flex items-center justify-center gap-1 h-4">
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className={`w-1 rounded-full ${state === 'speaking' ? 'bg-primary' : 'bg-green-500'}`}
+                  animate={{
+                    height: [4, 4 + Math.random() * 12 * audioLevel, 4],
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    repeat: Infinity,
+                    delay: i * 0.05,
+                  }}
+                />
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Error retry button */}
+        {state === 'error' && (
+          <div className="px-3 pb-2">
+            <Button onClick={onEnd} variant="outline" size="sm" className="w-full h-7 text-xs">
+              {t('voice.tryAgain')}
+            </Button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
