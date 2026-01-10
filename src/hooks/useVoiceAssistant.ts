@@ -571,7 +571,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             orderStateRef.current.registrationOffered &&
             !redirectingToAuthRef.current) {
           
-          // User DECLINES registration - wants to order as guest
+          // User DECLINES registration - politely end session and let them browse
           if (userTextLower.includes('no') || 
               userTextLower.includes('нет') ||
               userTextLower.includes('не хочу') ||
@@ -584,14 +584,17 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               userTextLower.includes('later') ||
               userTextLower.includes('just browse') ||
               userTextLower.includes('просто посмотреть') ||
-              userTextLower.includes('меню')) {
-            console.log('[VoiceAssistant] User declined registration, switching to guest mode');
+              userTextLower.includes('сам')) {
+            console.log('[VoiceAssistant] User declined registration, ending session politely');
             
-            // Switch to ordering mode as guest
-            updateOrderState(prev => ({ ...prev, stage: 'ordering', registrationOffered: false }));
+            // Tell user they can browse and pay at reception, then end
+            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте кальян в меню, а оплатить можно на ресепшене отеля. Приятного выбора!" or in English: "No problem! Browse the menu and you can pay at the hotel reception. Enjoy browsing!" Then STOP.');
             
-            // Tell user they can order as guest
-            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Можете заказать по меню и оплатить на ресепшене отеля. Какую крепость кальяна хотите? Ультра лёгкий, Лёгкий, Средний или Крепкий?" or in English: "No problem! You can order from the menu and pay at the hotel reception. What hookah strength? Ultra Light, Light, Medium, or Bold Strong?" Then STOP and wait.');
+            // Mark as complete to end session after AI responds
+            setTimeout(() => {
+              updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+              setState('complete');
+            }, 3000);
           }
           // User ACCEPTS registration
           else if (userTextLower.includes('yes') || 
