@@ -136,7 +136,7 @@ export const GlobalVoiceAssistant = () => {
     }
   }, [pendingLoginContinue, isLoggedIn, isActive, language, roomNumber, startSession]);
 
-  // Auto-close when order ready
+  // Auto-close when order ready or session ended (e.g., user declined registration)
   useEffect(() => {
     if (currentStage === 'ready' || state === 'complete') {
       orderCompletedRef.current = true;
@@ -144,11 +144,21 @@ export const GlobalVoiceAssistant = () => {
       setPendingLoginContinue(false);
       isInitiatingSessionRef.current = false;
       
-      console.log('[GlobalVoiceAssistant] Order completed');
+      console.log('[GlobalVoiceAssistant] Session ending, stage:', currentStage, 'state:', state);
+      
+      // Clear any existing timer
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+      }
       
       autoCloseTimerRef.current = setTimeout(() => {
+        console.log('[GlobalVoiceAssistant] Auto-closing voice assistant');
         handleEndVoice();
-      }, 4000);
+        // Reset orderCompleted so user can start fresh session
+        setTimeout(() => {
+          orderCompletedRef.current = false;
+        }, 500);
+      }, 3000);
     }
     
     return () => {
