@@ -886,13 +886,17 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         const wasRegistrationOffered = orderStateRef.current.registrationOffered;
         
         // Keywords that indicate user wants to register (regardless of current stage)
+        // EXPANDED: include more variations and transliterations
         const registrationAcceptKeywords = [
           'да', 'yes', 'хочу', 'готов', 'давай', 'помог', 'регистр', 
-          'ok', 'ок', 'окей', 'конечно', 'sure', 'iya', 'ya', 'ладно', 'согласен'
+          'ok', 'ок', 'окей', 'конечно', 'sure', 'iya', 'ya', 'ладно', 'согласен',
+          'помоги', 'пом', 'хоч', 'гот', 'дав', 'кон', 'лад', 'сог',
+          'yep', 'yeah', 'yea', 'yup', 'absolutely', 'of course', 'please',
+          'пожалуйста', 'можно', 'буду', 'хотел', 'нужн', 'надо'
         ];
         const registrationDeclineKeywords = [
           'нет', 'no', 'не хочу', 'не надо', 'без', 'skip', 'пропустить', 
-          'потом', 'later', 'сам', 'tidak', 'не сейчас'
+          'потом', 'later', 'сам', 'tidak', 'не сейчас', 'nope', 'nah'
         ];
         
         const userWantsToRegister = registrationAcceptKeywords.some(kw => userTextLower.includes(kw));
@@ -923,15 +927,38 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             
             // Voice feedback - SHORT, then redirect
             if (isRussian) {
-              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ. НЕ СПРАШИВАЙ имя или телефон.');
+              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ.');
             } else {
-              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP. DO NOT ask for name or phone.');
+              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP.');
             }
             
-            // Navigate IMMEDIATELY - don't wait
+            // Navigate IMMEDIATELY - don't wait for AI response
+            console.log('[VoiceAssistant] Navigating to /auth NOW');
             setTimeout(() => {
               navigate('/auth');
-            }, 500);
+            }, 300);
+          }
+          // If transcript is unclear but NOT a decline, treat as acceptance at login stage
+          // This handles cases where speech recognition gives garbled text
+          else if (isLoginStage && !userDeclinesRegistration && transcriptText.length > 0) {
+            console.log('[VoiceAssistant] Unclear response at login, treating as acceptance:', transcriptText);
+            
+            redirectingToAuthRef.current = true;
+            pendingAuthContinueRef.current = true;
+            
+            const lang = detectedLanguageRef.current;
+            const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+            
+            if (isRussian) {
+              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ.');
+            } else {
+              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP.');
+            }
+            
+            console.log('[VoiceAssistant] Navigating to /auth NOW (unclear response fallback)');
+            setTimeout(() => {
+              navigate('/auth');
+            }, 300);
           }
         }
         
