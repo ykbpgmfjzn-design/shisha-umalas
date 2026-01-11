@@ -518,106 +518,14 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       }
     }
     
-    // STRENGTH STAGE: Detect strength and move to flavor
-    if (currentStage === 'strength') {
-      const strength = getStrengthFromKeyword(lowerText);
-      if (strength) {
-        console.log('[VoiceAssistant] Detected strength:', strength, '-> moving to flavor stage');
-        updateOrderState(prev => ({ ...prev, strength, stage: 'flavor', strengthAsked: true }));
-        
-        // Use detected language
-        const lang = detectedLanguageRef.current;
-        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-        
-        // Ask for flavor
-        setTimeout(() => {
-          if (isRussian) {
-            sendFollowUpMessage(`Пользователь выбрал крепость ${strength}. Скажи ТОЛЬКО вкусы этой категории на РУССКОМ, макс 20 слов. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
-          } else {
-            sendFollowUpMessage(`User chose ${strength} strength. Now list flavors for this category in ENGLISH only, max 20 words. SPEAK ONLY IN ENGLISH.`);
-          }
-        }, 500);
-        return;
-      }
-    }
+    // STRENGTH STAGE: User confirms/rejects - AI will parse and confirm strength
+    // NOTE: We don't extract strength from user speech - AI does that and we read from AI's confirmation
+    // Just let AI handle the conversation naturally
     
-    // FLAVOR STAGE: Detect flavor/menu item and add to cart, then ask "want more?"
-    if (currentStage === 'flavor' || currentStage === 'strength') {
-      const menuItem = findMenuItemByKeyword(lowerText);
-      if (menuItem) {
-        console.log('[VoiceAssistant] Detected menu item:', menuItem.name, '-> adding to cart');
-        
-        // Default quantity is 1
-        const quantity = orderStateRef.current.quantity || 1;
-        
-        updateOrderState(prev => ({ 
-          ...prev, 
-          flavor: menuItem.name,
-          itemId: menuItem.id,
-          strength: menuItem.strength || prev.strength,
-          quantity,
-          flavorAsked: true,
-          addedToCart: true,
-        }));
-        
-        // Add to cart using the addItem from context (DON'T open cart yet!)
-        for (let i = 0; i < quantity; i++) {
-          addItem({
-            id: menuItem.id,
-            name: menuItem.name,
-            price: menuItem.price,
-            priceDisplay: menuItem.priceDisplay,
-            strength: menuItem.strength,
-            isSignature: menuItem.isSignature,
-            itemType: menuItem.itemType,
-          }, false);
-        }
-        
-        toast.success(`Добавлено ${quantity}x ${menuItem.name}!`);
-        
-        // Move to "more" stage - ask if they want another hookah
-        updateOrderState(prev => ({ ...prev, stage: 'more' }));
-        
-        // Use detected language
-        const lang = detectedLanguageRef.current;
-        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-        
-        setTimeout(() => {
-          if (isRussian) {
-            sendFollowUpMessage(`${quantity}x ${menuItem.name} добавлено. Скажи ТОЛЬКО: "Добавлено! Хотите заказать ещё один кальян?" Потом СТОП и жди да/нет. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
-          } else {
-            sendFollowUpMessage(`${quantity}x ${menuItem.name} added to cart. Say ONLY: "Added! Would you like to order another hookah?" Then STOP and wait for yes/no. SPEAK ONLY IN ENGLISH.`);
-          }
-        }, 500);
-        return;
-      }
-      
-      // Also check for quantity in flavor stage
-      const quantityPatterns = [
-        /(\d+)\s*(hookah|кальян|shisha|штук)/i,
-        /(one|two|three|four|five|один|два|три|четыре|пять)\s*(hookah|кальян)?/i,
-      ];
-      
-      const numMap: Record<string, number> = {
-        'one': 1, 'один': 1,
-        'two': 2, 'два': 2,
-        'three': 3, 'три': 3,
-        'four': 4, 'четыре': 4,
-        'five': 5, 'пять': 5,
-      };
-      
-      for (const pattern of quantityPatterns) {
-        const match = lowerText.match(pattern);
-        if (match && match[1]) {
-          const qty = numMap[match[1].toLowerCase()] || parseInt(match[1]);
-          if (qty > 0 && qty <= 10) {
-            console.log('[VoiceAssistant] Detected quantity:', qty);
-            updateOrderState(prev => ({ ...prev, quantity: qty }));
-            break;
-          }
-        }
-      }
-    }
+    // FLAVOR STAGE: User confirms/rejects - AI will parse and confirm flavor  
+    // NOTE: We don't extract flavor from user speech - AI does that and we read from AI's confirmation
+    // NOTE: Flavor detection removed from user speech processing
+    // AI will confirm the flavor (e.g., "Арбузная Волна, отлично!") and we extract from AI response
     
     // MORE STAGE: User deciding whether to add more hookahs or proceed to cart
     if (currentStage === 'more' || currentStage === 'flavor') {
@@ -790,141 +698,129 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         // NOTE: We do NOT auto-redirect when AI says "opening registration"
         // The redirect only happens when USER explicitly confirms (see input_audio_transcription.completed handler)
         
+        // ============= AI-CENTRIC DATA EXTRACTION =============
+        // CRITICAL: Extract data from what AI CONFIRMS, not from user speech
+        // This is more reliable because AI normalizes user input
+        
+        // --- STAGE: LOGIN ---
         if (transcriptLower.includes("what's your room") || 
             transcriptLower.includes('какой номер комнаты') ||
-            transcriptLower.includes('номер комнаты') ||
+            transcriptLower.includes('номер комнаты для доставки') ||
             transcriptLower.includes('room number')) {
           updateOrderState(prev => ({ ...prev, stage: 'room' }));
+          voiceAssistantSingleton.setStage('room');
         }
         
-        if (transcriptLower.includes('got it, room') || 
-            transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
-            transcriptLower.includes("let's order") ||
-            transcriptLower.includes('давайте закажем')) {
-          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
-        }
-        
-        if (transcriptLower.includes('what strength') || 
-            transcriptLower.includes('какую крепость')) {
-          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
-        }
-        
-        if (transcriptLower.includes('which flavor') ||
-            transcriptLower.includes('какой вкус')) {
-          updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
-        }
-        
-        // ============= HOOKAH SELECTION STAGE TRIGGERS =============
-        // AI mentions strength selection - EXPANDED triggers
-        const strengthTriggers = [
-          'ultra light', 'ультра лёгкий', 'ультра легкий', 'what strength', 'какую крепость',
-          'light, medium', 'лёгкий, средний', 'легкий, средний', 'choose strength', 'выберите крепость',
-          'комната', 'room', 'крепость кальяна', 'hookah strength', 'лёгкий или', 'light or',
-          'средний или', 'medium or', 'крепкий', 'bold strong', 'отлично, комната', 'great, room'
-        ];
-        if (strengthTriggers.some(phrase => transcriptLower.includes(phrase)) && 
-            (transcriptLower.includes('крепость') || transcriptLower.includes('strength') || 
-             transcriptLower.includes('комната') || transcriptLower.includes('room'))) {
-          console.log('[VoiceAssistant] AI asking about strength, updating to strength stage');
-          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
-          voiceAssistantSingleton.setStage('strength'); // Explicit sync
-        }
-        
-        // AI mentions flavor selection
-        const flavorTriggers = [
-          'which flavor', 'какой вкус', 'choose flavor', 'выберите вкус',
-          'menthol', 'ментол', 'fruity', 'фруктов', 'what flavor', 'какой аромат'
-        ];
-        if (flavorTriggers.some(phrase => transcriptLower.includes(phrase)) && 
-            !strengthTriggers.some(phrase => transcriptLower.includes(phrase))) {
-          console.log('[VoiceAssistant] AI asking about flavor, updating to flavor stage');
-          updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
-        }
-        
-        // ============= AI CONFIRMED FLAVOR SELECTION → ADD TO CART =============
-        // When AI says "Арбузная Волна, отлично!" or similar, we need to add to cart
-        const menuItemFromAI = findMenuItemByKeyword(transcriptLower);
-        const aiConfirmsPhrases = ['отлично', 'хорошо', 'great', 'okay', 'good choice', 'хороший выбор', 'добавляю', 'adding'];
-        const aiConfirms = aiConfirmsPhrases.some(phrase => transcriptLower.includes(phrase));
-        
-        if (menuItemFromAI && aiConfirms && !orderStateRef.current.addedToCart) {
-          console.log('[VoiceAssistant] AI confirmed flavor, adding to cart:', menuItemFromAI.name);
+        // --- STAGE: ROOM - AI confirms room number like "Комната 105, верно?" ---
+        const roomConfirmMatch = (event.transcript || '').match(/комната\s*(\d+)/i) ||
+                                 (event.transcript || '').match(/room\s*(\d+)/i);
+        if (roomConfirmMatch && roomConfirmMatch[1]) {
+          const confirmedRoom = roomConfirmMatch[1];
+          console.log('[VoiceAssistant] AI confirmed room number:', confirmedRoom);
           
-          // Add to cart
-          addItem({
-            id: menuItemFromAI.id,
-            name: menuItemFromAI.name,
-            price: menuItemFromAI.price,
-            priceDisplay: menuItemFromAI.priceDisplay,
-            strength: menuItemFromAI.strength,
-            isSignature: menuItemFromAI.isSignature,
-            itemType: menuItemFromAI.itemType,
-          }, false);
-          
+          // Store in pending state - will be saved when user confirms
           updateOrderState(prev => ({ 
             ...prev, 
-            flavor: menuItemFromAI.name,
-            itemId: menuItemFromAI.id,
-            addedToCart: true,
-            stage: 'more'
+            roomNumber: confirmedRoom, 
+            stage: 'room_confirm' 
           }));
-          
-          toast.success(`${menuItemFromAI.name} добавлен в корзину!`);
+          voiceAssistantSingleton.setStage('room_confirm');
         }
         
-        // ============= ADDED TO CART → MORE STAGE =============
-        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!', 'в корзине', 'хотите ещё', 'would you like another'];
-        const isAddedToCart = addedToCartPhrases.some(phrase => transcriptLower.includes(phrase));
-        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah', 'хотите заказать ещё', 'хотите добавить'].some(p => transcriptLower.includes(p));
+        // --- STAGE: STRENGTH - AI confirms strength like "Ультра лёгкий, хорошо" ---
+        const strengthFromAI = getStrengthFromKeyword(transcriptLower);
+        const aiConfirmsStrength = ['хорошо', 'отлично', 'okay', 'good', 'great', 'выбрали'].some(p => transcriptLower.includes(p));
         
-        if (isAddedToCart || askingForMore) {
-          console.log('[VoiceAssistant] Item added to cart or AI asking for more, moving to more stage');
-          updateOrderState(prev => ({ ...prev, stage: 'more' }));
+        if (strengthFromAI && aiConfirmsStrength && orderStateRef.current.stage === 'strength') {
+          console.log('[VoiceAssistant] AI confirmed strength:', strengthFromAI);
+          updateOrderState(prev => ({ ...prev, strength: strengthFromAI, stage: 'flavor' }));
+          voiceAssistantSingleton.setStage('flavor');
         }
         
-        // ============= CART OPENING TRIGGERS =============
+        // AI asks about strength → update stage
+        if ((transcriptLower.includes('какую крепость') || transcriptLower.includes('what strength')) &&
+            !strengthFromAI) {
+          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
+          voiceAssistantSingleton.setStage('strength');
+        }
+        
+        // --- STAGE: FLAVOR - AI confirms flavor like "Арбузная Волна, отлично!" ---
+        const menuItemFromAI = findMenuItemByKeyword(transcriptLower);
+        const aiConfirmsFlavor = ['отлично', 'хорошо', 'хороший выбор', 'great', 'good choice', 'добавляю', 'adding', 'добавлено'].some(p => transcriptLower.includes(p));
+        const aiAsksForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah', 'добавить ещё'].some(p => transcriptLower.includes(p));
+        
+        if (menuItemFromAI && (aiConfirmsFlavor || aiAsksForMore)) {
+          // Only add if not already added in this session
+          if (!orderStateRef.current.addedToCart || orderStateRef.current.flavor !== menuItemFromAI.name) {
+            console.log('[VoiceAssistant] AI confirmed flavor, adding to cart:', menuItemFromAI.name);
+            
+            // Add to cart
+            addItem({
+              id: menuItemFromAI.id,
+              name: menuItemFromAI.name,
+              price: menuItemFromAI.price,
+              priceDisplay: menuItemFromAI.priceDisplay,
+              strength: menuItemFromAI.strength,
+              isSignature: menuItemFromAI.isSignature,
+              itemType: menuItemFromAI.itemType,
+            }, false);
+            
+            updateOrderState(prev => ({ 
+              ...prev, 
+              flavor: menuItemFromAI.name,
+              itemId: menuItemFromAI.id,
+              strength: menuItemFromAI.strength || prev.strength,
+              addedToCart: true,
+              stage: 'more'
+            }));
+            voiceAssistantSingleton.setStage('more');
+            
+            toast.success(`${menuItemFromAI.name} добавлен в корзину!`);
+          }
+        }
+        
+        // --- STAGE: MORE → CART ---
         const cartOpenTriggers = [
-          'opening cart', 'открываю корзину', 'открываю для проверки',
-          'проверьте заказ', 'check your order', 'корзину для проверки', 'cart for review',
-          'всё верно', 'is everything correct', 'подтвердите заказ', 'confirm your order',
-          'готовы оформить', 'ready to checkout', 'хотите оплатить', 'want to pay'
+          'проверьте заказ', 'check your order', 'всё верно', 'is everything correct',
+          'подтвердите заказ', 'confirm your order', 'готовы оформить', 'ready to checkout',
+          'ваш заказ', 'your order', 'открываю корзину', 'opening cart'
         ];
         
         if (cartOpenTriggers.some(phrase => transcriptLower.includes(phrase))) {
-          console.log('[VoiceAssistant] AI mentioned cart, updating to cart stage');
+          console.log('[VoiceAssistant] AI mentioned cart verification');
           
           const currentStageFromRef = orderStateRef.current.stage;
           if (!['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
             updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-            console.log('[VoiceAssistant] FORCING cart open NOW');
+            voiceAssistantSingleton.setStage('cart');
+            console.log('[VoiceAssistant] Opening cart');
             setCartOpen(true);
           }
         }
         
-        // ============= PAYMENT STAGE TRIGGERS =============
+        // --- STAGE: PAYMENT ---
         const paymentTriggers = [
-          'выберите способ оплаты', 'choose payment', 'оплата', 'payment',
-          'оплатите', 'pay for', 'открываю оплату', 'opening payment',
           'способ оплаты', 'payment method', 'заказ оформлен', 'order confirmed',
-          'заказ отправлен', 'order submitted', 'переходим к оплате', 'proceed to payment'
+          'переходим к оплате', 'proceed to payment', 'выберите оплату', 'choose payment'
         ];
         
         if (paymentTriggers.some(phrase => transcriptLower.includes(phrase))) {
-          console.log('[VoiceAssistant] AI mentioned payment, updating to payment stage');
+          console.log('[VoiceAssistant] AI mentioned payment');
           updateOrderState(prev => ({ ...prev, stage: 'payment' }));
+          voiceAssistantSingleton.setStage('payment');
         }
         
-        // ============= ORDER COMPLETE TRIGGERS =============
+        // --- STAGE: COMPLETE ---
         const completeTriggers = [
           'приятного отдыха', 'enjoy', 'приятного курения', 'have a nice',
-          'заказ готов', 'order ready', 'сопровождение завершено', 'guide complete',
-          'спасибо за заказ', 'thank you for order', 'ждите доставку', 'wait for delivery',
-          'скоро будет', 'coming soon', 'несут', 'on the way'
+          'заказ готов', 'order ready', 'спасибо за заказ', 'thank you for order',
+          'ждите доставку', 'wait for delivery', 'скоро будет', 'coming soon'
         ];
         
         if (completeTriggers.some(phrase => transcriptLower.includes(phrase))) {
           console.log('[VoiceAssistant] AI indicated completion, updating to ready stage');
           updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+          voiceAssistantSingleton.setStage('ready');
           setState('complete');
         }
         break;
