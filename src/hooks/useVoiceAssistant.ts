@@ -359,6 +359,33 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     const currentStage = orderStateRef.current.stage;
     console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', currentStage);
     
+    // ============= GLOBAL COMMAND: CHANGE ROOM =============
+    // Can be triggered at any stage after room was set (strength, flavor, more, cart)
+    const changeRoomKeywords = [
+      'изменить комнату', 'изменить номер', 'другая комната', 'другой номер',
+      'поменять комнату', 'сменить комнату', 'change room', 'different room',
+      'wrong room', 'неправильная комната', 'не та комната'
+    ];
+    
+    const wantsToChangeRoom = changeRoomKeywords.some(kw => lowerText.includes(kw));
+    
+    if (wantsToChangeRoom && ['strength', 'flavor', 'more', 'cart'].includes(currentStage)) {
+      console.log('[VoiceAssistant] User wants to change room, going back to room stage');
+      updateOrderState(prev => ({ ...prev, roomNumber: undefined, stage: 'room' }));
+      
+      const lang = detectedLanguageRef.current;
+      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+      
+      setTimeout(() => {
+        if (isRussian) {
+          sendFollowUpMessage('Скажи ТОЛЬКО: "Хорошо, назовите новый номер комнаты для доставки." Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+        } else {
+          sendFollowUpMessage('Say ONLY: "Okay, please tell me the new room number for delivery." Then STOP. SPEAK ONLY IN ENGLISH.');
+        }
+      }, 500);
+      return;
+    }
+    
     // ROOM STAGE: Extract room number and ASK FOR CONFIRMATION (don't save yet!)
     if (currentStage === 'room') {
       const roomNumber = extractRoomNumber(text);
