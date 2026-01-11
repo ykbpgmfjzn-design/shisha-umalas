@@ -678,71 +678,49 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           }
         }
         
-        // Detect user wants to register - only if registration was offered by AI
-        if (orderStateRef.current.stage === 'login' && 
-            orderStateRef.current.registrationOffered &&
-            !redirectingToAuthRef.current) {
+        // ============= REGISTRATION FLOW =============
+        // Handle registration acceptance/decline at login stage
+        // IMPORTANT: Check stage is 'login' OR check for explicit registration keywords regardless of stage
+        const isLoginStage = orderStateRef.current.stage === 'login';
+        const wasRegistrationOffered = orderStateRef.current.registrationOffered;
+        
+        // Keywords that indicate user wants to register (regardless of current stage)
+        const registrationAcceptKeywords = [
+          'да', 'yes', 'хочу', 'готов', 'давай', 'помог', 'регистр', 
+          'ok', 'ок', 'окей', 'конечно', 'sure', 'iya', 'ya', 'ладно', 'согласен'
+        ];
+        const registrationDeclineKeywords = [
+          'нет', 'no', 'не хочу', 'не надо', 'без', 'skip', 'пропустить', 
+          'потом', 'later', 'сам', 'tidak', 'не сейчас'
+        ];
+        
+        const userWantsToRegister = registrationAcceptKeywords.some(kw => userTextLower.includes(kw));
+        const userDeclinesRegistration = registrationDeclineKeywords.some(kw => userTextLower.includes(kw));
+        
+        // Only process if: at login stage, OR registration was offered and not yet redirecting
+        if ((isLoginStage || wasRegistrationOffered) && !redirectingToAuthRef.current) {
           
-          // User DECLINES registration - politely end session and let them browse
-          if (intentResult.intent === 'decline_registration' && intentResult.accepted) {
-            console.log('[VoiceAssistant] User declined registration, ending session politely');
-            
-            // Tell user they can browse and pay at reception, then end
-            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте кальян в меню, а оплатить можно на ресепшене отеля. Приятного выбора!" or in English: "No problem! Browse the menu and you can pay at the hotel reception. Enjoy browsing!" Then STOP.');
-            
-            // Mark as complete to end session after AI responds
+          // User DECLINES registration
+          if (userDeclinesRegistration && !userWantsToRegister) {
+            console.log('[VoiceAssistant] User declined registration');
+            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте кальян в меню, а оплатить можно на ресепшене. Приятного выбора!" or in English: "No problem! Browse the menu. Enjoy!" Then STOP.');
             setTimeout(() => {
               updateOrderState(prev => ({ ...prev, stage: 'ready' }));
               setState('complete');
             }, 3000);
           }
-          // User ACCEPTS registration - check intent confidence
-          else if (intentResult.intent === 'agree_registration' && intentResult.accepted) {
-            console.log('[VoiceAssistant] User confirmed registration, redirecting to auth page');
+          // User ACCEPTS registration
+          else if (userWantsToRegister && !userDeclinesRegistration) {
+            console.log('[VoiceAssistant] User confirmed registration, redirecting to /auth');
             
             redirectingToAuthRef.current = true;
             pendingAuthContinueRef.current = true;
             
-            // Navigate immediately without waiting for AI
+            // Navigate immediately
             navigate('/auth');
             
-            // Also send follow-up for voice feedback
-            sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
-          }
-          // Fallback keyword matching - simple да/yes/нет/no should work
-          else if (userTextLower.includes('no') || 
-              userTextLower.includes('нет') ||
-              userTextLower.includes('не хочу') ||
-              userTextLower.includes('без регистрации') ||
-              userTextLower.includes('сам') ||
-              userTextLower.includes('tidak')) {
-            console.log('[VoiceAssistant] User declined registration (fallback), ending session');
-            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте в меню. Приятного выбора!" Then STOP.');
-            setTimeout(() => {
-              updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-              setState('complete');
-            }, 3000);
-          }
-          // User said yes/да - accept registration
-          else if (
-              userTextLower === 'да' ||
-              userTextLower === 'да.' ||
-              userTextLower === 'yes' ||
-              userTextLower === 'yes.' ||
-              userTextLower.includes('помог') ||
-              userTextLower.includes('хочу') ||
-              userTextLower.includes('готов') ||
-              userTextLower.includes('давай') ||
-              userTextLower.includes('регистр') ||
-              userTextLower.includes('ok') ||
-              userTextLower.includes('ок') ||
-              userTextLower.includes('iya') ||
-              userTextLower.includes('ya')) {
-            console.log('[VoiceAssistant] User confirmed registration (fallback), redirecting');
-            redirectingToAuthRef.current = true;
-            pendingAuthContinueRef.current = true;
-            navigate('/auth');
-            sendFollowUpMessage('Say ONLY: "Открываю регистрацию!" Then STOP.');
+            // Voice feedback
+            sendFollowUpMessage('Say ONLY: "Открываю регистрацию!" or "Opening registration!" Then STOP.');
           }
         }
         
