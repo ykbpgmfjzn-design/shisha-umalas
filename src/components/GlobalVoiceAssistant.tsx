@@ -82,8 +82,18 @@ export const GlobalVoiceAssistant = () => {
       if (event === 'SIGNED_IN' && loggedIn && wasNotLoggedIn && session?.user) {
         const room = await fetchRoomNumber(session.user.id);
         
-        // If voice was active, continue conversation
-        if (wasActiveBeforeLogin.current && showVoiceAssistant && !isInitiatingSessionRef.current) {
+        // CRITICAL: Check if there's already an active session
+        const hasActiveSession = voiceAssistantSingleton.isActive() || voiceAssistantSingleton.isStarting();
+        
+        if (hasActiveSession) {
+          console.log('[GlobalVoiceAssistant] Session already exists, just updating stage');
+          // Session exists - just update stage, don't restart
+          if (!room) {
+            voiceAssistantSingleton.setStage('room');
+          } else {
+            voiceAssistantSingleton.setStage('strength');
+          }
+        } else if (wasActiveBeforeLogin.current && showVoiceAssistant && !isInitiatingSessionRef.current) {
           console.log('[GlobalVoiceAssistant] User logged in, will restart voice session');
           setPendingLoginContinue(true);
         } else if (cartItems.length > 0) {
