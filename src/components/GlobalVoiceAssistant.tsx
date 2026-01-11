@@ -240,9 +240,14 @@ export const GlobalVoiceAssistant = () => {
     if (isOrderConfirmationPage && isActive) {
       console.log('[GlobalVoiceAssistant] On order confirmation, ending session');
       orderCompletedRef.current = true;
-      handleEndVoice();
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+      }
+      isInitiatingSessionRef.current = false;
+      endSession();
+      setShowVoiceAssistant(false);
     }
-  }, [isOrderConfirmationPage, isActive]);
+  }, [isOrderConfirmationPage, isActive, endSession]);
 
   return (
     <>
