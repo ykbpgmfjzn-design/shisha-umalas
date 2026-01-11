@@ -21,7 +21,7 @@ interface VoiceAssistantActiveProps {
 // Visual stages: Registration → Room → Hookah Selection → Cart → Payment (5 stages)
 const stages: { key: OrderStage; keys: OrderStage[]; labelKey: string; icon: React.ReactNode }[] = [
   { key: 'login', keys: ['login'], labelKey: 'voice.stageLogin', icon: <UserPlus className="w-3 h-3" /> },
-  { key: 'room', keys: ['room'], labelKey: 'voice.stageRoom', icon: <Mic className="w-3 h-3" /> },
+  { key: 'room', keys: ['room', 'room_confirm'], labelKey: 'voice.stageRoom', icon: <Mic className="w-3 h-3" /> },
   { key: 'strength', keys: ['strength', 'flavor', 'more'], labelKey: 'voice.stageHookah', icon: <Mic className="w-3 h-3" /> }, // Hookah selection stage
   { key: 'cart', keys: ['cart'], labelKey: 'voice.stageCart', icon: <ShoppingCart className="w-3 h-3" /> },
   { key: 'payment', keys: ['payment', 'ready'], labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },

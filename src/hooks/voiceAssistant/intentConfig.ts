@@ -189,6 +189,10 @@ export const STAGE_REMINDERS: Record<OrderStage, { ru: string; en: string }> = {
     ru: 'Пожалуйста, назовите номер вашей комнаты.',
     en: 'Please tell me your room number.',
   },
+  room_confirm: {
+    ru: 'Это правильный номер комнаты?',
+    en: 'Is this the correct room number?',
+  },
   strength: {
     ru: 'Какую крепость кальяна вы предпочитаете?',
     en: 'What hookah strength do you prefer?',

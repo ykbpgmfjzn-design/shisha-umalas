@@ -29,6 +29,11 @@ const STAGE_KEYWORDS: Record<OrderStage, string[]> = {
     // Room number related
     'room', 'комната', 'номер', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
   ],
+  room_confirm: [
+    // Room confirmation - yes/no + correction keywords
+    'yes', 'no', 'да', 'нет', 'верно', 'correct', 'неверно', 'wrong', 'исправ', 'другой', 'другая',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'room', 'комната', 'номер'
+  ],
   strength: [
     // Strength related
     'light', 'medium', 'strong', 'bold', 'ultra',

@@ -11,7 +11,7 @@ interface VoiceAssistantSingletonState {
   mediaStream: MediaStream | null;
   audioElement: HTMLAudioElement | null;
   // Track the current FSM stage globally
-  currentStage: 'login' | 'room' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
+  currentStage: 'login' | 'room' | 'room_confirm' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
   // Track session start time to detect stale sessions
   sessionStartTime: number | null;
   // Lock with timestamp to prevent permanent locks
@@ -195,7 +195,7 @@ export const voiceAssistantSingleton = {
   },
   
   // Set current FSM stage globally
-  setStage: (stage: 'login' | 'room' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready'): void => {
+  setStage: (stage: 'login' | 'room' | 'room_confirm' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready'): void => {
     console.log('[VoiceSingleton] Stage changed:', globalState.currentStage, '->', stage);
     globalState.currentStage = stage;
   },
