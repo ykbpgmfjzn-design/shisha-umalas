@@ -280,11 +280,17 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     }
   }, [sendFollowUpMessage]);
 
-  // Helper to update orderState and ref together
+  // Helper to update orderState and ref together - ALSO syncs to singleton
   const updateOrderState = useCallback((updater: (prev: OrderState) => OrderState) => {
     setOrderState(prev => {
       const newState = updater(prev);
       orderStateRef.current = newState;
+      
+      // CRITICAL: Sync stage to global singleton to prevent dual-assistant issues
+      if (newState.stage !== prev.stage) {
+        voiceAssistantSingleton.setStage(newState.stage);
+      }
+      
       return newState;
     });
   }, []);

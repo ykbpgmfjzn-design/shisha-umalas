@@ -1,5 +1,6 @@
 // Global singleton state for voice assistant
 // This ensures only ONE voice session can exist across the entire app
+// CRITICAL: This is the SINGLE SOURCE OF TRUTH for session state
 
 interface VoiceAssistantSingletonState {
   isSessionActive: boolean;
@@ -9,6 +10,12 @@ interface VoiceAssistantSingletonState {
   dataChannel: RTCDataChannel | null;
   mediaStream: MediaStream | null;
   audioElement: HTMLAudioElement | null;
+  // Track the current FSM stage globally
+  currentStage: 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready';
+  // Track session start time to detect stale sessions
+  sessionStartTime: number | null;
+  // Lock with timestamp to prevent permanent locks
+  lockTimestamp: number | null;
 }
 
 // Global singleton - shared across all hook instances
@@ -20,15 +27,33 @@ const globalState: VoiceAssistantSingletonState = {
   dataChannel: null,
   mediaStream: null,
   audioElement: null,
+  currentStage: 'login',
+  sessionStartTime: null,
+  lockTimestamp: null,
 };
 
-// Lock for preventing race conditions
-let sessionLock = false;
+// Lock timeout (ms) - if lock is older than this, it's stale
+const LOCK_TIMEOUT = 5000;
+const SESSION_TIMEOUT = 300000; // 5 minutes
 
 export const voiceAssistantSingleton = {
   // Try to acquire session - returns true if successful
   tryAcquireSession: (instanceId: string): boolean => {
-    if (sessionLock) {
+    const now = Date.now();
+    
+    // Check for stale lock
+    if (globalState.lockTimestamp && (now - globalState.lockTimestamp > LOCK_TIMEOUT)) {
+      console.log('[VoiceSingleton] Stale lock detected, clearing');
+      globalState.lockTimestamp = null;
+    }
+    
+    // Check for stale session
+    if (globalState.sessionStartTime && (now - globalState.sessionStartTime > SESSION_TIMEOUT)) {
+      console.log('[VoiceSingleton] Stale session detected, force cleanup');
+      voiceAssistantSingleton.forceCleanup();
+    }
+    
+    if (globalState.lockTimestamp) {
       console.log('[VoiceSingleton] Session locked, rejecting acquire request');
       return false;
     }
@@ -42,13 +67,14 @@ export const voiceAssistantSingleton = {
       return false;
     }
     
-    sessionLock = true;
+    globalState.lockTimestamp = now;
     globalState.isStarting = true;
     globalState.instanceId = instanceId;
+    globalState.sessionStartTime = now;
     
     // Release lock after short delay
     setTimeout(() => {
-      sessionLock = false;
+      globalState.lockTimestamp = null;
     }, 100);
     
     console.log('[VoiceSingleton] Session acquired by:', instanceId);
@@ -119,7 +145,9 @@ export const voiceAssistantSingleton = {
     globalState.isSessionActive = false;
     globalState.isStarting = false;
     globalState.instanceId = null;
-    sessionLock = false;
+    globalState.lockTimestamp = null;
+    globalState.sessionStartTime = null;
+    globalState.currentStage = 'login';
   },
   
   // Force cleanup any existing session
@@ -161,8 +189,18 @@ export const voiceAssistantSingleton = {
     globalState.isSessionActive = false;
     globalState.isStarting = false;
     globalState.instanceId = null;
-    sessionLock = false;
+    globalState.lockTimestamp = null;
+    globalState.sessionStartTime = null;
+    globalState.currentStage = 'login';
   },
+  
+  // Set current FSM stage globally
+  setStage: (stage: 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready'): void => {
+    console.log('[VoiceSingleton] Stage changed:', globalState.currentStage, '->', stage);
+    globalState.currentStage = stage;
+  },
+  
+  getStage: (): string => globalState.currentStage,
   
   // Store WebRTC objects
   setPeerConnection: (pc: RTCPeerConnection | null): void => {
