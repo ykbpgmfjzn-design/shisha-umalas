@@ -338,18 +338,47 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       }
     }
     
-    // FLAVOR STAGE: Detect flavor/menu item - just store it, cart logic handled in event handler
+    // FLAVOR STAGE: Detect flavor/menu item and add to cart
     if (currentStage === 'flavor') {
       const menuItem = findMenuItemByKeyword(lowerText);
       if (menuItem) {
-        console.log('[VoiceAssistant] Detected menu item:', menuItem.name);
+        console.log('[VoiceAssistant] Detected menu item:', menuItem.name, '-> adding to cart');
+        
+        // Default quantity is 1
+        const quantity = orderStateRef.current.quantity || 1;
+        
         updateOrderState(prev => ({ 
           ...prev, 
           flavor: menuItem.name,
           itemId: menuItem.id,
           strength: menuItem.strength || prev.strength,
+          quantity,
           flavorAsked: true,
         }));
+        
+        // Add to cart using the addItem from context
+        for (let i = 0; i < quantity; i++) {
+          addItem({
+            id: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            priceDisplay: menuItem.priceDisplay,
+            strength: menuItem.strength,
+            isSignature: menuItem.isSignature,
+            itemType: menuItem.itemType,
+          }, false);
+        }
+        
+        toast.success(`Добавлено ${quantity}x ${menuItem.name}!`);
+        updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true, addedToCart: true }));
+        
+        // Open cart and ask for confirmation
+        setTimeout(() => {
+          setCartOpen(true);
+          setTimeout(() => {
+            sendFollowUpMessage(`${quantity}x ${menuItem.name} добавлено в корзину. Say ONLY: "Проверьте заказ. Всё верно? Скажите 'подтверждаю' для оформления." or "Check your order. Say 'confirm' to proceed." Then STOP and wait.`);
+          }, 800);
+        }, 300);
         return;
       }
       
@@ -379,7 +408,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         }
       }
     }
-  }, [extractRoomNumber, saveRoomNumber, updateOrderState, sendFollowUpMessage]);
+  }, [extractRoomNumber, saveRoomNumber, updateOrderState, sendFollowUpMessage, addItem, setCartOpen]);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -732,21 +761,25 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               console.log('[VoiceAssistant] User explicitly confirmed order, submitting...');
               
               submittingOrderRef.current = true;
+              updateOrderState(prev => ({ ...prev, stage: 'payment' }));
               
-              sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
+              sendFollowUpMessage('Great! Opening payment page now.');
               
               setTimeout(() => {
                 submitOrderProgrammatically().then((success) => {
                   if (success) {
-                    console.log('[VoiceAssistant] Order submitted successfully');
+                    console.log('[VoiceAssistant] Order submitted, navigated to payment');
+                    // Payment page handles the rest - assistant says goodbye
                     setTimeout(() => {
-                      sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
+                      sendFollowUpMessage('Say ONLY: "Заказ оформлен! Выберите способ оплаты. Приятного отдыха!" or "Order confirmed! Choose your payment method. Enjoy!" Then STOP.');
                     }, 800);
                     updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+                    setState('complete');
                   } else {
                     console.log('[VoiceAssistant] Order submission failed');
                     submittingOrderRef.current = false;
-                    sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
+                    updateOrderState(prev => ({ ...prev, stage: 'cart' }));
+                    sendFollowUpMessage('There was an issue. Please try the Payment button manually.');
                   }
                 });
               }, 500);
@@ -768,19 +801,22 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             console.log('[VoiceAssistant] User confirmed order with explicit keywords, submitting...');
             
             submittingOrderRef.current = true;
-            sendFollowUpMessage('Great! Submitting your order now.');
+            updateOrderState(prev => ({ ...prev, stage: 'payment' }));
+            sendFollowUpMessage('Great! Opening payment page now.');
             
             setTimeout(() => {
               submitOrderProgrammatically().then((success) => {
                 if (success) {
-                  console.log('[VoiceAssistant] Order submitted successfully');
+                  console.log('[VoiceAssistant] Order submitted, navigated to payment');
                   setTimeout(() => {
-                    sendFollowUpMessage('Order submitted successfully! Thank the user warmly. Be brief, max 15 words.');
+                    sendFollowUpMessage('Say ONLY: "Заказ оформлен! Приятного отдыха!" or "Order confirmed! Enjoy!" Then STOP.');
                   }, 800);
                   updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+                  setState('complete');
                 } else {
                   submittingOrderRef.current = false;
-                  sendFollowUpMessage('There was an issue. Please try the Submit button manually.');
+                  updateOrderState(prev => ({ ...prev, stage: 'cart' }));
+                  sendFollowUpMessage('There was an issue. Please try the Payment button manually.');
                 }
               });
             }, 500);
