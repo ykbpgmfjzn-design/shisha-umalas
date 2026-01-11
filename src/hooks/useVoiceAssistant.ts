@@ -346,20 +346,24 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       console.log('[VoiceAssistant] User logged in, continuing conversation');
       pendingAuthContinueRef.current = false;
       
-      toast.success('Вход выполнен! Продолжаем заказ...');
+      // CRITICAL: Preserve language from before login
+      const savedLang = loadSavedLanguage();
+      const lang = detectedLanguageRef.current || savedLang;
+      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+      
+      console.log('[VoiceAssistant] Continuing after login with language:', lang, 'isRussian:', isRussian);
+      
+      // Use language-specific toast
+      toast.success(isRussian ? 'Вход выполнен! Продолжаем заказ...' : 'Logged in! Continuing your order...');
       navigate('/');
       
       updateOrderState(prev => ({ ...prev, stage: 'room' }));
       
-      // Use detected language for follow-up
-      const lang = detectedLanguageRef.current;
-      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-      
       setTimeout(() => {
         if (isRussian) {
-          sendFollowUpMessage('Пользователь успешно вошёл. Скажи ТОЛЬКО: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" Потом СТОП и жди ответ. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+          sendFollowUpMessage('ГОВОРИ ТОЛЬКО ПО-РУССКИ. НЕ ПЕРЕКЛЮЧАЙСЯ НА АНГЛИЙСКИЙ. Пользователь успешно вошёл. Скажи ТОЛЬКО: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" Потом СТОП и жди ответ.');
         } else {
-          sendFollowUpMessage('User just logged in successfully. Say ONLY: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait. SPEAK ONLY IN ENGLISH.');
+          sendFollowUpMessage('SPEAK ONLY IN ENGLISH. DO NOT SWITCH TO RUSSIAN. User just logged in successfully. Say ONLY: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait.');
         }
       }, 1000);
     }
@@ -1085,8 +1089,19 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       setTranscript('');
       setAssistantMessage('');
       
-      // Reset detected language on new session
-      detectedLanguageRef.current = null;
+      // CRITICAL: Preserve language if already detected, otherwise use saved from localStorage
+      // DO NOT reset language on session restart (e.g., after login)
+      const savedLang = loadSavedLanguage();
+      if (!detectedLanguageRef.current && savedLang) {
+        detectedLanguageRef.current = savedLang;
+        console.log('[VoiceAssistant] Restored language from localStorage:', savedLang);
+      }
+      
+      // Determine effective language for this session
+      // Priority: 1) already detected 2) saved in localStorage 3) passed parameter
+      const effectiveLanguage = detectedLanguageRef.current || savedLang || language;
+      console.log('[VoiceAssistant] Starting session with language:', effectiveLanguage, 
+        'detected:', detectedLanguageRef.current, 'saved:', savedLang, 'param:', language);
       
       // Reset action flags
       redirectingToAuthRef.current = false;
@@ -1108,9 +1123,9 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       voiceAssistantSingleton.setMediaStream(stream);
 
-      // Get ephemeral token
+      // Get ephemeral token - PASS EFFECTIVE LANGUAGE
       const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-session', {
-        body: { language, isLoggedIn, roomNumber },
+        body: { language: effectiveLanguage, isLoggedIn, roomNumber },
       });
 
       if (fnError || !data?.client_secret) {
@@ -1145,29 +1160,38 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         setState('speaking');
         voiceAssistantSingleton.markSessionActive(instanceId);
         
-        // Use detected language for greeting, default to Russian for Russian-speaking locale
-        const lang = detectedLanguageRef.current || language;
+        // CRITICAL: Use preserved language, not reset one
+        // Priority: detected > saved from localStorage > parameter
+        const savedLang = loadSavedLanguage();
+        const lang = detectedLanguageRef.current || savedLang || language;
         const isRussian = lang === 'ru' || lang === 'uk';
+        
+        console.log('[VoiceAssistant] Greeting with language:', lang, 'isRussian:', isRussian);
         
         // CRITICAL: Send ONE complete greeting phrase, not split into parts
         // This prevents the stuttering/interruption issue
         let greetingInstruction = '';
         
+        // ALWAYS add strict language enforcement
+        const langEnforcement = isRussian 
+          ? 'ГОВОРИ ТОЛЬКО ПО-РУССКИ. НЕ ПЕРЕКЛЮЧАЙСЯ НА АНГЛИЙСКИЙ.'
+          : 'SPEAK ONLY IN ENGLISH. DO NOT SWITCH TO RUSSIAN.';
+        
         if (!isLoggedIn) {
           // Not logged in: welcome + explain registration requirement + ask in ONE phrase
           greetingInstruction = isRussian 
-            ? 'Скажи ОДНОЙ ФРАЗОЙ без пауз: "Добро пожаловать в Shisha Lounge! Я ваш голосовой помощник. Для оформления заказа с доставкой в номер необходима регистрация. Это займёт меньше минуты. Хотите, помогу зарегистрироваться?" Произнеси всё слитно, плавно, без пауз между предложениями. Потом ЗАМОЛЧИ и жди ответ.'
-            : 'Say in ONE smooth phrase without pauses: "Welcome to Shisha Lounge! I am your voice assistant. To place an order with room delivery, registration is required. It takes less than a minute. Would you like me to help you register?" Say it all smoothly without pauses between sentences. Then STOP and wait for response.';
+            ? `${langEnforcement} Скажи ОДНОЙ ФРАЗОЙ без пауз: "Добро пожаловать в Shisha Lounge! Я ваш голосовой помощник. Для оформления заказа с доставкой в номер необходима регистрация. Это займёт меньше минуты. Хотите, помогу зарегистрироваться?" Произнеси всё слитно, плавно, без пауз между предложениями. Потом ЗАМОЛЧИ и жди ответ.`
+            : `${langEnforcement} Say in ONE smooth phrase without pauses: "Welcome to Shisha Lounge! I am your voice assistant. To place an order with room delivery, registration is required. It takes less than a minute. Would you like me to help you register?" Say it all smoothly without pauses between sentences. Then STOP and wait for response.`;
         } else if (!roomNumber) {
           // Logged in but no room: greet + ask room
           greetingInstruction = isRussian
-            ? 'Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Рада снова вас видеть. Подскажите, пожалуйста, номер вашей комнаты для доставки?" Плавно, без пауз. Потом жди ответ.'
-            : 'Say in ONE phrase: "Welcome back! Please tell me your room number for delivery." Smoothly, no pauses. Then wait for response.';
+            ? `${langEnforcement} Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Рада снова вас видеть. Подскажите, пожалуйста, номер вашей комнаты для доставки?" Плавно, без пауз. Потом жди ответ.`
+            : `${langEnforcement} Say in ONE phrase: "Welcome back! Please tell me your room number for delivery." Smoothly, no pauses. Then wait for response.`;
         } else {
           // Logged in with room: greet + ask strength
           greetingInstruction = isRussian
-            ? `Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Доставка в комнату ${roomNumber}. Какую крепость кальяна выберете? У нас есть ультра лёгкий, лёгкий, средний или крепкий." Плавно, потом жди ответ.`
-            : `Say in ONE phrase: "Welcome back! Delivery to room ${roomNumber}. What hookah strength would you like? We have ultra light, light, medium, or bold strong." Smoothly, then wait for response.`;
+            ? `${langEnforcement} Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Доставка в комнату ${roomNumber}. Какую крепость кальяна выберете? У нас есть ультра лёгкий, лёгкий, средний или крепкий." Плавно, потом жди ответ.`
+            : `${langEnforcement} Say in ONE phrase: "Welcome back! Delivery to room ${roomNumber}. What hookah strength would you like? We have ultra light, light, medium, or bold strong." Smoothly, then wait for response.`;
         }
         
         // Force AI to respond with the complete greeting
