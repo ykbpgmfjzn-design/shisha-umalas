@@ -214,12 +214,24 @@ serve(async (req) => {
 
     // Check if 3DS is required
     if (chargeData.credit_card?.three_d_secure?.redirect_url) {
+      // Get current purchase notes to preserve item details
+      const { data: currentPurchase } = await supabase
+        .from("purchases")
+        .select("notes")
+        .eq("id", purchaseId)
+        .single();
+      
+      const originalNotes = currentPurchase?.notes || "";
+      const updatedNotes = originalNotes 
+        ? `${originalNotes}\nCard Payment (3DS pending): ${invoiceNumber}`
+        : `Card Payment (3DS pending): ${invoiceNumber}`;
+
       // 3DS required - return the redirect URL
       const { error: updateError } = await supabase
         .from("purchases")
         .update({
           xendit_invoice_id: invoiceNumber,
-          notes: `Card Payment (3DS pending): ${invoiceNumber}`,
+          notes: updatedNotes,
           payment_status: "pending_3ds"
         })
         .eq("id", purchaseId);

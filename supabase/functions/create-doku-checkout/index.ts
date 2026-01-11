@@ -201,13 +201,25 @@ serve(async (req) => {
       throw new Error("No payment URL in DOKU response");
     }
 
+    // Get current purchase notes to preserve item details
+    const { data: currentPurchase } = await supabase
+      .from("purchases")
+      .select("notes")
+      .eq("id", purchaseId)
+      .single();
+    
+    const originalNotes = currentPurchase?.notes || "";
+    const updatedNotes = originalNotes 
+      ? `${originalNotes}\nDOKU Invoice: ${invoiceNumber}`
+      : `DOKU Invoice: ${invoiceNumber}`;
+
     // Update purchase with DOKU info
     const { error: updateError } = await supabase
       .from("purchases")
       .update({
         xendit_invoice_id: tokenId || invoiceNumber, // Reusing column for DOKU token
         xendit_invoice_url: paymentUrl, // Reusing column for DOKU URL
-        notes: `DOKU Invoice: ${invoiceNumber}`
+        notes: updatedNotes
       })
       .eq("id", purchaseId);
 
