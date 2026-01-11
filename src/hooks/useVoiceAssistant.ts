@@ -742,6 +742,20 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         const transcriptLower = (event.transcript || '').toLowerCase();
         console.log('[VoiceAssistant] AI said:', event.transcript);
         
+        // ============= AUTH PAGE PAUSE MODE FOR AI =============
+        // CRITICAL: If we're on auth page, don't process AI responses that could trigger stage changes
+        if (redirectingToAuthRef.current || pendingAuthContinueRef.current) {
+          console.log('[VoiceAssistant] On auth page - limiting AI response processing');
+          // Only allow the "opening registration" acknowledgement, nothing else
+          if (!transcriptLower.includes('открываю регистрацию') && 
+              !transcriptLower.includes('opening registration') &&
+              !transcriptLower.includes('заполните форму') &&
+              !transcriptLower.includes('fill out')) {
+            // Ignore other AI responses during auth
+            break;
+          }
+        }
+        
         // AI offered registration - set flag so we can detect user confirmation later
         if (transcriptLower.includes('need to register') || 
             transcriptLower.includes('нужно зарегистрироваться') ||
@@ -851,6 +865,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         console.log('[VoiceAssistant] User said:', transcriptText);
         setTranscript(transcriptText);
         
+        // ============= AUTH PAGE PAUSE MODE =============
+        // CRITICAL: If we're redirecting to auth or already on auth page, 
+        // IGNORE all audio input to prevent "second assistant" effect
+        if (redirectingToAuthRef.current || pendingAuthContinueRef.current) {
+          console.log('[VoiceAssistant] On auth page or redirecting - IGNORING audio input');
+          // Just stay silent - don't send any follow-up messages
+          setState('listening');
+          break;
+        }
+        
         // ============= FSM NOISE & BACKCHANNEL FILTER =============
         const currentStage = orderStateRef.current.stage;
         const filterResult = filterTranscript(transcriptText, currentStage);
@@ -868,10 +892,12 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             filterResult.reason
           );
           
-          // Ask to repeat - don't process further
-          const noiseResponse = getNoiseResponse(filterResult, detectedLanguageRef.current === 'ru' ? 'ru' : 'en');
-          if (noiseResponse) {
-            sendFollowUpMessage(`Say ONLY: "${noiseResponse}" Then STOP and wait.`);
+          // DON'T ask to repeat if on login stage (prevents "second assistant")
+          if (currentStage !== 'login') {
+            const noiseResponse = getNoiseResponse(filterResult, detectedLanguageRef.current === 'ru' ? 'ru' : 'en');
+            if (noiseResponse) {
+              sendFollowUpMessage(`Say ONLY: "${noiseResponse}" Then STOP and wait.`);
+            }
           }
           setState('listening');
           break; // Exit early - don't process noise/backchannel
@@ -977,7 +1003,6 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               setState('complete');
             }, 3000);
           }
-          // User ACCEPTS registration - IMMEDIATELY redirect, no questions
           else if (userWantsToRegister && !userDeclinesRegistration) {
             console.log('[VoiceAssistant] User confirmed registration, redirecting to /auth IMMEDIATELY');
             
@@ -988,11 +1013,12 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             const lang = detectedLanguageRef.current;
             const isRussian = lang === 'ru' || lang === 'uk' || !lang;
             
-            // Voice feedback - SHORT, then redirect
+            // Voice feedback - SHORT, then MUTE the AI completely
+            // CRITICAL: Tell AI to stay COMPLETELY SILENT during registration
             if (isRussian) {
-              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ.');
+              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию! Заполните форму, я подожду." Потом ПОЛНОСТЬЮ ЗАМОЛЧИ. НЕ РЕАГИРУЙ ни на какой звук пока пользователь не вернётся. МОЛЧИ.');
             } else {
-              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP.');
+              sendFollowUpMessage('Say ONLY: "Opening registration! Fill out the form, I will wait." Then go COMPLETELY SILENT. DO NOT react to any sound until user returns. STAY MUTED.');
             }
             
             // Navigate IMMEDIATELY - don't wait for AI response
@@ -1012,10 +1038,11 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             const lang = detectedLanguageRef.current;
             const isRussian = lang === 'ru' || lang === 'uk' || !lang;
             
+            // CRITICAL: Tell AI to stay COMPLETELY SILENT during registration
             if (isRussian) {
-              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ.');
+              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию! Заполните форму, я подожду." Потом ПОЛНОСТЬЮ ЗАМОЛЧИ. НЕ РЕАГИРУЙ ни на какой звук. МОЛЧИ.');
             } else {
-              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP.');
+              sendFollowUpMessage('Say ONLY: "Opening registration! Fill out the form, I will wait." Then go COMPLETELY SILENT. DO NOT react to any sound. STAY MUTED.');
             }
             
             console.log('[VoiceAssistant] Navigating to /auth NOW (unclear response fallback)');
