@@ -63,7 +63,7 @@ const RecentFeedback = ({ feedbacks, maxItems = 5 }: RecentFeedbackProps) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs font-medium truncate">
-                    {fb.user_name || fb.user_email || "Гость"}
+                    {fb.user_email || fb.user_name || "Гость"}
                   </span>
                   {renderStars(fb.rating)}
                 </div>
