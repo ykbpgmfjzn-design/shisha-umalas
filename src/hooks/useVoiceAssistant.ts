@@ -268,8 +268,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
       toast.success(`Комната ${roomNumber} сохранена!`);
       
+      // Use detected language for follow-up, default to Russian
+      const lang = detectedLanguageRef.current;
+      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+      
       setTimeout(() => {
-        sendFollowUpMessage(`Room ${roomNumber} saved. Say ONLY: "Отлично, комната ${roomNumber}! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?" Then STOP and wait for answer.`);
+        if (isRussian) {
+          sendFollowUpMessage(`Комната ${roomNumber} сохранена. Скажи ТОЛЬКО: "Отлично, комната ${roomNumber}! Какую крепость кальяна выберете? Ультра лёгкий, Лёгкий, Средний или Крепкий?" Потом СТОП и жди ответ. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
+        } else {
+          sendFollowUpMessage(`Room ${roomNumber} saved. Say ONLY: "Great, room ${roomNumber}! What hookah strength would you like? Ultra Light, Light, Medium, or Bold Strong?" Then STOP and wait for answer. SPEAK ONLY IN ENGLISH.`);
+        }
       }, 500);
       
       return true;
@@ -306,8 +314,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       
       updateOrderState(prev => ({ ...prev, stage: 'room' }));
       
+      // Use detected language for follow-up
+      const lang = detectedLanguageRef.current;
+      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+      
       setTimeout(() => {
-        sendFollowUpMessage('User just logged in successfully. Say ONLY: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" or in English: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait.');
+        if (isRussian) {
+          sendFollowUpMessage('Пользователь успешно вошёл. Скажи ТОЛЬКО: "Отлично, вы вошли! Какой номер вашей комнаты для доставки?" Потом СТОП и жди ответ. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+        } else {
+          sendFollowUpMessage('User just logged in successfully. Say ONLY: "Great, you are logged in! What is your room number for delivery?" Then STOP and wait. SPEAK ONLY IN ENGLISH.');
+        }
       }, 1000);
     }
   }, [user, navigate, updateOrderState, sendFollowUpMessage]);
@@ -336,9 +352,17 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         console.log('[VoiceAssistant] Detected strength:', strength, '-> moving to flavor stage');
         updateOrderState(prev => ({ ...prev, strength, stage: 'flavor', strengthAsked: true }));
         
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
         // Ask for flavor
         setTimeout(() => {
-          sendFollowUpMessage(`User chose ${strength} strength. Now ask: "Отлично! Какой вкус? Например: Ваниль Крем, Мятный Лайм, Арбуз, или любой из меню." Be brief, max 20 words. Use the same language as conversation.`);
+          if (isRussian) {
+            sendFollowUpMessage(`Пользователь выбрал крепость ${strength}. Скажи ТОЛЬКО вкусы этой категории на РУССКОМ, макс 20 слов. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
+          } else {
+            sendFollowUpMessage(`User chose ${strength} strength. Now list flavors for this category in ENGLISH only, max 20 words. SPEAK ONLY IN ENGLISH.`);
+          }
         }, 500);
         return;
       }
@@ -381,8 +405,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         // Move to "more" stage - ask if they want another hookah
         updateOrderState(prev => ({ ...prev, stage: 'more' }));
         
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
         setTimeout(() => {
-          sendFollowUpMessage(`${quantity}x ${menuItem.name} added to cart. Now ask ONLY: "Добавлено! Хотите заказать ещё один кальян?" / "Added! Would you like to order another hookah?" Then STOP and wait for yes/no.`);
+          if (isRussian) {
+            sendFollowUpMessage(`${quantity}x ${menuItem.name} добавлено. Скажи ТОЛЬКО: "Добавлено! Хотите заказать ещё один кальян?" Потом СТОП и жди да/нет. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
+          } else {
+            sendFollowUpMessage(`${quantity}x ${menuItem.name} added to cart. Say ONLY: "Added! Would you like to order another hookah?" Then STOP and wait for yes/no. SPEAK ONLY IN ENGLISH.`);
+          }
         }, 500);
         return;
       }
@@ -429,8 +461,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         console.log('[VoiceAssistant] User wants more hookahs, returning to strength');
         updateOrderState(prev => ({ ...prev, stage: 'strength', strength: undefined, flavor: undefined, quantity: undefined, itemId: undefined }));
         
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
         setTimeout(() => {
-          sendFollowUpMessage('User wants another hookah. Say ONLY: "Отлично! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий." / "Great! What strength? Ultra Light, Light, Medium, or Bold Strong." Then STOP and wait.');
+          if (isRussian) {
+            sendFollowUpMessage('Пользователь хочет ещё. Скажи ТОЛЬКО: "Отлично! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий." Потом СТОП и жди. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+          } else {
+            sendFollowUpMessage('User wants another hookah. Say ONLY: "Great! What strength? Ultra Light, Light, Medium, or Bold Strong." Then STOP and wait. SPEAK ONLY IN ENGLISH.');
+          }
         }, 500);
         return;
       }
@@ -440,10 +480,18 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         console.log('[VoiceAssistant] User done ordering, opening cart for verification');
         updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
         setTimeout(() => {
           setCartOpen(true);
           setTimeout(() => {
-            sendFollowUpMessage('User is done ordering. Cart is open. Say ONLY: "Открываю корзину. Проверьте заказ - всё верно? Если да, скажите \'подтверждаю\'. Если нужно что-то изменить - скажите." / "Opening cart. Check your order - is everything correct? If yes, say \'confirm\'. If you need to change something - tell me." Then STOP and wait.');
+            if (isRussian) {
+              sendFollowUpMessage('Открыта корзина. Скажи ТОЛЬКО: "Открываю корзину. Проверьте заказ - всё верно? Если да, скажите подтверждаю. Если нужно изменить - скажите что именно." Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+            } else {
+              sendFollowUpMessage('Cart is open. Say ONLY: "Opening cart. Check your order - is everything correct? If yes, say confirm. If you need to change something - tell me what." Then STOP. SPEAK ONLY IN ENGLISH.');
+            }
           }, 800);
         }, 300);
         return;
@@ -920,14 +968,24 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         setState('listening');
         voiceAssistantSingleton.markSessionActive(instanceId);
         
-        // Send initial greeting
+        // Use detected language for greeting, default to Russian for Russian-speaking locale
+        const lang = detectedLanguageRef.current || language;
+        const isRussian = lang === 'ru' || lang === 'uk';
+        
+        // Send initial greeting in ONE language only
         let greetingInstruction = '';
         if (!isLoggedIn) {
-          greetingInstruction = 'Greet briefly and tell user they need to register first to order. Ask if they want help registering. Max 15 words.';
+          greetingInstruction = isRussian 
+            ? 'Поприветствуй кратко и скажи что для заказа нужна регистрация. Спроси хочет ли помочь зарегистрироваться. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.'
+            : 'Greet briefly and tell user they need to register first to order. Ask if they want help registering. Max 15 words. ENGLISH ONLY.';
         } else if (!roomNumber) {
-          greetingInstruction = 'Greet briefly and ask for room number for delivery. Max 15 words.';
+          greetingInstruction = isRussian
+            ? 'Поприветствуй кратко и спроси номер комнаты для доставки. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.'
+            : 'Greet briefly and ask for room number for delivery. Max 15 words. ENGLISH ONLY.';
         } else {
-          greetingInstruction = `Greet briefly, mention room ${roomNumber}, and ask what strength hookah they want. Max 15 words.`;
+          greetingInstruction = isRussian
+            ? `Поприветствуй кратко, упомяни комнату ${roomNumber}, и спроси какую крепость кальяна хочет. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.`
+            : `Greet briefly, mention room ${roomNumber}, and ask what strength hookah they want. Max 15 words. ENGLISH ONLY.`;
         }
         
         dc.send(JSON.stringify({
