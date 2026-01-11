@@ -542,7 +542,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     }
     
     // FLAVOR STAGE: Detect flavor/menu item and add to cart, then ask "want more?"
-    if (currentStage === 'flavor') {
+    if (currentStage === 'flavor' || currentStage === 'strength') {
       const menuItem = findMenuItemByKeyword(lowerText);
       if (menuItem) {
         console.log('[VoiceAssistant] Detected menu item:', menuItem.name, '-> adding to cart');
@@ -841,13 +841,44 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
         }
         
-        // ============= ADDED TO CART → MORE STAGE =============
-        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!', 'в корзине'];
-        const isAddedToCart = addedToCartPhrases.some(phrase => transcriptLower.includes(phrase));
-        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah', 'хотите заказать ещё'].some(p => transcriptLower.includes(p));
+        // ============= AI CONFIRMED FLAVOR SELECTION → ADD TO CART =============
+        // When AI says "Арбузная Волна, отлично!" or similar, we need to add to cart
+        const menuItemFromAI = findMenuItemByKeyword(transcriptLower);
+        const aiConfirmsPhrases = ['отлично', 'хорошо', 'great', 'okay', 'good choice', 'хороший выбор', 'добавляю', 'adding'];
+        const aiConfirms = aiConfirmsPhrases.some(phrase => transcriptLower.includes(phrase));
         
-        if (isAddedToCart) {
-          console.log('[VoiceAssistant] Item added to cart, moving to more stage');
+        if (menuItemFromAI && aiConfirms && !orderStateRef.current.addedToCart) {
+          console.log('[VoiceAssistant] AI confirmed flavor, adding to cart:', menuItemFromAI.name);
+          
+          // Add to cart
+          addItem({
+            id: menuItemFromAI.id,
+            name: menuItemFromAI.name,
+            price: menuItemFromAI.price,
+            priceDisplay: menuItemFromAI.priceDisplay,
+            strength: menuItemFromAI.strength,
+            isSignature: menuItemFromAI.isSignature,
+            itemType: menuItemFromAI.itemType,
+          }, false);
+          
+          updateOrderState(prev => ({ 
+            ...prev, 
+            flavor: menuItemFromAI.name,
+            itemId: menuItemFromAI.id,
+            addedToCart: true,
+            stage: 'more'
+          }));
+          
+          toast.success(`${menuItemFromAI.name} добавлен в корзину!`);
+        }
+        
+        // ============= ADDED TO CART → MORE STAGE =============
+        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!', 'в корзине', 'хотите ещё', 'would you like another'];
+        const isAddedToCart = addedToCartPhrases.some(phrase => transcriptLower.includes(phrase));
+        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah', 'хотите заказать ещё', 'хотите добавить'].some(p => transcriptLower.includes(p));
+        
+        if (isAddedToCart || askingForMore) {
+          console.log('[VoiceAssistant] Item added to cart or AI asking for more, moving to more stage');
           updateOrderState(prev => ({ ...prev, stage: 'more' }));
         }
         

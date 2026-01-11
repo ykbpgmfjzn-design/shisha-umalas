@@ -13,11 +13,11 @@ export interface MenuItem {
 
 export const menuItems: MenuItem[] = [
   // Ultra Light
-  { id: 'wl-vanilla', name: 'Whiteline Vanilla', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['vanilla', 'ваниль', 'vanila', 'whiteline vanilla', 'вайтлайн ваниль'] },
-  { id: 'wl-oolong', name: 'Whiteline Oolong Tea', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['oolong', 'tea', 'чай', 'улун', 'teh', 'whiteline oolong'] },
-  { id: 'hl-watermelon', name: 'Herbaline Watermelon', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['watermelon', 'арбуз', 'semangka', 'herbaline watermelon', 'гербалайн арбуз'] },
-  { id: 'vanilla-breeze', name: 'Vanilla Breeze', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['vanilla breeze', 'breeze', 'ваниль бриз', 'бриз'] },
-  { id: 'watermelon-wave', name: 'Watermelon Wave', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['watermelon wave', 'wave', 'арбуз волна', 'волна'] },
+  { id: 'wl-vanilla', name: 'Whiteline Vanilla', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['vanilla', 'ваниль', 'vanila', 'whiteline vanilla', 'вайтлайн ваниль', 'ванилька', 'ванильный'] },
+  { id: 'wl-oolong', name: 'Whiteline Oolong Tea', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['oolong', 'tea', 'чай', 'улун', 'teh', 'whiteline oolong', 'чайный'] },
+  { id: 'hl-watermelon', name: 'Herbaline Watermelon', price: 280000, priceDisplay: 'IDR 280K', strength: 'Ultra Light', itemType: 'hookah', keywords: ['watermelon', 'арбуз', 'semangka', 'herbaline watermelon', 'гербалайн арбуз', 'арбузный', 'арбузик'] },
+  { id: 'vanilla-breeze', name: 'Vanilla Breeze', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['vanilla breeze', 'breeze', 'ваниль бриз', 'бриз', 'ванильный бриз'] },
+  { id: 'watermelon-wave', name: 'Watermelon Wave', price: 320000, priceDisplay: 'IDR 320K', strength: 'Ultra Light', isSignature: true, itemType: 'hookah', keywords: ['watermelon wave', 'wave', 'арбуз волна', 'волна', 'арбузная волна', 'арбузная', 'арбузный волна'] },
   
   // Light
   { id: 'wl-mint', name: 'Whiteline Mint', price: 295000, priceDisplay: 'IDR 295K', strength: 'Light', itemType: 'hookah', keywords: ['mint', 'мята', 'мятный', 'мента', 'whiteline mint', 'вайтлайн мята'] },
