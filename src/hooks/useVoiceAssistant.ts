@@ -798,16 +798,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
         }
         
-        // Handle "added to cart" - move to 'more' stage (ask if want another)
-        if ((transcriptLower.includes('added to cart') || 
-            transcriptLower.includes('добавлено в корзину') ||
-            transcriptLower.includes('добавлено!') ||
-            transcriptLower.includes('added!')) &&
-            !transcriptLower.includes('открываю корзину') &&
-            !transcriptLower.includes('opening cart')) {
-          console.log('[VoiceAssistant] Item added, moving to more stage');
-          updateOrderState(prev => ({ ...prev, stage: 'more' }));
-        }
+        // NOTE: "added to cart" handling moved to the cart trigger section below
         
         // Handle "opening cart" OR "asking for confirmation" - when AI mentions cart verification
         const cartTriggerPhrases = [
@@ -816,23 +807,41 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           'корзину для проверки', 'cart for review', 'скажите подтверждаю',
           'say confirm', 'если да', 'if yes', 'подтвердите заказ', 'confirm your order',
           'правильно ли', 'is this correct', 'хотите оформить', 'would you like to place',
-          'готовы оформить', 'ready to place'
+          'готовы оформить', 'ready to place', 'хотите ещё', 'would you like another',
+          'ещё один кальян', 'another hookah', 'добавлено в корзину', 'added to cart',
+          'добавлено!', 'added!'
         ];
         
-        if (cartTriggerPhrases.some(phrase => transcriptLower.includes(phrase))) {
-          console.log('[VoiceAssistant] AI mentioned cart/verification, checking if cart should open');
+        // Check if we should move to "more" stage (after adding to cart)
+        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!'];
+        const isAddedToCart = addedToCartPhrases.some(phrase => transcriptLower.includes(phrase));
+        
+        // If AI says "added to cart" + "would you like another", stay in more stage
+        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah'].some(p => transcriptLower.includes(p));
+        
+        if (isAddedToCart && !askingForMore) {
+          console.log('[VoiceAssistant] Item added, moving to more stage');
+          updateOrderState(prev => ({ ...prev, stage: 'more' }));
+        } else if (isAddedToCart && askingForMore) {
+          console.log('[VoiceAssistant] Item added, AI asking for more - staying in more stage');
+          updateOrderState(prev => ({ ...prev, stage: 'more' }));
+        }
+        
+        // Cart opening triggers (excluding "added to cart" messages)
+        const cartOpenTriggers = [
+          'opening cart', 'открываю корзину', 'открываю для проверки',
+          'проверьте заказ', 'check your order', 'корзину для проверки', 'cart for review'
+        ];
+        
+        if (cartOpenTriggers.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI mentioned cart opening, forcing cart open');
           
-          // Only open cart if not already opened and not in login/room stages
           const currentStageFromRef = orderStateRef.current.stage;
-          if (!orderStateRef.current.cartOpened && !['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
-            console.log('[VoiceAssistant] Opening cart UI from AI transcript');
+          if (!['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
             updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-            setTimeout(() => {
-              setCartOpen(true);
-            }, 300);
-          } else if (!['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
-            // Just update stage if cart was already opened
-            updateOrderState(prev => ({ ...prev, stage: 'cart' }));
+            // Force open cart immediately
+            console.log('[VoiceAssistant] FORCING cart open NOW');
+            setCartOpen(true);
           }
         }
         
