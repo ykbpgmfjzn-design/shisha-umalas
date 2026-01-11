@@ -278,7 +278,8 @@ export const GlobalVoiceAssistant = () => {
       )}
       
       {/* Active Panel - ONLY ONE UI element when active */}
-      {!hideVoiceAssistant && showVoiceAssistant && isActive && (
+      {/* CRITICAL: Use stable condition to prevent flickering */}
+      {!hideVoiceAssistant && (showVoiceAssistant || isActive) && (
         <div className={isAuthPage ? "fixed top-4 left-4 right-4 z-[40] max-w-sm" : ""}>
           <VoiceAssistantActive
             state={state}

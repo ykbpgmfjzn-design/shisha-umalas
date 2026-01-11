@@ -103,6 +103,7 @@ export const VoiceAssistantActive = ({
     ru: { login: 'Регистрация', room: 'Комната', strength: 'Кальян', cart: 'Корзина', payment: 'Оплата' },
   };
 
+  // Don't render if idle, but use CSS visibility to prevent flicker
   if (state === 'idle') return null;
 
   // When forceMinimized, show only a small floating circle
