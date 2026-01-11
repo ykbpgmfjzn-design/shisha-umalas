@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Phone, Sparkles, MapPin } from "lucide-react";
+import { CalendarIcon, Clock, Phone, Sparkles, MapPin, AlertCircle, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ const timeSlots = [
 const Reservation = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { user } = useProfile();
+  const { user, profile, loading } = useProfile();
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>();
   const [partySize, setPartySize] = useState<number>(2);
@@ -49,7 +49,22 @@ const Reservation = () => {
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check if user is logged in and has room number
+  const canMakeReservation = user && profile?.room_number;
+
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error(t("reservation.loginRequired"));
+      navigate("/auth");
+      return;
+    }
+
+    if (!profile?.room_number) {
+      toast.error(t("reservation.roomRequired"));
+      navigate("/profile");
+      return;
+    }
+
     if (!date || !time || !phone) {
       toast.error(t("reservation.fillRequired"));
       return;
@@ -58,13 +73,11 @@ const Reservation = () => {
     setIsSubmitting(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
       // Insert into reservations table
       const { error } = await supabase
         .from("reservations")
         .insert({
-          user_id: user?.id || null,
+          user_id: user.id,
           reservation_date: format(date, 'yyyy-MM-dd'),
           reservation_time: time,
           party_size: partySize,
@@ -84,6 +97,7 @@ const Reservation = () => {
         party_size: partySize,
         hookah_count: hookahCount,
         phone,
+        room_number: profile.room_number,
       });
 
       // Send Telegram notification for reservation
@@ -98,7 +112,8 @@ const Reservation = () => {
             phone,
             location: location || null,
             notes: notes || specialRequests || null,
-            userEmail: user?.email,
+            userEmail: user.email,
+            roomNumber: profile.room_number,
           },
         });
       } catch (telegramError) {
@@ -145,6 +160,42 @@ const Reservation = () => {
             </p>
           </div>
 
+          {/* Login/Room Required Notice */}
+          {!loading && !canMakeReservation && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-amber-200 text-sm">
+                  {t("reservation.loginNotice")}
+                </p>
+                {!user ? (
+                  <Button
+                    onClick={() => navigate("/auth")}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-amber-500/50 text-amber-200 hover:bg-amber-500/20"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {t("nav.profile")}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate("/profile")}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-amber-500/50 text-amber-200 hover:bg-amber-500/20"
+                  >
+                    {t("reservation.roomRequired")}
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Date & Time Section */}
           <section className="space-y-4">
             <h2 className="font-display text-xl text-foreground">
@@ -174,7 +225,11 @@ const Reservation = () => {
                     mode="single"
                     selected={date}
                     onSelect={setDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -321,8 +376,8 @@ const Reservation = () => {
           >
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full h-14 bg-golden hover:bg-golden/90 text-primary-foreground font-semibold text-lg rounded-xl shadow-lg"
+              disabled={isSubmitting || !canMakeReservation}
+              className="w-full h-14 bg-golden hover:bg-golden/90 text-primary-foreground font-semibold text-lg rounded-xl shadow-lg disabled:opacity-50"
             >
               {isSubmitting ? t("reservation.submitting") : t("reservation.submit")}
             </Button>
