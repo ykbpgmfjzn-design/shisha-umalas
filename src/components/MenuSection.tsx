@@ -154,7 +154,7 @@ const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, stren
 interface MenuCategoryProps {
   title: string;
   subtitle?: string;
-  strength: "ultra-light" | "light" | "medium" | "bold";
+  strength: "ultra-light" | "light" | "medium" | "bold" | "extra";
   children: ReactNode;
   delay?: number;
 }
@@ -164,6 +164,7 @@ const strengthColors = {
   "light": "from-smoke-light/30 to-smoke/15",
   "medium": "from-golden/25 to-amber/15",
   "bold": "from-sunset/25 to-accent/15",
+  "extra": "from-emerald-500/20 to-teal-500/10",
 };
 
 const strengthBadge = {
@@ -171,6 +172,7 @@ const strengthBadge = {
   "light": "bg-smoke-light/30 text-smoke-light border-smoke-light/50",
   "medium": "bg-golden/30 text-golden border-golden/50",
   "bold": "bg-sunset/30 text-sunset border-sunset/50",
+  "extra": "bg-emerald-500/30 text-emerald-400 border-emerald-500/50",
 };
 
 const strengthLabels: Record<string, string> = {
@@ -178,6 +180,7 @@ const strengthLabels: Record<string, string> = {
   "light": "strength.light",
   "medium": "strength.medium",
   "bold": "strength.boldStrong",
+  "extra": "menu.extras",
 };
 
 const MenuCategory = ({ title, subtitle, strength, children, delay = 0 }: MenuCategoryProps) => {
@@ -417,6 +420,19 @@ const MenuSection = () => {
                 delay={0.3} 
               />
             </SubCategory>
+          </MenuCategory>
+
+          {/* Extra - Snacks */}
+          <MenuCategory title={t("menu.extras")} strength="extra" delay={0.4}>
+            <MenuItem 
+              id="mixed-nuts" 
+              name="Mixed Nuts" 
+              price={10000} 
+              priceDisplay="IDR 10K" 
+              strength="Extra" 
+              itemType="snack"
+              delay={0.1} 
+            />
           </MenuCategory>
         </div>
       </div>
