@@ -341,22 +341,41 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
   }, []);
 
   // Continue conversation after user logs in
+  // CRITICAL: This should ONLY fire once after login, not repeatedly
+  const hasHandledLoginRef = useRef(false);
+  
   useEffect(() => {
-    if (user && pendingAuthContinueRef.current && voiceAssistantSingleton.getDataChannel()?.readyState === 'open') {
-      console.log('[VoiceAssistant] User logged in, continuing conversation');
-      pendingAuthContinueRef.current = false;
-      
-      // CRITICAL: Preserve language from before login
-      const savedLang = loadSavedLanguage();
-      const lang = detectedLanguageRef.current || savedLang;
-      const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-      
-      console.log('[VoiceAssistant] Continuing after login with language:', lang, 'isRussian:', isRussian);
-      
-      // Use language-specific toast
-      toast.success(isRussian ? 'Вход выполнен! Продолжаем заказ...' : 'Logged in! Continuing your order...');
-      navigate('/');
-      
+    // Prevent duplicate handling
+    if (!user || !pendingAuthContinueRef.current || hasHandledLoginRef.current) {
+      return;
+    }
+    
+    const dc = voiceAssistantSingleton.getDataChannel();
+    if (!dc || dc.readyState !== 'open') {
+      return;
+    }
+    
+    // CRITICAL: Check current stage - if already past room, don't send room message
+    const currentStage = orderStateRef.current.stage;
+    console.log('[VoiceAssistant] User logged in, current stage:', currentStage);
+    
+    // Mark as handled to prevent re-triggering
+    hasHandledLoginRef.current = true;
+    pendingAuthContinueRef.current = false;
+    
+    // CRITICAL: Preserve language from before login
+    const savedLang = loadSavedLanguage();
+    const lang = detectedLanguageRef.current || savedLang;
+    const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+    
+    console.log('[VoiceAssistant] Continuing after login with language:', lang, 'stage:', currentStage);
+    
+    // Use language-specific toast
+    toast.success(isRussian ? 'Вход выполнен! Продолжаем заказ...' : 'Logged in! Continuing your order...');
+    navigate('/');
+    
+    // Only set to room if we're still in login stage
+    if (currentStage === 'login') {
       updateOrderState(prev => ({ ...prev, stage: 'room' }));
       
       setTimeout(() => {
@@ -367,6 +386,15 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         }
       }, 1000);
     }
+    // If already on room or further stages, don't send duplicate message
+    else {
+      console.log('[VoiceAssistant] Already past login stage, not sending room message');
+    }
+    
+    // Reset the flag after a delay so it can be used again if user logs out and back in
+    setTimeout(() => {
+      hasHandledLoginRef.current = false;
+    }, 5000);
   }, [user, navigate, updateOrderState, sendFollowUpMessage]);
 
   // Process user transcript - FSM aware

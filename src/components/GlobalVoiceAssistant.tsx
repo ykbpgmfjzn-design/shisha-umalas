@@ -85,13 +85,23 @@ export const GlobalVoiceAssistant = () => {
         // CRITICAL: Check if there's already an active session
         const hasActiveSession = voiceAssistantSingleton.isActive() || voiceAssistantSingleton.isStarting();
         
+        // Get current stage to prevent regression
+        const currentStage = voiceAssistantSingleton.getStage();
+        console.log('[GlobalVoiceAssistant] After login - hasActiveSession:', hasActiveSession, 'currentStage:', currentStage);
+        
         if (hasActiveSession) {
-          console.log('[GlobalVoiceAssistant] Session already exists, just updating stage');
-          // Session exists - just update stage, don't restart
-          if (!room) {
-            voiceAssistantSingleton.setStage('room');
+          console.log('[GlobalVoiceAssistant] Session already exists, checking if stage update needed');
+          
+          // CRITICAL: Only update stage if we're still in login stage
+          // Don't regress if already on room, strength, etc.
+          if (currentStage === 'login') {
+            if (!room) {
+              voiceAssistantSingleton.setStage('room');
+            } else {
+              voiceAssistantSingleton.setStage('strength');
+            }
           } else {
-            voiceAssistantSingleton.setStage('strength');
+            console.log('[GlobalVoiceAssistant] Already past login stage, not changing stage');
           }
         } else if (wasActiveBeforeLogin.current && showVoiceAssistant && !isInitiatingSessionRef.current) {
           console.log('[GlobalVoiceAssistant] User logged in, will restart voice session');
