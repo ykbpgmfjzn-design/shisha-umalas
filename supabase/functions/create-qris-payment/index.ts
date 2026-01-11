@@ -163,12 +163,24 @@ serve(async (req) => {
       throw new Error("No QR content in DOKU response");
     }
 
+    // Get current purchase notes to preserve item details
+    const { data: currentPurchase } = await supabase
+      .from("purchases")
+      .select("notes")
+      .eq("id", purchaseId)
+      .single();
+    
+    const originalNotes = currentPurchase?.notes || "";
+    const updatedNotes = originalNotes 
+      ? `${originalNotes}\nQRIS Payment: ${invoiceNumber}`
+      : `QRIS Payment: ${invoiceNumber}`;
+
     // Update purchase with QRIS info
     const { error: updateError } = await supabase
       .from("purchases")
       .update({
         xendit_invoice_id: invoiceNumber,
-        notes: `QRIS Payment: ${invoiceNumber}`,
+        notes: updatedNotes,
         payment_status: "pending"
       })
       .eq("id", purchaseId);

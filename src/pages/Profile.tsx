@@ -377,47 +377,56 @@ const Profile = () => {
               </div>
             ) : purchases.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                {purchases.map((purchase) => (
-                  <div
-                    key={purchase.id}
-                    className="p-4 rounded-xl bg-muted/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{purchase.hookah_count} {t("profile.hookahCount")}</span>
-                      </div>
-                      {purchase.amount && (
-                        <span className="text-golden font-medium">
-                          IDR {(purchase.amount / 1000).toFixed(0)}K
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(purchase.created_at)}
-                      </div>
-                      {purchase.free_drink_used && (
-                        <div className="flex items-center gap-1 text-golden">
-                          <Coffee className="w-3 h-3" />
-                          {t("profile.freeDrink")}
+                {purchases.map((purchase) => {
+                  // Parse notes to get item names (first line before any invoice info)
+                  const notesLines = (purchase.notes || "").split("\n");
+                  const itemsLine = notesLines[0]?.includes("Invoice") ? null : notesLines[0];
+                  
+                  return (
+                    <div
+                      key={purchase.id}
+                      className="p-4 rounded-xl bg-muted/30"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                          {itemsLine ? (
+                            <span className="font-medium text-foreground">{itemsLine}</span>
+                          ) : purchase.hookah_count > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Hash className="w-4 h-4 text-muted-foreground" />
+                              <span className="font-medium">{purchase.hookah_count} {t("profile.hookahCount")}</span>
+                            </div>
+                          ) : (
+                            <span className="font-medium text-muted-foreground">{t("menu.extras")}</span>
+                          )}
                         </div>
-                      )}
-                      {purchase.free_snack_used && (
-                        <div className="flex items-center gap-1 text-golden">
-                          <Cookie className="w-3 h-3" />
-                          {t("profile.freeSnack")}
+                        {purchase.amount && (
+                          <span className="text-golden font-medium">
+                            IDR {(purchase.amount / 1000).toFixed(0)}K
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(purchase.created_at)}
                         </div>
-                      )}
+                        {purchase.free_drink_used && (
+                          <div className="flex items-center gap-1 text-golden">
+                            <Coffee className="w-3 h-3" />
+                            {t("profile.freeDrink")}
+                          </div>
+                        )}
+                        {purchase.free_snack_used && (
+                          <div className="flex items-center gap-1 text-golden">
+                            <Cookie className="w-3 h-3" />
+                            {t("profile.freeSnack")}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {purchase.notes && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">
-                        {purchase.notes}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
