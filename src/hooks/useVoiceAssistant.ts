@@ -582,16 +582,51 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     }
     
     // MORE STAGE: User deciding whether to add more hookahs or proceed to cart
-    if (currentStage === 'more') {
-      const wantsMore = [
-        'да', 'yes', 'ещё', 'more', 'another', 'хочу', 'давай', 'конечно', 'sure', 'iya', 'ya', 'ок', 'okay'
-      ].some(kw => lowerText.includes(kw));
+    if (currentStage === 'more' || currentStage === 'flavor') {
+      // Expanded keywords for "no more"
+      const noMoreKeywords = [
+        'нет', 'no', 'хватит', 'достаточно', 'enough', 'всё', 'все', 'done', 'готов', 
+        'stop', 'стоп', 'не надо', 'больше не', 'это всё', 'that\'s all', 'that is all',
+        'finish', 'закончил', 'корзин', 'cart', 'оформ', 'checkout', 'pay', 'оплат',
+        'подтверд', 'confirm', 'готово', 'не хочу больше', 'только это', 'just this',
+        'one is enough', 'одного хватит', 'only one', 'только один'
+      ];
       
-      const noMore = [
-        'нет', 'no', 'хватит', 'достаточно', 'enough', 'всё', 'все', 'done', 'готов', 'stop', 'стоп', 'не надо', 'больше не', 'это всё'
-      ].some(kw => lowerText.includes(kw));
+      const wantsMoreKeywords = [
+        'да', 'yes', 'ещё', 'more', 'another', 'хочу', 'давай', 'конечно', 'sure', 
+        'iya', 'ya', 'ок', 'okay', 'добавь', 'add', 'ещё один', 'one more'
+      ];
       
-      if (wantsMore && !noMore) {
+      const wantsMore = wantsMoreKeywords.some(kw => lowerText.includes(kw));
+      const noMore = noMoreKeywords.some(kw => lowerText.includes(kw));
+      
+      // If user explicitly says cart/checkout/confirm, go to cart immediately
+      const explicitCartRequest = ['корзин', 'cart', 'оформ', 'checkout', 'подтверд', 'confirm'].some(kw => lowerText.includes(kw));
+      
+      if (explicitCartRequest || (noMore && !wantsMore)) {
+        // User is done - open cart for verification
+        console.log('[VoiceAssistant] User done ordering or requested cart, opening cart for verification');
+        updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+        
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
+        setTimeout(() => {
+          console.log('[VoiceAssistant] Opening cart UI from processTranscript');
+          setCartOpen(true);
+          setTimeout(() => {
+            if (isRussian) {
+              sendFollowUpMessage('ГОВОРИ ТОЛЬКО ПО-РУССКИ. Открыта корзина. Скажи ТОЛЬКО: "Проверьте заказ в корзине. Всё верно? Если да - скажите подтверждаю." Потом СТОП.');
+            } else {
+              sendFollowUpMessage('SPEAK ONLY IN ENGLISH. Cart is open. Say ONLY: "Check your order in the cart. Is everything correct? If yes - say confirm." Then STOP.');
+            }
+          }, 800);
+        }, 300);
+        return;
+      }
+      
+      if (wantsMore && !noMore && currentStage === 'more') {
         // User wants to add more - go back to strength selection
         console.log('[VoiceAssistant] User wants more hookahs, returning to strength');
         updateOrderState(prev => ({ ...prev, stage: 'strength', strength: undefined, flavor: undefined, quantity: undefined, itemId: undefined }));
@@ -602,33 +637,11 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         
         setTimeout(() => {
           if (isRussian) {
-            sendFollowUpMessage('Пользователь хочет ещё. Скажи ТОЛЬКО: "Отлично! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий." Потом СТОП и жди. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+            sendFollowUpMessage('ГОВОРИ ТОЛЬКО ПО-РУССКИ. Пользователь хочет ещё. Скажи ТОЛЬКО: "Отлично! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий." Потом СТОП и жди.');
           } else {
-            sendFollowUpMessage('User wants another hookah. Say ONLY: "Great! What strength? Ultra Light, Light, Medium, or Bold Strong." Then STOP and wait. SPEAK ONLY IN ENGLISH.');
+            sendFollowUpMessage('SPEAK ONLY IN ENGLISH. User wants another hookah. Say ONLY: "Great! What strength? Ultra Light, Light, Medium, or Bold Strong." Then STOP and wait.');
           }
         }, 500);
-        return;
-      }
-      
-      if (noMore && !wantsMore) {
-        // User is done - open cart for verification
-        console.log('[VoiceAssistant] User done ordering, opening cart for verification');
-        updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-        
-        // Use detected language
-        const lang = detectedLanguageRef.current;
-        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-        
-        setTimeout(() => {
-          setCartOpen(true);
-          setTimeout(() => {
-            if (isRussian) {
-              sendFollowUpMessage('Открыта корзина. Скажи ТОЛЬКО: "Открываю корзину. Проверьте заказ - всё верно? Если да, скажите подтверждаю. Если нужно изменить - скажите что именно." Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
-            } else {
-              sendFollowUpMessage('Cart is open. Say ONLY: "Opening cart. Check your order - is everything correct? If yes, say confirm. If you need to change something - tell me what." Then STOP. SPEAK ONLY IN ENGLISH.');
-            }
-          }, 800);
-        }, 300);
         return;
       }
     }
@@ -746,21 +759,39 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         // Handle "added to cart" - move to 'more' stage (ask if want another)
         if ((transcriptLower.includes('added to cart') || 
             transcriptLower.includes('добавлено в корзину') ||
-            transcriptLower.includes('добавлено!')) &&
-            !transcriptLower.includes('открываю корзину')) {
+            transcriptLower.includes('добавлено!') ||
+            transcriptLower.includes('added!')) &&
+            !transcriptLower.includes('открываю корзину') &&
+            !transcriptLower.includes('opening cart')) {
           console.log('[VoiceAssistant] Item added, moving to more stage');
           updateOrderState(prev => ({ ...prev, stage: 'more' }));
         }
         
-        // Handle "opening cart" - only when user said they don't want more
-        if (transcriptLower.includes('opening cart') ||
-            transcriptLower.includes('открываю корзину') ||
-            transcriptLower.includes('открываю для проверки')) {
-          console.log('[VoiceAssistant] Opening cart for verification');
-          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-          setTimeout(() => {
-            setCartOpen(true);
-          }, 300);
+        // Handle "opening cart" OR "asking for confirmation" - when AI mentions cart verification
+        const cartTriggerPhrases = [
+          'opening cart', 'открываю корзину', 'открываю для проверки',
+          'проверьте заказ', 'check your order', 'всё верно', 'is everything correct',
+          'корзину для проверки', 'cart for review', 'скажите подтверждаю',
+          'say confirm', 'если да', 'if yes', 'подтвердите заказ', 'confirm your order',
+          'правильно ли', 'is this correct', 'хотите оформить', 'would you like to place',
+          'готовы оформить', 'ready to place'
+        ];
+        
+        if (cartTriggerPhrases.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI mentioned cart/verification, checking if cart should open');
+          
+          // Only open cart if not already opened and not in login/room stages
+          const currentStageFromRef = orderStateRef.current.stage;
+          if (!orderStateRef.current.cartOpened && !['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
+            console.log('[VoiceAssistant] Opening cart UI from AI transcript');
+            updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+            setTimeout(() => {
+              setCartOpen(true);
+            }, 300);
+          } else if (!['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
+            // Just update stage if cart was already opened
+            updateOrderState(prev => ({ ...prev, stage: 'cart' }));
+          }
         }
         
         // ONLY mark as complete if order was actually submitted (stage is cart and submitting was triggered)
