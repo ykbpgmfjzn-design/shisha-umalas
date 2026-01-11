@@ -127,26 +127,8 @@ const Cart = () => {
         room_number: roomNumber,
       });
 
-      // Send Telegram notification
-      try {
-        await supabase.functions.invoke('send-telegram-notification', {
-          body: {
-            orderId: data.id,
-            roomNumber: roomNumber,
-            userEmail: user.email,
-            hookahCount: currentHookahCount,
-            totalAmount: currentTotalPrice,
-            items: currentItems.map((item: any) => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price * item.quantity,
-            })),
-          },
-        });
-      } catch (telegramError) {
-        console.error('Telegram notification failed:', telegramError);
-        // Don't block order if notification fails
-      }
+      // NOTE: Telegram notification is now sent ONLY after payment is confirmed
+      // This happens in: create-card-payment, xendit-webhook, doku-webhook edge functions
 
       // Navigate to confirmation page with order details
       const params = new URLSearchParams({
