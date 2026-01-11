@@ -245,7 +245,6 @@ serve(async (req) => {
         .from("purchases")
         .update({
           xendit_invoice_id: invoiceNumber,
-          notes: `Card Payment: ${invoiceNumber}`,
           payment_status: "paid",
           paid_at: new Date().toISOString()
         })
@@ -253,6 +252,42 @@ serve(async (req) => {
 
       if (updateError) {
         console.error("Error updating purchase:", updateError);
+      }
+
+      // Send Telegram notification for successful card payment
+      try {
+        const { data: purchaseData } = await supabase
+          .from("purchases")
+          .select("*, profiles!purchases_user_id_fkey(room_number, email, full_name)")
+          .eq("id", purchaseId)
+          .maybeSingle();
+
+        if (purchaseData) {
+          const profile = purchaseData.profiles as { room_number?: string; email?: string; full_name?: string } | null;
+          
+          await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              orderId: purchaseId,
+              roomNumber: profile?.room_number || "",
+              userEmail: profile?.email || "",
+              hookahCount: purchaseData.hookah_count,
+              totalAmount: purchaseData.amount,
+              items: purchaseData.notes ? purchaseData.notes.split(", ").map((item: string) => {
+                const match = item.match(/^(\d+)x (.+)$/);
+                return match ? { name: match[2], quantity: parseInt(match[1]), price: 0 } : { name: item, quantity: 1, price: 0 };
+              }) : [],
+            }),
+          });
+          console.log("Telegram notification sent for paid card order");
+        }
+      } catch (telegramError) {
+        console.error("Failed to send Telegram notification:", telegramError);
+        // Don't fail if notification fails
       }
 
       return new Response(

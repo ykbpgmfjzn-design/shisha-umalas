@@ -32,6 +32,8 @@ const OrderConfirmationContent = () => {
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -55,7 +57,59 @@ const OrderConfirmationContent = () => {
     fetchProfile();
   }, []);
 
+  // Fetch initial payment status and subscribe to changes
   useEffect(() => {
+    if (!orderId) return;
+
+    const fetchPaymentStatus = async () => {
+      const { data } = await supabase
+        .from("purchases")
+        .select("payment_status")
+        .eq("id", orderId)
+        .maybeSingle();
+      
+      if (data) {
+        setPaymentStatus(data.payment_status);
+        setIsPaid(data.payment_status === "paid" || data.payment_status === "delivered");
+      }
+    };
+
+    fetchPaymentStatus();
+
+    // Subscribe to realtime changes for this purchase
+    const channel = supabase
+      .channel(`purchase-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'purchases',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const newStatus = payload.new.payment_status;
+          setPaymentStatus(newStatus);
+          if (newStatus === "paid" || newStatus === "delivered") {
+            setIsPaid(true);
+            toast({
+              title: t("payment.confirmed"),
+              description: t("payment.orderStarted"),
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, t, toast]);
+
+  // Timer only starts when payment is confirmed
+  useEffect(() => {
+    if (!isPaid) return; // Don't start timer until paid
+    
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         const newTime = Math.max(0, prev - 1);
@@ -68,7 +122,7 @@ const OrderConfirmationContent = () => {
     }, 1000);
     
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaid]);
 
   const playReadySound = () => {
     // Create a simple notification sound using Web Audio API
@@ -270,22 +324,37 @@ const OrderConfirmationContent = () => {
                 </span>
               </div>
 
-              {/* Wait Time */}
-              <div className="p-6 bg-gradient-to-br from-golden/10 to-sunset/5 rounded-xl border border-golden/20">
-                <div className="flex items-center gap-3 mb-4">
-                  <Clock className="w-5 h-5 text-golden" />
-                  <span className="text-muted-foreground">{t("order.estimatedTime")}</span>
-                </div>
-                
-                <div className="text-center">
-                  <div className="font-display text-5xl text-golden mb-2">
-                    {formatTime(timeLeft)}
+              {/* Wait Time - Only shown after payment */}
+              {isPaid ? (
+                <div className="p-6 bg-gradient-to-br from-golden/10 to-sunset/5 rounded-xl border border-golden/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Clock className="w-5 h-5 text-golden" />
+                    <span className="text-muted-foreground">{t("order.estimatedTime")}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("order.approx")} {estimatedMinutes} {t("order.minutes")}
-                  </p>
+                  
+                  <div className="text-center">
+                    <div className="font-display text-5xl text-golden mb-2">
+                      {formatTime(timeLeft)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t("order.approx")} {estimatedMinutes} {t("order.minutes")}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-xl border border-amber-500/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AlertCircle className="w-5 h-5 text-amber-500" />
+                    <span className="text-amber-500 font-medium">{t("payment.awaitingPayment")}</span>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-muted-foreground">
+                      {t("payment.timerStartsAfterPayment")}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Delivery Info */}
               {!loading && (

@@ -34,10 +34,11 @@ serve(async (req) => {
     const purchaseIdMatch = external_id.match(/^purchase_([a-f0-9-]+)_/);
     
     let updateResult;
+    let purchaseId: string | null = null;
     
     if (purchaseIdMatch) {
       // Update by purchase ID
-      const purchaseId = purchaseIdMatch[1];
+      purchaseId = purchaseIdMatch[1];
       console.log('Updating purchase by ID:', purchaseId, 'status:', status);
       
       updateResult = await supabase
@@ -45,19 +46,28 @@ serve(async (req) => {
         .update({
           payment_status: status.toLowerCase(),
           paid_at: status === 'PAID' ? (paid_at || new Date().toISOString()) : null,
-          notes: `Payment via ${payment_method || 'unknown'} - ${payment_channel || 'unknown'}`,
         })
         .eq('id', purchaseId);
     } else {
       // Fallback: Update by Xendit invoice ID
       console.log('Updating purchase by Xendit invoice ID:', id, 'status:', status);
       
+      // First get the purchase to get its ID
+      const { data: purchase } = await supabase
+        .from('purchases')
+        .select('id')
+        .eq('xendit_invoice_id', id)
+        .maybeSingle();
+      
+      if (purchase) {
+        purchaseId = purchase.id;
+      }
+      
       updateResult = await supabase
         .from('purchases')
         .update({
           payment_status: status.toLowerCase(),
           paid_at: status === 'PAID' ? (paid_at || new Date().toISOString()) : null,
-          notes: `Payment via ${payment_method || 'unknown'} - ${payment_channel || 'unknown'}`,
         })
         .eq('xendit_invoice_id', id);
     }
@@ -71,6 +81,45 @@ serve(async (req) => {
     }
 
     console.log('Purchase updated successfully');
+
+    // Send Telegram notification ONLY when payment is confirmed
+    if (status === 'PAID' && purchaseId) {
+      try {
+        // Fetch purchase details for notification
+        const { data: purchaseData } = await supabase
+          .from('purchases')
+          .select('*, profiles!purchases_user_id_fkey(room_number, email, full_name)')
+          .eq('id', purchaseId)
+          .maybeSingle();
+
+        if (purchaseData) {
+          const profile = purchaseData.profiles as { room_number?: string; email?: string; full_name?: string } | null;
+          
+          await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              orderId: purchaseId,
+              roomNumber: profile?.room_number || '',
+              userEmail: profile?.email || '',
+              hookahCount: purchaseData.hookah_count,
+              totalAmount: purchaseData.amount,
+              items: purchaseData.notes ? purchaseData.notes.split(', ').map((item: string) => {
+                const match = item.match(/^(\d+)x (.+)$/);
+                return match ? { name: match[2], quantity: parseInt(match[1]), price: 0 } : { name: item, quantity: 1, price: 0 };
+              }) : [],
+            }),
+          });
+          console.log('Telegram notification sent for paid order');
+        }
+      } catch (telegramError) {
+        console.error('Failed to send Telegram notification:', telegramError);
+        // Don't fail the webhook if notification fails
+      }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

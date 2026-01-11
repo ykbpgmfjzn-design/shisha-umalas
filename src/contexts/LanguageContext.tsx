@@ -337,7 +337,10 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Account Name",
     "payment.bankName": "Bank",
     "payment.accountNumber": "Account Number",
-    
+    "payment.awaitingPayment": "Awaiting Payment",
+    "payment.timerStartsAfterPayment": "The timer will start once payment is confirmed",
+    "payment.confirmed": "Payment Confirmed",
+    "payment.orderStarted": "Your order is now being prepared!",
     // QRIS Payment
     "qris.title": "QRIS Payment",
     "qris.subtitle": "Scan with any banking app",
@@ -750,8 +753,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Имя счёта",
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер счёта",
+    "payment.awaitingPayment": "Ожидание оплаты",
+    "payment.timerStartsAfterPayment": "Таймер запустится после подтверждения оплаты",
+    "payment.confirmed": "Оплата подтверждена",
+    "payment.orderStarted": "Ваш заказ готовится!",
     "payment.copy": "Копировать",
-    
     // QRIS Payment
     "qris.title": "Оплата QRIS",
     "qris.subtitle": "Сканируйте любым банковским приложением",
@@ -1075,8 +1081,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Nama Rekening",
     "payment.bankName": "Bank",
     "payment.accountNumber": "Nomor Rekening",
+    "payment.awaitingPayment": "Menunggu Pembayaran",
+    "payment.timerStartsAfterPayment": "Timer akan dimulai setelah pembayaran dikonfirmasi",
+    "payment.confirmed": "Pembayaran Dikonfirmasi",
+    "payment.orderStarted": "Pesanan Anda sedang disiapkan!",
     "payment.copy": "Salin",
-    
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",
     "whatsapp.subtitle": "Biasanya membalas dalam satu jam",
@@ -1337,8 +1346,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Ім'я рахунку",
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер рахунку",
+    "payment.awaitingPayment": "Очікування оплати",
+    "payment.timerStartsAfterPayment": "Таймер почнеться після підтвердження оплати",
+    "payment.confirmed": "Оплату підтверджено",
+    "payment.orderStarted": "Ваше замовлення готується!",
     "payment.copy": "Копіювати",
-    
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",
     "whatsapp.subtitle": "Зазвичай відповідаємо протягом години",
@@ -1580,8 +1592,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "Nom du compte",
     "payment.bankName": "Banque",
     "payment.accountNumber": "Numéro de compte",
+    "payment.awaitingPayment": "En attente de paiement",
+    "payment.timerStartsAfterPayment": "Le minuteur démarrera après confirmation du paiement",
+    "payment.confirmed": "Paiement confirmé",
+    "payment.orderStarted": "Votre commande est en préparation !",
     "payment.copy": "Copier",
-    
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",
     "whatsapp.subtitle": "Répond généralement dans l'heure",
@@ -1817,8 +1832,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "खाता नाम",
     "payment.bankName": "बैंक",
     "payment.accountNumber": "खाता संख्या",
+    "payment.awaitingPayment": "भुगतान की प्रतीक्षा",
+    "payment.timerStartsAfterPayment": "भुगतान की पुष्टि के बाद टाइमर शुरू होगा",
+    "payment.confirmed": "भुगतान की पुष्टि",
+    "payment.orderStarted": "आपका ऑर्डर तैयार हो रहा है!",
     "payment.copy": "कॉपी",
-    
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",
     "whatsapp.subtitle": "आमतौर पर एक घंटे में जवाब देते हैं",
@@ -2054,8 +2072,11 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.accountName": "账户名称",
     "payment.bankName": "银行",
     "payment.accountNumber": "账号",
+    "payment.awaitingPayment": "等待付款",
+    "payment.timerStartsAfterPayment": "付款确认后计时器将启动",
+    "payment.confirmed": "付款已确认",
+    "payment.orderStarted": "您的订单正在准备中！",
     "payment.copy": "复制",
-    
     // WhatsApp
     "whatsapp.title": "Shisha Lounge",
     "whatsapp.subtitle": "通常在一小时内回复",

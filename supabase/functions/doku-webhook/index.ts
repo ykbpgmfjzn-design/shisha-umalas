@@ -72,16 +72,6 @@ serve(async (req) => {
         updateData.paid_at = new Date().toISOString();
       }
 
-      // Add payment details to notes
-      const noteDetails = [
-        `Status: ${status}`,
-        channel?.id ? `Channel: ${channel.id}` : null,
-        acquirer?.id ? `Acquirer: ${acquirer.id}` : null,
-        amount ? `Amount: ${amount}` : null
-      ].filter(Boolean).join(", ");
-      
-      updateData.notes = `DOKU Invoice: ${invoiceNumber} | ${noteDetails}`;
-
       const { error: updateError } = await supabase
         .from("purchases")
         .update(updateData)
@@ -93,6 +83,48 @@ serve(async (req) => {
       }
 
       console.log(`Updated purchase ${purchaseId} to status: ${paymentStatus}`);
+
+      // Send Telegram notification ONLY when payment is confirmed
+      if (paymentStatus === "paid") {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          
+          // Fetch purchase details for notification
+          const { data: purchaseData } = await supabase
+            .from("purchases")
+            .select("*, profiles!purchases_user_id_fkey(room_number, email, full_name)")
+            .eq("id", purchaseId)
+            .maybeSingle();
+
+          if (purchaseData) {
+            const profile = purchaseData.profiles as { room_number?: string; email?: string; full_name?: string } | null;
+            
+            await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                orderId: purchaseId,
+                roomNumber: profile?.room_number || "",
+                userEmail: profile?.email || "",
+                hookahCount: purchaseData.hookah_count,
+                totalAmount: purchaseData.amount,
+                items: purchaseData.notes ? purchaseData.notes.split(", ").map((item: string) => {
+                  const match = item.match(/^(\d+)x (.+)$/);
+                  return match ? { name: match[2], quantity: parseInt(match[1]), price: 0 } : { name: item, quantity: 1, price: 0 };
+                }) : [],
+              }),
+            });
+            console.log("Telegram notification sent for paid order");
+          }
+        } catch (telegramError) {
+          console.error("Failed to send Telegram notification:", telegramError);
+          // Don't fail the webhook if notification fails
+        }
+      }
     } else {
       console.log(`No purchase found for invoice: ${invoiceNumber}`);
     }
