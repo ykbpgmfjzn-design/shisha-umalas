@@ -261,21 +261,21 @@ export const GlobalVoiceAssistant = () => {
 
   return (
     <>
-      {/* Voice Assistant Overlay */}
-      {!hideVoiceAssistant && (
+      {/* Voice Assistant Overlay - HIDDEN */}
+      {/* {!hideVoiceAssistant && (
         <VoiceAssistantOverlay
           onStart={handleStartVoice}
           onDismiss={() => {}}
         />
-      )}
+      )} */}
       
-      {/* Voice Button - ONLY when NOT active */}
-      {!hideVoiceAssistant && !isActive && !showVoiceAssistant && (
+      {/* Voice Button - HIDDEN */}
+      {/* {!hideVoiceAssistant && !isActive && !showVoiceAssistant && (
         <VoiceAssistantButton
           isActive={isActive}
           onClick={handleToggleVoice}
         />
-      )}
+      )} */}
       
       {/* Active Panel - ONLY ONE UI element when active */}
       {/* CRITICAL: Use stable condition to prevent flickering */}
