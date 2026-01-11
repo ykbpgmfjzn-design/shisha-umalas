@@ -16,6 +16,8 @@ interface VoiceAssistantSingletonState {
   sessionStartTime: number | null;
   // Lock with timestamp to prevent permanent locks
   lockTimestamp: number | null;
+  // CRITICAL: Track if session was closed to prevent zombie events
+  isClosed: boolean;
 }
 
 // Global singleton - shared across all hook instances
@@ -30,6 +32,7 @@ const globalState: VoiceAssistantSingletonState = {
   currentStage: 'login',
   sessionStartTime: null,
   lockTimestamp: null,
+  isClosed: false,
 };
 
 // Lock timeout (ms) - if lock is older than this, it's stale
@@ -71,6 +74,7 @@ export const voiceAssistantSingleton = {
     globalState.isStarting = true;
     globalState.instanceId = instanceId;
     globalState.sessionStartTime = now;
+    globalState.isClosed = false; // Reset closed flag
     
     // Release lock after short delay
     setTimeout(() => {
@@ -101,6 +105,19 @@ export const voiceAssistantSingleton = {
     }
     
     console.log('[VoiceSingleton] Releasing session:', instanceId);
+    
+    // CRITICAL: Mark as closed FIRST to block all further events
+    globalState.isClosed = true;
+    
+    // Cancel any ongoing AI response before cleanup
+    if (globalState.dataChannel && globalState.dataChannel.readyState === 'open') {
+      try {
+        console.log('[VoiceSingleton] Sending response.cancel before cleanup');
+        globalState.dataChannel.send(JSON.stringify({ type: 'response.cancel' }));
+      } catch (e) {
+        console.log('[VoiceSingleton] Error sending cancel:', e);
+      }
+    }
     
     // Cleanup all resources
     if (globalState.dataChannel) {
@@ -153,6 +170,16 @@ export const voiceAssistantSingleton = {
   // Force cleanup any existing session
   forceCleanup: (): void => {
     console.log('[VoiceSingleton] Force cleanup called');
+    
+    // CRITICAL: Mark as closed to block events
+    globalState.isClosed = true;
+    
+    // Cancel any ongoing AI response
+    if (globalState.dataChannel && globalState.dataChannel.readyState === 'open') {
+      try {
+        globalState.dataChannel.send(JSON.stringify({ type: 'response.cancel' }));
+      } catch (e) {}
+    }
     
     // Cleanup all resources regardless of instance
     if (globalState.dataChannel) {
@@ -225,6 +252,7 @@ export const voiceAssistantSingleton = {
   getMediaStream: (): MediaStream | null => globalState.mediaStream,
   isActive: (): boolean => globalState.isSessionActive,
   isStarting: (): boolean => globalState.isStarting,
+  isClosed: (): boolean => globalState.isClosed,
   getCurrentInstanceId: (): string | null => globalState.instanceId,
 };
 
