@@ -239,30 +239,42 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     return null;
   }, []);
 
-  // Send follow-up message with queue
-  const sendFollowUpMessage = useCallback((instruction: string) => {
+  // CANCEL any ongoing AI response before sending new instruction
+  const cancelCurrentResponse = useCallback(() => {
+    const dc = voiceAssistantSingleton.getDataChannel();
+    if (!dc || dc.readyState !== 'open') return;
+    
+    console.log('[VoiceAssistant] Canceling current AI response');
+    dc.send(JSON.stringify({ type: 'response.cancel' }));
+    isAiRespondingRef.current = false;
+  }, []);
+
+  // Send follow-up message - ALWAYS cancels current response first
+  const sendFollowUpMessage = useCallback((instruction: string, forceCancel: boolean = true) => {
     const dc = voiceAssistantSingleton.getDataChannel();
     if (!dc || dc.readyState !== 'open') {
       console.log('[VoiceAssistant] Data channel not ready for follow-up');
       return;
     }
     
-    if (isAiRespondingRef.current) {
-      console.log('[VoiceAssistant] AI is responding, queuing follow-up:', instruction);
-      pendingFollowUpRef.current = instruction;
-      return;
+    // CRITICAL: Always cancel current response to prevent overlapping speech
+    if (forceCancel) {
+      cancelCurrentResponse();
     }
     
-    console.log('[VoiceAssistant] Sending follow-up instruction:', instruction);
-    isAiRespondingRef.current = true;
-    dc.send(JSON.stringify({
-      type: 'response.create',
-      response: {
-        modalities: ['audio', 'text'],
-        instructions: instruction,
-      },
-    }));
-  }, []);
+    // Small delay to ensure cancel is processed
+    setTimeout(() => {
+      console.log('[VoiceAssistant] Sending follow-up instruction:', instruction);
+      isAiRespondingRef.current = true;
+      dc.send(JSON.stringify({
+        type: 'response.create',
+        response: {
+          modalities: ['audio', 'text'],
+          instructions: instruction,
+        },
+      }));
+    }, 100);
+  }, [cancelCurrentResponse]);
 
   // Save room number to profile
   const saveRoomNumber = useCallback(async (roomNumber: string) => {
@@ -1006,18 +1018,23 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       case 'response.done':
         isAiRespondingRef.current = false;
         
+        // Process pending follow-up only if we're not already in a controlled stage transition
         if (pendingFollowUpRef.current) {
           const pending = pendingFollowUpRef.current;
           pendingFollowUpRef.current = null;
-          setTimeout(() => {
-            sendFollowUpMessage(pending);
-          }, 300);
+          // Don't send follow-up - the stage transition already sent the right message
+          console.log('[VoiceAssistant] Clearing pending follow-up (stage already handled):', pending.substring(0, 50));
         }
         
         if (state !== 'complete') {
           setState('listening');
         }
         setAssistantMessage('');
+        break;
+      
+      case 'response.cancelled':
+        console.log('[VoiceAssistant] Response cancelled');
+        isAiRespondingRef.current = false;
         break;
         
       case 'error':
