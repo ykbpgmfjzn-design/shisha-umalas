@@ -79,6 +79,9 @@ serve(async (req) => {
     const secretKey = Deno.env.get("DOKU_SECRET_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Use sandbox URL for testing, switch to api.doku.com for production
+    const dokuBaseUrl = "https://api-sandbox.doku.com";
 
     if (!clientId || !secretKey) {
       throw new Error("DOKU credentials not configured");
@@ -137,7 +140,7 @@ serve(async (req) => {
 
     console.log("Creating card token for purchase:", purchaseId);
     
-    const tokenResponse = await fetch("https://api.doku.com/credit-card/v1/token", {
+    const tokenResponse = await fetch(`${dokuBaseUrl}/credit-card/v1/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -194,7 +197,7 @@ serve(async (req) => {
 
     console.log("Charging card for invoice:", invoiceNumber);
     
-    const chargeResponse = await fetch("https://api.doku.com/credit-card/v1/payment/host-to-host", {
+    const chargeResponse = await fetch(`${dokuBaseUrl}/credit-card/v1/payment/host-to-host`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
