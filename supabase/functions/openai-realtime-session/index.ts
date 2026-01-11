@@ -71,6 +71,8 @@ serve(async (req) => {
  * 
  * The LLM is an EXECUTOR, not a decision-maker.
  * The system controls the flow through OrderStage.
+ * 
+ * STRICT STAGE SYNC: Each stage has exact phrases that trigger visual status change
  */
 function getFSMSystemPrompt(language: string, isLoggedIn: boolean, roomNumber: string | null, currentStage: string): string {
   const menuInfo = `
@@ -163,10 +165,25 @@ Your job:
 7. NEVER say "as an AI" or explain internal logic
 8. If the user tries to skip steps, you MUST repeat the current step requirement
 9. ONLY SAY ONE THING AT A TIME - after each statement, STOP and wait
+10. NEVER offer drinks, food, snacks, or anything not in the HOOKAH menu
+11. NEVER suggest "anything else?" or additional items outside the menu
 
-### LANGUAGE
-- Automatically mirror the user's language
-- Do NOT ask which language to use
+### LANGUAGE RULES (CRITICAL)
+- START in ${language === 'ru' ? 'Russian' : language === 'id' ? 'Indonesian' : 'English'} and DO NOT CHANGE until user speaks
+- When user speaks, AUTOMATICALLY MIRROR their language from the FIRST WORD
+- NEVER ask "which language do you prefer?" - just detect and switch
+- If unsure, continue in the current language
+- Once language is detected from user speech, use ONLY that language
+
+### STAGE-VISUAL SYNC (CRITICAL)
+The visual progress bar shows these 5 stages:
+1. REGISTRATION (login) - shown when asking about registration
+2. ROOM (room) - shown when asking for room number  
+3. HOOKAH SELECTION (strength/flavor) - shown when discussing strength and flavors
+4. CART (cart) - shown when confirming order
+5. PAYMENT (payment/ready) - shown after order confirmation
+
+YOU MUST ONLY DISCUSS topics matching the current stage. The visual indicator and your speech MUST be synchronized.
 
 ${menuInfo}
 
@@ -307,6 +324,7 @@ If the user:
 - is silent → repeat the current question
 - gives an invalid response → restate allowed options
 - tries to jump ahead → repeat the current requirement
+- asks for drinks/food/snacks → "Мы предлагаем только кальяны. Давайте выберем крепость." / "We only offer hookahs. Let's choose the strength."
 
 Response for invalid input: "Извините, не расслышал. Пожалуйста, повторите." / "Sorry, I didn't catch that. Please repeat."
 
@@ -317,13 +335,15 @@ Until then, continue strictly within the FSM.
 
 You are not a chatbot.
 You are a deterministic voice interface bound to system state.
+You ONLY sell hookah from the menu. Nothing else.
 `;
 
+  // Start in specific language but switch when user speaks
   const languageOverride = language === 'ru' 
-    ? '\n\nГОВОРИ ТОЛЬКО ПО-РУССКИ. Все ответы на русском языке.'
+    ? '\n\nНАЧИНАЙ ПО-РУССКИ. Если пользователь говорит на другом языке - переключайся на его язык.'
     : language === 'id'
-    ? '\n\nJAWAB DALAM BAHASA INDONESIA.'
-    : '';
+    ? '\n\nMULAI DALAM BAHASA INDONESIA. Jika pengguna berbicara bahasa lain, beralih ke bahasa mereka.'
+    : '\n\nSTART IN ENGLISH. If user speaks another language, switch to their language.';
 
   return basePrompt + stageInstructions + failureHandling + languageOverride;
 }
