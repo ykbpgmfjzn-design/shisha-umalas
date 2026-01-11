@@ -35,28 +35,30 @@ export interface IntentRule {
 // ============= CONFIDENCE THRESHOLDS =============
 
 export const CONFIDENCE_THRESHOLDS: Record<IntentType, number> = {
-  agree_registration: 0.75,
-  decline_registration: 0.75,
-  provide_room_number: 0.80,
-  choose_strength: 0.85,
-  choose_flavor: 0.85,
-  choose_quantity: 0.90,
+  agree_registration: 0.50, // Lower threshold - simple "да/yes" should work
+  decline_registration: 0.50, // Lower threshold for declining too
+  provide_room_number: 0.70,
+  choose_strength: 0.70,
+  choose_flavor: 0.70,
+  choose_quantity: 0.80,
   confirm_order: 0.95, // MOST STRICT - prevent accidental confirmations
-  decline_order: 0.80,
+  decline_order: 0.70,
   backchannel: 0.0, // Always matches if only backchannel words
   noise: 0.0,
   unknown: 0.0,
 };
 
 // ============= BACKCHANNEL WORDS (NEVER count as intent) =============
+// NOTE: "да", "yes", "нет", "no" are NOT backchannel - they're valid responses!
+// Backchannel = filler words with NO semantic meaning
 
 export const BACKCHANNEL_WORDS = [
-  // English
-  'ok', 'okay', 'yes', 'yeah', 'yep', 'yup', 'uh-huh', 'mhm', 'hmm', 'ah', 'oh',
-  // Russian
-  'угу', 'ага', 'мм', 'ммм', 'ну', 'ээ', 'аа', 'да', 'ок', 'окей', 'ладно',
-  // Indonesian
-  'iya', 'ya', 'oke', 'hmm',
+  // English fillers only (NOT yes/no - those have meaning)
+  'uh-huh', 'mhm', 'hmm', 'ah', 'oh', 'um', 'uh',
+  // Russian fillers only (NOT да/нет - those have meaning)
+  'угу', 'ага', 'мм', 'ммм', 'ну', 'ээ', 'аа',
+  // Indonesian fillers only
+  'hmm',
 ];
 
 // ============= NOISE PATTERNS =============
@@ -76,23 +78,25 @@ export const INTENT_RULES: IntentRule[] = [
   {
     intent: 'agree_registration',
     allowedStage: 'login',
-    minConfidence: 0.75,
+    minConfidence: 0.50, // Low threshold - simple да/yes is enough
     keywords: [
+      // Explicit agreement words
       'yes', 'да', 'готов', 'хочу', 'register', 'регистр', 'sign up', 
       'help', 'помог', 'давай', 'конечно', 'sure', "let's go", 'поехали',
-      'want', 'need', 'please', 'пожалуйста'
+      'want', 'need', 'please', 'пожалуйста', 'okay', 'ok', 'ок', 'окей',
+      'ладно', 'согласен', 'agree', 'iya', 'ya' // Indonesian yes
     ],
-    antiKeywords: ['no', 'нет', 'не хочу', 'без', 'skip', 'пропустить', 'потом', 'later'],
+    antiKeywords: ['no', 'нет', 'не хочу', 'без', 'skip', 'пропустить', 'потом', 'later', 'tidak'],
     handler: 'handleAgreeRegistration',
   },
   {
     intent: 'decline_registration',
     allowedStage: 'login',
-    minConfidence: 0.75,
+    minConfidence: 0.50, // Low threshold - simple нет/no is enough
     keywords: [
       'no', 'нет', 'не хочу', 'не надо', 'без регистрации', 'without',
       'skip', 'пропустить', 'потом', 'later', 'just browse', 'просто посмотреть',
-      'сам', 'myself', 'не сейчас', 'not now'
+      'сам', 'myself', 'не сейчас', 'not now', 'tidak' // Indonesian no
     ],
     handler: 'handleDeclineRegistration',
   },
@@ -101,7 +105,7 @@ export const INTENT_RULES: IntentRule[] = [
   {
     intent: 'provide_room_number',
     allowedStage: 'room',
-    minConfidence: 0.80,
+    minConfidence: 0.70,
     keywords: [], // Detected via regex, not keywords
     requiresSlots: ['roomNumber'],
     handler: 'handleRoomNumber',
