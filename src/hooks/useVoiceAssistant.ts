@@ -1105,23 +1105,28 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         const lang = detectedLanguageRef.current || language;
         const isRussian = lang === 'ru' || lang === 'uk';
         
-        // Send initial greeting in ONE language only - AI MUST speak first
+        // CRITICAL: Send ONE complete greeting phrase, not split into parts
+        // This prevents the stuttering/interruption issue
         let greetingInstruction = '';
+        
         if (!isLoggedIn) {
+          // Not logged in: welcome + explain registration requirement + ask in ONE phrase
           greetingInstruction = isRussian 
-            ? 'НЕМЕДЛЕННО начни говорить. Скажи: "Добро пожаловать! Для заказа с доставкой в номер нужно зарегистрироваться. Хотите помогу?" ГОВОРИ СЕЙЧАС, не жди.'
-            : 'IMMEDIATELY start speaking. Say: "Welcome! To order with room delivery, you need to register. Would you like help?" SPEAK NOW, do not wait.';
+            ? 'Скажи ОДНОЙ ФРАЗОЙ без пауз: "Добро пожаловать в Shisha Lounge! Я ваш голосовой помощник. Для оформления заказа с доставкой в номер необходима регистрация. Это займёт меньше минуты. Хотите, помогу зарегистрироваться?" Произнеси всё слитно, плавно, без пауз между предложениями. Потом ЗАМОЛЧИ и жди ответ.'
+            : 'Say in ONE smooth phrase without pauses: "Welcome to Shisha Lounge! I am your voice assistant. To place an order with room delivery, registration is required. It takes less than a minute. Would you like me to help you register?" Say it all smoothly without pauses between sentences. Then STOP and wait for response.';
         } else if (!roomNumber) {
+          // Logged in but no room: greet + ask room
           greetingInstruction = isRussian
-            ? 'НЕМЕДЛЕННО начни говорить. Скажи: "Здравствуйте! Подскажите номер вашей комнаты для доставки?" ГОВОРИ СЕЙЧАС, не жди.'
-            : 'IMMEDIATELY start speaking. Say: "Hello! What is your room number for delivery?" SPEAK NOW, do not wait.';
+            ? 'Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Рада снова вас видеть. Подскажите, пожалуйста, номер вашей комнаты для доставки?" Плавно, без пауз. Потом жди ответ.'
+            : 'Say in ONE phrase: "Welcome back! Please tell me your room number for delivery." Smoothly, no pauses. Then wait for response.';
         } else {
+          // Logged in with room: greet + ask strength
           greetingInstruction = isRussian
-            ? `НЕМЕДЛЕННО начни говорить. Скажи: "Здравствуйте! Доставка в комнату ${roomNumber}. Какую крепость кальяна выберете? Ультра лёгкий, Лёгкий, Средний или Крепкий?" ГОВОРИ СЕЙЧАС.`
-            : `IMMEDIATELY start speaking. Say: "Hello! Delivery to room ${roomNumber}. What hookah strength would you like? Ultra Light, Light, Medium, or Bold Strong?" SPEAK NOW.`;
+            ? `Скажи ОДНОЙ ФРАЗОЙ: "Добро пожаловать! Доставка в комнату ${roomNumber}. Какую крепость кальяна выберете? У нас есть ультра лёгкий, лёгкий, средний или крепкий." Плавно, потом жди ответ.`
+            : `Say in ONE phrase: "Welcome back! Delivery to room ${roomNumber}. What hookah strength would you like? We have ultra light, light, medium, or bold strong." Smoothly, then wait for response.`;
         }
         
-        // Force AI to respond immediately with audio
+        // Force AI to respond with the complete greeting
         dc.send(JSON.stringify({
           type: 'response.create',
           response: {
