@@ -798,68 +798,82 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
         }
         
-        // NOTE: "added to cart" handling moved to the cart trigger section below
-        
-        // Handle "opening cart" OR "asking for confirmation" - when AI mentions cart verification
-        const cartTriggerPhrases = [
-          'opening cart', 'открываю корзину', 'открываю для проверки',
-          'проверьте заказ', 'check your order', 'всё верно', 'is everything correct',
-          'корзину для проверки', 'cart for review', 'скажите подтверждаю',
-          'say confirm', 'если да', 'if yes', 'подтвердите заказ', 'confirm your order',
-          'правильно ли', 'is this correct', 'хотите оформить', 'would you like to place',
-          'готовы оформить', 'ready to place', 'хотите ещё', 'would you like another',
-          'ещё один кальян', 'another hookah', 'добавлено в корзину', 'added to cart',
-          'добавлено!', 'added!'
+        // ============= HOOKAH SELECTION STAGE TRIGGERS =============
+        // AI mentions strength selection
+        const strengthTriggers = [
+          'ultra light', 'ультра лёгкий', 'ультра легкий', 'what strength', 'какую крепость',
+          'light, medium', 'лёгкий, средний', 'легкий, средний', 'choose strength', 'выберите крепость'
         ];
+        if (strengthTriggers.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI asking about strength, updating to strength stage');
+          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
+        }
         
-        // Check if we should move to "more" stage (after adding to cart)
-        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!'];
+        // AI mentions flavor selection
+        const flavorTriggers = [
+          'which flavor', 'какой вкус', 'choose flavor', 'выберите вкус',
+          'menthol', 'ментол', 'fruity', 'фруктов', 'what flavor', 'какой аромат'
+        ];
+        if (flavorTriggers.some(phrase => transcriptLower.includes(phrase)) && 
+            !strengthTriggers.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI asking about flavor, updating to flavor stage');
+          updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
+        }
+        
+        // ============= ADDED TO CART → MORE STAGE =============
+        const addedToCartPhrases = ['добавлено в корзину', 'added to cart', 'добавлено!', 'added!', 'в корзине'];
         const isAddedToCart = addedToCartPhrases.some(phrase => transcriptLower.includes(phrase));
+        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah', 'хотите заказать ещё'].some(p => transcriptLower.includes(p));
         
-        // If AI says "added to cart" + "would you like another", stay in more stage
-        const askingForMore = ['хотите ещё', 'would you like another', 'ещё один', 'another hookah'].some(p => transcriptLower.includes(p));
-        
-        if (isAddedToCart && !askingForMore) {
-          console.log('[VoiceAssistant] Item added, moving to more stage');
-          updateOrderState(prev => ({ ...prev, stage: 'more' }));
-        } else if (isAddedToCart && askingForMore) {
-          console.log('[VoiceAssistant] Item added, AI asking for more - staying in more stage');
+        if (isAddedToCart) {
+          console.log('[VoiceAssistant] Item added to cart, moving to more stage');
           updateOrderState(prev => ({ ...prev, stage: 'more' }));
         }
         
-        // Cart opening triggers (excluding "added to cart" messages)
+        // ============= CART OPENING TRIGGERS =============
         const cartOpenTriggers = [
           'opening cart', 'открываю корзину', 'открываю для проверки',
-          'проверьте заказ', 'check your order', 'корзину для проверки', 'cart for review'
+          'проверьте заказ', 'check your order', 'корзину для проверки', 'cart for review',
+          'всё верно', 'is everything correct', 'подтвердите заказ', 'confirm your order',
+          'готовы оформить', 'ready to checkout', 'хотите оплатить', 'want to pay'
         ];
         
         if (cartOpenTriggers.some(phrase => transcriptLower.includes(phrase))) {
-          console.log('[VoiceAssistant] AI mentioned cart opening, forcing cart open');
+          console.log('[VoiceAssistant] AI mentioned cart, updating to cart stage');
           
           const currentStageFromRef = orderStateRef.current.stage;
           if (!['login', 'room', 'room_confirm'].includes(currentStageFromRef)) {
             updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
-            // Force open cart immediately
             console.log('[VoiceAssistant] FORCING cart open NOW');
             setCartOpen(true);
           }
         }
         
-        // ONLY mark as complete if order was actually submitted (stage is cart and submitting was triggered)
-        if (orderStateRef.current.stage === 'cart' && submittingOrderRef.current) {
-          if (transcriptLower.includes('order guide complete') || 
-              transcriptLower.includes('сопровождение заказа завершено') ||
-              transcriptLower.includes('order placed') ||
-              transcriptLower.includes('заказ оформлен') ||
-              transcriptLower.includes('order submitted') ||
-              transcriptLower.includes('заказ отправлен') ||
-              transcriptLower.includes('enjoy your hookah') ||
-              transcriptLower.includes('приятного отдыха') ||
-              transcriptLower.includes('приятного курения')) {
-            console.log('[VoiceAssistant] Order confirmed complete, ending session');
-            updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-            setState('complete');
-          }
+        // ============= PAYMENT STAGE TRIGGERS =============
+        const paymentTriggers = [
+          'выберите способ оплаты', 'choose payment', 'оплата', 'payment',
+          'оплатите', 'pay for', 'открываю оплату', 'opening payment',
+          'способ оплаты', 'payment method', 'заказ оформлен', 'order confirmed',
+          'заказ отправлен', 'order submitted', 'переходим к оплате', 'proceed to payment'
+        ];
+        
+        if (paymentTriggers.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI mentioned payment, updating to payment stage');
+          updateOrderState(prev => ({ ...prev, stage: 'payment' }));
+        }
+        
+        // ============= ORDER COMPLETE TRIGGERS =============
+        const completeTriggers = [
+          'приятного отдыха', 'enjoy', 'приятного курения', 'have a nice',
+          'заказ готов', 'order ready', 'сопровождение завершено', 'guide complete',
+          'спасибо за заказ', 'thank you for order', 'ждите доставку', 'wait for delivery',
+          'скоро будет', 'coming soon', 'несут', 'on the way'
+        ];
+        
+        if (completeTriggers.some(phrase => transcriptLower.includes(phrase))) {
+          console.log('[VoiceAssistant] AI indicated completion, updating to ready stage');
+          updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+          setState('complete');
         }
         break;
         
