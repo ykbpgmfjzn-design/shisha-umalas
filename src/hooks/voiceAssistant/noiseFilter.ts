@@ -29,10 +29,13 @@ const STAGE_KEYWORDS: Record<OrderStage, string[]> = {
     // Room number related
     'room', 'комната', 'номер', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
   ],
-  ordering: [
-    // Menu related
+  strength: [
+    // Strength related
     'light', 'medium', 'strong', 'bold', 'ultra',
-    'лёгкий', 'легкий', 'средний', 'крепкий',
+    'лёгкий', 'легкий', 'средний', 'крепкий', 'лайт', 'медиум'
+  ],
+  flavor: [
+    // Flavor and quantity related
     'vanilla', 'mint', 'apple', 'grape', 'berry', 'lime', 'watermelon',
     'ваниль', 'мята', 'яблоко', 'виноград', 'ягода', 'лайм', 'арбуз',
     'hookah', 'кальян', 'shisha', 'one', 'two', 'three', 'один', 'два', 'три',
@@ -43,6 +46,10 @@ const STAGE_KEYWORDS: Record<OrderStage, string[]> = {
     // Confirmation related
     'yes', 'no', 'да', 'нет', 'confirm', 'подтвержда', 'cancel', 'отмена',
     'correct', 'верно', 'wrong', 'неверно', 'submit', 'оформ', 'готов'
+  ],
+  payment: [
+    // Payment related
+    'pay', 'оплат', 'card', 'карт', 'cash', 'наличн', 'transfer', 'перевод'
   ],
   ready: []
 };
@@ -91,7 +98,7 @@ export function semanticFilter(text: string, currentStage: OrderStage): FilterRe
   const stageKeywords = STAGE_KEYWORDS[currentStage];
   
   // For ready stage, everything is noise (session should end)
-  if (currentStage === 'ready') {
+  if (currentStage === 'ready' || currentStage === 'payment') {
     return { type: 'noise', reason: 'session_complete' };
   }
   
@@ -108,8 +115,8 @@ export function semanticFilter(text: string, currentStage: OrderStage): FilterRe
     return { type: 'valid', text };
   }
   
-  // For ordering stage with quantity, numbers are important
-  if (currentStage === 'ordering' && hasNumbers) {
+  // For flavor stage with quantity, numbers are important
+  if (currentStage === 'flavor' && hasNumbers) {
     return { type: 'valid', text };
   }
   

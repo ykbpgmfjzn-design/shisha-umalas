@@ -15,7 +15,7 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
-export type OrderStage = 'login' | 'room' | 'ordering' | 'cart' | 'ready';
+export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready';
 
 // ============= ORDER STATE =============
 
@@ -29,6 +29,8 @@ export interface OrderState {
   cartOpened?: boolean;
   addedToCart?: boolean;
   registrationOffered?: boolean;
+  strengthAsked?: boolean;
+  flavorAsked?: boolean;
 }
 
 // ============= EVENT TYPES =============

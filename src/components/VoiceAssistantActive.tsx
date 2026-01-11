@@ -21,9 +21,10 @@ interface VoiceAssistantActiveProps {
 const stages: { key: OrderStage; labelKey: string; icon: React.ReactNode }[] = [
   { key: 'login', labelKey: 'voice.stageLogin', icon: <UserPlus className="w-3 h-3" /> },
   { key: 'room', labelKey: 'voice.stageRoom', icon: <Mic className="w-3 h-3" /> },
-  { key: 'ordering', labelKey: 'voice.stageOrder', icon: <ShoppingCart className="w-3 h-3" /> },
+  { key: 'strength', labelKey: 'voice.stageStrength', icon: <Mic className="w-3 h-3" /> },
+  { key: 'flavor', labelKey: 'voice.stageFlavor', icon: <Mic className="w-3 h-3" /> },
   { key: 'cart', labelKey: 'voice.stageCart', icon: <ShoppingCart className="w-3 h-3" /> },
-  { key: 'ready', labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },
+  { key: 'payment', labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },
 ];
 
 export const VoiceAssistantActive = ({
@@ -33,7 +34,7 @@ export const VoiceAssistantActive = ({
   error,
   onEnd,
   audioLevel = 0.5,
-  currentStage = 'ordering',
+  currentStage = 'strength',
   forceMinimized = false,
 }: VoiceAssistantActiveProps) => {
   const { t, language } = useLanguage();
@@ -97,8 +98,8 @@ export const VoiceAssistantActive = ({
 
   // Stage labels
   const stageLabels: Record<string, Record<OrderStage, string>> = {
-    en: { login: 'Login', room: 'Room', ordering: 'Order', cart: 'Cart', ready: 'Payment' },
-    ru: { login: 'Вход', room: 'Комната', ordering: 'Заказ', cart: 'Корзина', ready: 'Оплата' },
+    en: { login: 'Login', room: 'Room', strength: 'Strength', flavor: 'Flavor', cart: 'Cart', payment: 'Payment', ready: 'Done' },
+    ru: { login: 'Вход', room: 'Комната', strength: 'Крепость', flavor: 'Вкус', cart: 'Корзина', payment: 'Оплата', ready: 'Готово' },
   };
 
   if (state === 'idle') return null;
