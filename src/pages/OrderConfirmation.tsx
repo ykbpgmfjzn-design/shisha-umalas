@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, CreditCard, Loader2, Copy, Banknote } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, Loader2, Copy, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import CardPayment from "@/components/CardPayment";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,7 +29,6 @@ const OrderConfirmationContent = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [showCardPayment, setShowCardPayment] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState(false);
@@ -178,32 +177,6 @@ const OrderConfirmationContent = () => {
     } finally {
       setIsCancelling(false);
     }
-  };
-
-
-  const handlePayWithCard = () => {
-    if (!orderId || !userEmail) {
-      toast({
-        title: t("order.paymentError"),
-        description: t("order.loginRequired"),
-        variant: "destructive",
-      });
-      return;
-    }
-    setShowCardPayment(true);
-  };
-
-  const handleCardSuccess = () => {
-    setShowCardPayment(false);
-    toast({
-      title: t("card.success"),
-      description: t("card.successDesc"),
-    });
-    window.location.reload();
-  };
-
-  const handleCardCancel = () => {
-    setShowCardPayment(false);
   };
 
   const handlePayOnline = async () => {
@@ -430,24 +403,6 @@ const OrderConfirmationContent = () => {
                 </h3>
                 
                 <div className="space-y-3">
-                  {/* Card Payment */}
-                  <button
-                    onClick={handlePayWithCard}
-                    disabled={!userEmail}
-                    className="w-full p-4 bg-muted/30 rounded-xl border border-border/30 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <div>
-                        <span className="font-medium text-foreground group-hover:text-blue-500 transition-colors">
-                          {t("card.payWithCard")}
-                        </span>
-                        <p className="text-xs text-muted-foreground">Visa, Mastercard, JCB</p>
-                      </div>
-                    </div>
-                  </button>
 
                   {/* Online Payment - DOKU */}
                   <button
@@ -578,19 +533,6 @@ const OrderConfirmationContent = () => {
         </motion.div>
       </div>
 
-
-      {/* Card Payment Modal */}
-      {showCardPayment && userEmail && (
-        <CardPayment
-          purchaseId={orderId}
-          amount={parseInt(total) * 1000}
-          description={items}
-          customerName={userName || "Guest"}
-          customerEmail={userEmail}
-          onSuccess={handleCardSuccess}
-          onCancel={handleCardCancel}
-        />
-      )}
     </main>
   );
 };
