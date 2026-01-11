@@ -197,6 +197,10 @@ export const STAGE_REMINDERS: Record<OrderStage, { ru: string; en: string }> = {
     ru: 'Какой вкус кальяна вы хотите?',
     en: 'What hookah flavor would you like?',
   },
+  more: {
+    ru: 'Хотите заказать ещё один кальян?',
+    en: 'Would you like to order another hookah?',
+  },
   cart: {
     ru: 'Пожалуйста, подтвердите заказ.',
     en: 'Please confirm your order.',

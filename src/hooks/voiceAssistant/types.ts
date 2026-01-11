@@ -15,7 +15,7 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
-export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready';
+export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
 
 // ============= ORDER STATE =============
 

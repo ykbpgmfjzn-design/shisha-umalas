@@ -18,13 +18,13 @@ interface VoiceAssistantActiveProps {
   forceMinimized?: boolean; // External control to force minimized state
 }
 
-const stages: { key: OrderStage; labelKey: string; icon: React.ReactNode }[] = [
-  { key: 'login', labelKey: 'voice.stageLogin', icon: <UserPlus className="w-3 h-3" /> },
-  { key: 'room', labelKey: 'voice.stageRoom', icon: <Mic className="w-3 h-3" /> },
-  { key: 'strength', labelKey: 'voice.stageStrength', icon: <Mic className="w-3 h-3" /> },
-  { key: 'flavor', labelKey: 'voice.stageFlavor', icon: <Mic className="w-3 h-3" /> },
-  { key: 'cart', labelKey: 'voice.stageCart', icon: <ShoppingCart className="w-3 h-3" /> },
-  { key: 'payment', labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },
+// Visual stages: Registration → Room → Hookah Selection → Cart → Payment (5 stages)
+const stages: { key: OrderStage; keys: OrderStage[]; labelKey: string; icon: React.ReactNode }[] = [
+  { key: 'login', keys: ['login'], labelKey: 'voice.stageLogin', icon: <UserPlus className="w-3 h-3" /> },
+  { key: 'room', keys: ['room'], labelKey: 'voice.stageRoom', icon: <Mic className="w-3 h-3" /> },
+  { key: 'strength', keys: ['strength', 'flavor', 'more'], labelKey: 'voice.stageHookah', icon: <Mic className="w-3 h-3" /> }, // Hookah selection stage
+  { key: 'cart', keys: ['cart'], labelKey: 'voice.stageCart', icon: <ShoppingCart className="w-3 h-3" /> },
+  { key: 'payment', keys: ['payment', 'ready'], labelKey: 'voice.stagePayment', icon: <CreditCard className="w-3 h-3" /> },
 ];
 
 export const VoiceAssistantActive = ({
@@ -89,17 +89,18 @@ export const VoiceAssistantActive = ({
 
   const stateInfo = getStateInfo();
 
+  // Find which visual stage contains the current FSM stage
   const getStageIndex = (stage: OrderStage) => {
-    const index = stages.findIndex(s => s.key === stage);
+    const index = stages.findIndex(s => s.keys.includes(stage));
     return index >= 0 ? index : 0;
   };
 
   const currentStageIndex = getStageIndex(currentStage);
 
-  // Stage labels
-  const stageLabels: Record<string, Record<OrderStage, string>> = {
-    en: { login: 'Login', room: 'Room', strength: 'Strength', flavor: 'Flavor', cart: 'Cart', payment: 'Payment', ready: 'Done' },
-    ru: { login: 'Вход', room: 'Комната', strength: 'Крепость', flavor: 'Вкус', cart: 'Корзина', payment: 'Оплата', ready: 'Готово' },
+  // Stage labels for 5 visual stages
+  const stageLabels: Record<string, Record<string, string>> = {
+    en: { login: 'Registration', room: 'Room', strength: 'Hookah', cart: 'Cart', payment: 'Payment' },
+    ru: { login: 'Регистрация', room: 'Комната', strength: 'Кальян', cart: 'Корзина', payment: 'Оплата' },
   };
 
   if (state === 'idle') return null;
