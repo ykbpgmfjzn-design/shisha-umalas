@@ -63,13 +63,40 @@ const OrderConfirmationContent = () => {
     const fetchPaymentStatus = async () => {
       const { data } = await supabase
         .from("purchases")
-        .select("payment_status")
+        .select("payment_status, notes")
         .eq("id", orderId)
         .maybeSingle();
       
       if (data) {
         setPaymentStatus(data.payment_status);
         setIsPaid(data.payment_status === "paid" || data.payment_status === "delivered");
+        
+        // If still pending, check DOKU status (in case webhook didn't fire)
+        if (data.payment_status === "pending" && data.notes) {
+          const invoiceMatch = data.notes.match(/DOKU Invoice: (INV-[^\s\n]+)/);
+          if (invoiceMatch) {
+            checkDokuPaymentStatus(invoiceMatch[1]);
+          }
+        }
+      }
+    };
+
+    const checkDokuPaymentStatus = async (invoiceNumber: string) => {
+      try {
+        const { data: funcData, error } = await supabase.functions.invoke("check-qris-status", {
+          body: { invoiceNumber, purchaseId: orderId },
+        });
+        
+        if (!error && funcData?.status === "paid") {
+          setPaymentStatus("paid");
+          setIsPaid(true);
+          toast({
+            title: t("payment.confirmed"),
+            description: t("payment.orderStarted"),
+          });
+        }
+      } catch (e) {
+        console.error("Error checking DOKU status:", e);
       }
     };
 

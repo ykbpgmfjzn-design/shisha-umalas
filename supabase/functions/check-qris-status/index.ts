@@ -92,7 +92,7 @@ serve(async (req) => {
 
     console.log("Checking QRIS payment status for:", invoiceNumber);
     
-    const dokuUrl = `https://api.doku.com/orders/v1/status/${invoiceNumber}`;
+    const dokuUrl = `https://api-sandbox.doku.com/orders/v1/status/${invoiceNumber}`;
     
     const response = await fetch(dokuUrl, {
       method: "GET",
