@@ -38,6 +38,9 @@ export const menuItems: MenuItem[] = [
   { id: 'darkside-polar', name: 'Darkside Polar Cream', price: 450000, priceDisplay: 'IDR 450K', strength: 'Bold Strong', itemType: 'hookah', keywords: ['polar cream', 'darkside polar', 'cream', 'polar', 'крем', 'полярный', 'krim'] },
   { id: 'berry-kiss', name: 'Berry Kiss', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['berry kiss', 'kiss', 'ягода поцелуй'] },
   { id: 'wild-heart', name: 'Wild Heart', price: 485000, priceDisplay: 'IDR 485K', strength: 'Bold Strong', isSignature: true, itemType: 'hookah', keywords: ['wild heart', 'wild', 'heart', 'дикий', 'сердце', 'liar'] },
+  
+  // Extra
+  { id: 'mixed-nuts', name: 'Mixed Nuts', price: 10000, priceDisplay: 'IDR 10K', strength: 'Extra', itemType: 'snack', keywords: ['mixed nuts', 'nuts', 'орехи', 'орешки', 'kacang', 'snack', 'закуска'] },
 ];
 
 export const findMenuItemByKeyword = (text: string): MenuItem | undefined => {
