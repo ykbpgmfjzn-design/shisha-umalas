@@ -111,10 +111,10 @@ export const INTENT_RULES: IntentRule[] = [
     handler: 'handleRoomNumber',
   },
   
-  // ORDERING STAGE
+  // STRENGTH STAGE
   {
     intent: 'choose_strength',
-    allowedStage: 'ordering',
+    allowedStage: 'strength',
     minConfidence: 0.85,
     keywords: [
       'ultra light', 'ультра лёгкий', 'ультра легкий', 'очень лёгкий',
@@ -124,9 +124,11 @@ export const INTENT_RULES: IntentRule[] = [
     ],
     handler: 'handleStrength',
   },
+  
+  // FLAVOR STAGE
   {
     intent: 'choose_flavor',
-    allowedStage: 'ordering',
+    allowedStage: 'flavor',
     minConfidence: 0.85,
     keywords: [
       // Flavors (partial list - full matching done in menuItems.ts)
@@ -139,7 +141,7 @@ export const INTENT_RULES: IntentRule[] = [
   },
   {
     intent: 'choose_quantity',
-    allowedStage: 'ordering',
+    allowedStage: 'flavor',
     minConfidence: 0.90,
     keywords: [
       'one', 'two', 'three', 'four', 'five',
@@ -187,13 +189,21 @@ export const STAGE_REMINDERS: Record<OrderStage, { ru: string; en: string }> = {
     ru: 'Пожалуйста, назовите номер вашей комнаты.',
     en: 'Please tell me your room number.',
   },
-  ordering: {
-    ru: 'Давайте завершим выбор заказа.',
-    en: "Let's finish selecting your order.",
+  strength: {
+    ru: 'Какую крепость кальяна вы предпочитаете?',
+    en: 'What hookah strength do you prefer?',
+  },
+  flavor: {
+    ru: 'Какой вкус кальяна вы хотите?',
+    en: 'What hookah flavor would you like?',
   },
   cart: {
-    ru: 'Пожалуйста, сначала подтвердите заказ.',
-    en: 'Please confirm the order first.',
+    ru: 'Пожалуйста, подтвердите заказ.',
+    en: 'Please confirm your order.',
+  },
+  payment: {
+    ru: 'Выберите способ оплаты.',
+    en: 'Choose your payment method.',
   },
   ready: {
     ru: 'Заказ оформлен. Спасибо!',

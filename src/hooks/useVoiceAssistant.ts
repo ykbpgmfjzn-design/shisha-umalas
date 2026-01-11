@@ -28,7 +28,8 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
-export type OrderStage = 'ordering' | 'cart' | 'login' | 'room' | 'ready';
+// FSM Stages: login → room → strength → flavor → cart → payment → ready
+export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready';
 
 interface OrderState {
   flavor?: string;
@@ -41,6 +42,8 @@ interface OrderState {
   roomNumber?: string;
   addedToCart?: boolean;
   registrationOffered?: boolean;
+  strengthAsked?: boolean;
+  flavorAsked?: boolean;
 }
 
 interface UseVoiceAssistantProps {
@@ -303,64 +306,80 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     }
   }, [user, navigate, updateOrderState, sendFollowUpMessage]);
 
-  // Process user transcript
+  // Process user transcript - FSM aware
   const processTranscript = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
-    console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', orderStateRef.current.stage);
+    const currentStage = orderStateRef.current.stage;
+    console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', currentStage);
     
-    if (orderStateRef.current.stage === 'room') {
+    // ROOM STAGE: Extract and save room number, then move to strength
+    if (currentStage === 'room') {
       const roomNumber = extractRoomNumber(text);
       if (roomNumber) {
         console.log('[VoiceAssistant] Detected room number at room stage:', roomNumber);
-        updateOrderState(prev => ({ ...prev, roomNumber, stage: 'ordering' }));
+        updateOrderState(prev => ({ ...prev, roomNumber, stage: 'strength' }));
         saveRoomNumber(roomNumber);
         return;
       }
     }
     
-    const menuItem = findMenuItemByKeyword(lowerText);
-    if (menuItem) {
-      console.log('[VoiceAssistant] Detected menu item:', menuItem.name);
-      updateOrderState(prev => ({ 
-        ...prev, 
-        flavor: menuItem.name,
-        itemId: menuItem.id,
-        strength: menuItem.strength,
-      }));
+    // STRENGTH STAGE: Detect strength and move to flavor
+    if (currentStage === 'strength') {
+      const strength = getStrengthFromKeyword(lowerText);
+      if (strength) {
+        console.log('[VoiceAssistant] Detected strength:', strength, '-> moving to flavor stage');
+        updateOrderState(prev => ({ ...prev, strength, stage: 'flavor', strengthAsked: true }));
+        
+        // Ask for flavor
+        setTimeout(() => {
+          sendFollowUpMessage(`User chose ${strength} strength. Now ask: "Отлично! Какой вкус? Например: Ваниль Крем, Мятный Лайм, Арбуз, или любой из меню." Be brief, max 20 words. Use the same language as conversation.`);
+        }, 500);
+        return;
+      }
     }
     
-    const strength = getStrengthFromKeyword(lowerText);
-    if (strength) {
-      console.log('[VoiceAssistant] Detected strength:', strength);
-      updateOrderState(prev => ({ ...prev, strength }));
-    }
-    
-    const quantityPatterns = [
-      /(\d+)\s*(hookah|кальян|shisha|штук)/i,
-      /^(\d+)$/,
-      /(one|two|three|four|five|один|два|три|четыре|пять|1|2|3|4|5)\s*(hookah|кальян)?/i,
-    ];
-    
-    const numMap: Record<string, number> = {
-      'one': 1, 'один': 1, '1': 1,
-      'two': 2, 'два': 2, '2': 2,
-      'three': 3, 'три': 3, '3': 3,
-      'four': 4, 'четыре': 4, '4': 4,
-      'five': 5, 'пять': 5, '5': 5,
-    };
-    
-    for (const pattern of quantityPatterns) {
-      const match = lowerText.match(pattern);
-      if (match && match[1]) {
-        const qty = numMap[match[1].toLowerCase()] || parseInt(match[1]);
-        if (qty > 0 && qty <= 10) {
-          console.log('[VoiceAssistant] Detected quantity:', qty);
-          updateOrderState(prev => ({ ...prev, quantity: qty }));
-          break;
+    // FLAVOR STAGE: Detect flavor/menu item - just store it, cart logic handled in event handler
+    if (currentStage === 'flavor') {
+      const menuItem = findMenuItemByKeyword(lowerText);
+      if (menuItem) {
+        console.log('[VoiceAssistant] Detected menu item:', menuItem.name);
+        updateOrderState(prev => ({ 
+          ...prev, 
+          flavor: menuItem.name,
+          itemId: menuItem.id,
+          strength: menuItem.strength || prev.strength,
+          flavorAsked: true,
+        }));
+        return;
+      }
+      
+      // Also check for quantity in flavor stage
+      const quantityPatterns = [
+        /(\d+)\s*(hookah|кальян|shisha|штук)/i,
+        /(one|two|three|four|five|один|два|три|четыре|пять)\s*(hookah|кальян)?/i,
+      ];
+      
+      const numMap: Record<string, number> = {
+        'one': 1, 'один': 1,
+        'two': 2, 'два': 2,
+        'three': 3, 'три': 3,
+        'four': 4, 'четыре': 4,
+        'five': 5, 'пять': 5,
+      };
+      
+      for (const pattern of quantityPatterns) {
+        const match = lowerText.match(pattern);
+        if (match && match[1]) {
+          const qty = numMap[match[1].toLowerCase()] || parseInt(match[1]);
+          if (qty > 0 && qty <= 10) {
+            console.log('[VoiceAssistant] Detected quantity:', qty);
+            updateOrderState(prev => ({ ...prev, quantity: qty }));
+            break;
+          }
         }
       }
     }
-  }, [extractRoomNumber, saveRoomNumber, updateOrderState]);
+  }, [extractRoomNumber, saveRoomNumber, updateOrderState, sendFollowUpMessage]);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -458,14 +477,17 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             transcriptLower.includes('комната') && transcriptLower.includes('принято') ||
             transcriptLower.includes("let's order") ||
             transcriptLower.includes('давайте закажем')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
+          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
         }
         
         if (transcriptLower.includes('what strength') || 
-            transcriptLower.includes('какую крепость') ||
-            transcriptLower.includes('which flavor') ||
+            transcriptLower.includes('какую крепость')) {
+          updateOrderState(prev => ({ ...prev, stage: 'strength' }));
+        }
+        
+        if (transcriptLower.includes('which flavor') ||
             transcriptLower.includes('какой вкус')) {
-          updateOrderState(prev => ({ ...prev, stage: 'ordering' }));
+          updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
         }
         
         if (transcriptLower.includes('added to cart') || 
@@ -822,7 +844,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       } else if (!roomNumber) {
         updateOrderState(() => ({ stage: 'room' }));
       } else {
-        updateOrderState(() => ({ stage: 'ordering' }));
+        updateOrderState(() => ({ stage: 'strength' }));
       }
 
       // Request microphone permission
