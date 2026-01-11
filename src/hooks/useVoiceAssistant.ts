@@ -106,14 +106,39 @@ const detectLanguageFromText = (text: string): Language | null => {
   return null;
 };
 
+const VOICE_LANGUAGE_KEY = 'voice-assistant-language';
+
+// Load saved language from localStorage
+const loadSavedLanguage = (): Language | null => {
+  try {
+    const saved = localStorage.getItem(VOICE_LANGUAGE_KEY);
+    if (saved && ['en', 'ru', 'uk', 'id', 'fr', 'hi', 'zh'].includes(saved)) {
+      return saved as Language;
+    }
+  } catch (e) {
+    console.error('[VoiceAssistant] Error loading saved language:', e);
+  }
+  return null;
+};
+
+// Save language to localStorage
+const saveLanguage = (lang: Language): void => {
+  try {
+    localStorage.setItem(VOICE_LANGUAGE_KEY, lang);
+    console.log('[VoiceAssistant] Language saved to localStorage:', lang);
+  } catch (e) {
+    console.error('[VoiceAssistant] Error saving language:', e);
+  }
+};
+
 export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssistantReturn => {
   const { onLanguageDetected } = props || {};
   
   // Generate unique instance ID for this hook instance
   const instanceId = useMemo(() => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, []);
   
-  // Track detected language to avoid duplicate callbacks
-  const detectedLanguageRef = useRef<Language | null>(null);
+  // Track detected language - initialize from localStorage
+  const detectedLanguageRef = useRef<Language | null>(loadSavedLanguage());
   
   const [state, setState] = useState<VoiceAssistantState>('idle');
   const [transcript, setTranscript] = useState('');
@@ -713,6 +738,9 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           if (detectedLang && detectedLang !== detectedLanguageRef.current) {
             console.log('[VoiceAssistant] Detected language:', detectedLang);
             detectedLanguageRef.current = detectedLang;
+            
+            // Save to localStorage for persistence between sessions
+            saveLanguage(detectedLang);
             
             // Switch app UI language
             if (onLanguageDetected) {
