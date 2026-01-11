@@ -993,29 +993,31 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       voiceAssistantSingleton.setDataChannel(dc);
 
       dc.onopen = () => {
-        setState('listening');
+        // Set to 'speaking' initially because AI will greet first
+        setState('speaking');
         voiceAssistantSingleton.markSessionActive(instanceId);
         
         // Use detected language for greeting, default to Russian for Russian-speaking locale
         const lang = detectedLanguageRef.current || language;
         const isRussian = lang === 'ru' || lang === 'uk';
         
-        // Send initial greeting in ONE language only
+        // Send initial greeting in ONE language only - AI MUST speak first
         let greetingInstruction = '';
         if (!isLoggedIn) {
           greetingInstruction = isRussian 
-            ? 'Поприветствуй кратко и скажи что для заказа нужна регистрация. Спроси хочет ли помочь зарегистрироваться. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.'
-            : 'Greet briefly and tell user they need to register first to order. Ask if they want help registering. Max 15 words. ENGLISH ONLY.';
+            ? 'НЕМЕДЛЕННО начни говорить. Скажи: "Добро пожаловать! Для заказа с доставкой в номер нужно зарегистрироваться. Хотите помогу?" ГОВОРИ СЕЙЧАС, не жди.'
+            : 'IMMEDIATELY start speaking. Say: "Welcome! To order with room delivery, you need to register. Would you like help?" SPEAK NOW, do not wait.';
         } else if (!roomNumber) {
           greetingInstruction = isRussian
-            ? 'Поприветствуй кратко и спроси номер комнаты для доставки. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.'
-            : 'Greet briefly and ask for room number for delivery. Max 15 words. ENGLISH ONLY.';
+            ? 'НЕМЕДЛЕННО начни говорить. Скажи: "Здравствуйте! Подскажите номер вашей комнаты для доставки?" ГОВОРИ СЕЙЧАС, не жди.'
+            : 'IMMEDIATELY start speaking. Say: "Hello! What is your room number for delivery?" SPEAK NOW, do not wait.';
         } else {
           greetingInstruction = isRussian
-            ? `Поприветствуй кратко, упомяни комнату ${roomNumber}, и спроси какую крепость кальяна хочет. Макс 15 слов. ТОЛЬКО ПО-РУССКИ.`
-            : `Greet briefly, mention room ${roomNumber}, and ask what strength hookah they want. Max 15 words. ENGLISH ONLY.`;
+            ? `НЕМЕДЛЕННО начни говорить. Скажи: "Здравствуйте! Доставка в комнату ${roomNumber}. Какую крепость кальяна выберете? Ультра лёгкий, Лёгкий, Средний или Крепкий?" ГОВОРИ СЕЙЧАС.`
+            : `IMMEDIATELY start speaking. Say: "Hello! Delivery to room ${roomNumber}. What hookah strength would you like? Ultra Light, Light, Medium, or Bold Strong?" SPEAK NOW.`;
         }
         
+        // Force AI to respond immediately with audio
         dc.send(JSON.stringify({
           type: 'response.create',
           response: {
