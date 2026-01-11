@@ -731,6 +731,12 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
   }, [cleanup, updateOrderState, instanceId]);
 
   const handleRealtimeEvent = useCallback((event: any) => {
+    // CRITICAL: Ignore ALL events if session is closed
+    if (voiceAssistantSingleton.isClosed()) {
+      console.log('[VoiceAssistant] Session closed, ignoring event:', event.type);
+      return;
+    }
+    
     switch (event.type) {
       case 'response.audio_transcript.delta':
         setAssistantMessage(prev => prev + (event.delta || ''));
@@ -1050,29 +1056,9 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               navigate('/auth');
             }, 300);
           }
-          // If transcript is unclear but NOT a decline, treat as acceptance at login stage
-          // This handles cases where speech recognition gives garbled text
-          else if (isLoginStage && !userDeclinesRegistration && transcriptText.length > 0) {
-            console.log('[VoiceAssistant] Unclear response at login, treating as acceptance:', transcriptText);
-            
-            redirectingToAuthRef.current = true;
-            pendingAuthContinueRef.current = true;
-            
-            const lang = detectedLanguageRef.current;
-            const isRussian = lang === 'ru' || lang === 'uk' || !lang;
-            
-            // CRITICAL: Tell AI to stay COMPLETELY SILENT during registration
-            if (isRussian) {
-              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию! Заполните форму, я подожду." Потом ПОЛНОСТЬЮ ЗАМОЛЧИ. НЕ РЕАГИРУЙ ни на какой звук. МОЛЧИ.');
-            } else {
-              sendFollowUpMessage('Say ONLY: "Opening registration! Fill out the form, I will wait." Then go COMPLETELY SILENT. DO NOT react to any sound. STAY MUTED.');
-            }
-            
-            console.log('[VoiceAssistant] Navigating to /auth NOW (unclear response fallback)');
-            setTimeout(() => {
-              navigate('/auth');
-            }, 300);
-          }
+          // REMOVED: Auto-redirect on unclear response
+          // This was causing "ghost" behavior where any garbled audio led to /auth
+          // User must explicitly say да/yes/хочу to trigger registration
         }
         
         // ============= STRICT CONFIRM ORDER CHECK =============
