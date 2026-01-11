@@ -33,6 +33,8 @@ const OrderConfirmationContent = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [dokuInvoiceNumber, setDokuInvoiceNumber] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -56,6 +58,42 @@ const OrderConfirmationContent = () => {
     fetchProfile();
   }, []);
 
+  // Function to check DOKU payment status (extracted for reuse)
+  const checkDokuPaymentStatus = async (invoiceNumber: string, showToast = false) => {
+    try {
+      setIsCheckingPayment(true);
+      const { data: funcData, error } = await supabase.functions.invoke("check-qris-status", {
+        body: { invoiceNumber, purchaseId: orderId },
+      });
+      
+      if (!error && funcData?.status === "paid") {
+        setPaymentStatus("paid");
+        setIsPaid(true);
+        toast({
+          title: t("payment.confirmed"),
+          description: t("payment.orderStarted"),
+        });
+      } else if (showToast) {
+        toast({
+          title: t("payment.checkingStatus") || "Checking Status",
+          description: t("payment.notYetConfirmed") || "Payment not yet confirmed",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      console.error("Error checking DOKU status:", e);
+      if (showToast) {
+        toast({
+          title: t("payment.error") || "Error",
+          description: t("payment.checkFailed") || "Failed to check status",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  };
+
   // Fetch initial payment status and subscribe to changes
   useEffect(() => {
     if (!orderId) return;
@@ -71,32 +109,17 @@ const OrderConfirmationContent = () => {
         setPaymentStatus(data.payment_status);
         setIsPaid(data.payment_status === "paid" || data.payment_status === "delivered");
         
-        // If still pending, check DOKU status (in case webhook didn't fire)
-        if (data.payment_status === "pending" && data.notes) {
+        // Extract and save DOKU invoice number for manual check
+        if (data.notes) {
           const invoiceMatch = data.notes.match(/DOKU Invoice: (INV-[^\s\n]+)/);
           if (invoiceMatch) {
-            checkDokuPaymentStatus(invoiceMatch[1]);
+            setDokuInvoiceNumber(invoiceMatch[1]);
+            // If still pending, auto-check DOKU status (in case webhook didn't fire)
+            if (data.payment_status === "pending") {
+              checkDokuPaymentStatus(invoiceMatch[1]);
+            }
           }
         }
-      }
-    };
-
-    const checkDokuPaymentStatus = async (invoiceNumber: string) => {
-      try {
-        const { data: funcData, error } = await supabase.functions.invoke("check-qris-status", {
-          body: { invoiceNumber, purchaseId: orderId },
-        });
-        
-        if (!error && funcData?.status === "paid") {
-          setPaymentStatus("paid");
-          setIsPaid(true);
-          toast({
-            title: t("payment.confirmed"),
-            description: t("payment.orderStarted"),
-          });
-        }
-      } catch (e) {
-        console.error("Error checking DOKU status:", e);
       }
     };
 
@@ -348,10 +371,28 @@ const OrderConfirmationContent = () => {
                     <span className="text-amber-500 font-medium">{t("payment.awaitingPayment")}</span>
                   </div>
                   
-                  <div className="text-center">
+                  <div className="text-center space-y-3">
                     <p className="text-muted-foreground">
                       {t("payment.timerStartsAfterPayment")}
                     </p>
+                    
+                    {dokuInvoiceNumber && (
+                      <Button
+                        variant="outline"
+                        onClick={() => checkDokuPaymentStatus(dokuInvoiceNumber, true)}
+                        disabled={isCheckingPayment}
+                        className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                      >
+                        {isCheckingPayment ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {t("payment.checking") || "Checking..."}
+                          </>
+                        ) : (
+                          t("payment.checkStatus") || "Check Payment Status"
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
