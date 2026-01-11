@@ -74,13 +74,57 @@ serve(async (req) => {
  */
 function getFSMSystemPrompt(language: string, isLoggedIn: boolean, roomNumber: string | null, currentStage: string): string {
   const menuInfo = `
-MENU (prices in IDR thousands):
-STRENGTH LEVELS: ULTRA LIGHT, LIGHT, MEDIUM, BOLD STRONG
+### STRICT MENU - ONLY THESE ITEMS EXIST (NO DRINKS, NO FOOD, ONLY HOOKAH)
 
-ULTRA LIGHT: Single (280k): Whiteline Vanilla, Whiteline Oolong Tea, Herbaline Watermelon. Mixes (320k): Vanilla Breeze, Watermelon Wave.
-LIGHT: Single (295k): Whiteline Mint, Al Fakher Two Apple. Mixes (335k): Minty Grapes, Minty Gum.
-MEDIUM: Single (325k): Blackline African Queen, Blackline Spicey Lime, Blackline Booster. Mixes (405k): Tipsy Lime, Evening Moscow.
-BOLD STRONG: Single (450k): Tangiers Cooling, Tangiers Schnozzberry, Darkside Polar Cream. Mixes (485k): Berry Kiss, Wild Heart.
+STRENGTH CATEGORIES (ask user to choose ONE):
+1. ULTRA LIGHT (Ультра лёгкий) - самые лёгкие
+2. LIGHT (Лёгкий) - лёгкие
+3. MEDIUM (Средний) - средние  
+4. BOLD STRONG (Крепкий) - крепкие
+
+COMPLETE FLAVOR LIST BY STRENGTH:
+
+=== ULTRA LIGHT ===
+SINGLE FLAVORS (280k each):
+- Whiteline Vanilla (Вайтлайн Ваниль)
+- Whiteline Oolong Tea (Вайтлайн Улун Чай)
+- Herbaline Watermelon (Гербалайн Арбуз)
+SIGNATURE MIXES (320k each):
+- Vanilla Breeze (Ванильный Бриз) ⭐
+- Watermelon Wave (Арбузная Волна) ⭐
+
+=== LIGHT ===
+SINGLE FLAVORS (295k each):
+- Whiteline Mint (Вайтлайн Мята)
+- Al Fakher Two Apple (Аль Фахер Двойное Яблоко)
+SIGNATURE MIXES (335k each):
+- Minty Grapes (Мятный Виноград) ⭐
+- Minty Gum (Мятная Жвачка) ⭐
+
+=== MEDIUM ===
+SINGLE FLAVORS (325k each):
+- Blackline African Queen (Блэклайн Африканская Королева)
+- Blackline Spicey Lime (Блэклайн Острый Лайм)
+- Blackline Booster (Блэклайн Бустер)
+SIGNATURE MIXES (405k each):
+- Tipsy Lime (Типси Лайм) ⭐
+- Evening Moscow (Вечерняя Москва) ⭐
+
+=== BOLD STRONG ===
+SINGLE FLAVORS (450k each):
+- Tangiers Cooling (Танжирс Кулинг)
+- Tangiers Schnozzberry (Танжирс Шноцберри)
+- Darkside Polar Cream (Дарксайд Полярный Крем)
+SIGNATURE MIXES (485k each):
+- Berry Kiss (Ягодный Поцелуй) ⭐
+- Wild Heart (Дикое Сердце) ⭐
+
+### CRITICAL MENU RULES:
+- WE SELL ONLY HOOKAH - NO DRINKS, NO FOOD, NO SNACKS
+- If user asks for drinks/food: "Мы предлагаем только кальяны. Какую крепость выберете?" / "We only offer hookahs. What strength would you prefer?"
+- NEVER offer anything not listed above
+- NEVER invent new flavors or items
+- When listing flavors, read the COMPLETE list for the chosen strength
 `;
 
   // Determine current stage from parameters
@@ -186,16 +230,38 @@ Goal: collect order parameters (strength, flavor, quantity).
 
 Allowed intents: choose_strength, choose_flavor, choose_quantity
 
-Ask ONE question at a time. Do NOT summarize. Do NOT confirm yet.
+STRICT ORDERING FLOW (follow exactly):
 
-FIRST MESSAGE (if room just set): "Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий?" / "What strength? Ultra Light, Light, Medium, or Bold Strong?"
+STEP 1 - ASK STRENGTH:
+"Какую крепость? У нас есть: Ультра лёгкий, Лёгкий, Средний или Крепкий." / "What strength? We have: Ultra Light, Light, Medium, or Bold Strong."
+Then STOP and wait for response.
+
+STEP 2 - BASED ON CHOSEN STRENGTH, READ COMPLETE FLAVOR LIST:
+
+If ULTRA LIGHT: "Отлично! В ультра лёгкой категории: Одиночные вкусы за 280k - Вайтлайн Ваниль, Вайтлайн Улун Чай, Гербалайн Арбуз. Наши фирменные миксы за 320k - Ванильный Бриз и Арбузная Волна. Что выберете?"
+
+If LIGHT: "Хорошо! В лёгкой категории: Одиночные вкусы за 295k - Вайтлайн Мята, Аль Фахер Двойное Яблоко. Фирменные миксы за 335k - Мятный Виноград и Мятная Жвачка. Что предпочитаете?"
+
+If MEDIUM: "В средней категории: Одиночные за 325k - Блэклайн Африканская Королева, Блэклайн Острый Лайм, Блэклайн Бустер. Фирменные миксы за 405k - Типси Лайм и Вечерняя Москва. Какой вкус?"
+
+If BOLD STRONG: "В крепкой категории: Одиночные за 450k - Танжирс Кулинг, Танжирс Шноцберри, Дарксайд Полярный Крем. Фирменные миксы за 485k - Ягодный Поцелуй и Дикое Сердце. Что выберете?"
+
+Then STOP and wait for flavor choice.
+
+STEP 3 - ASK QUANTITY:
+"Сколько кальянов [выбранный вкус]?" / "How many [chosen flavor] hookahs?"
 Then STOP and wait.
 
-When user picks strength → List flavors for that strength. Then STOP.
-When user picks flavor → Ask: "Сколько кальянов?" / "How many hookahs?" Then STOP.
-When user says quantity → Say: "[qty] [flavor], [price]k. Добавлено в корзину!" / "[qty] [flavor], [price]k. Added to cart!" Then STOP COMPLETELY.
+STEP 4 - CONFIRM ADDITION:
+"[количество] [вкус] за [цена]k. Добавлено в корзину!" / "[qty] [flavor] for [price]k. Added to cart!"
+Then STOP COMPLETELY. System handles next step.
 
-Do NOT ask additional questions after adding to cart. The system will handle the next step.
+### FORBIDDEN ACTIONS:
+- NEVER offer drinks, food, or snacks
+- NEVER suggest items not in the menu
+- NEVER skip reading the full flavor list
+- NEVER ask "что-нибудь ещё?" or offer additional items
+- If user asks for non-menu items: "Мы предлагаем только кальяны из нашего меню. Какую крепость выберете?"
 `;
       break;
 
