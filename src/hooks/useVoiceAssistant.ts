@@ -658,12 +658,13 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             // Also send follow-up for voice feedback
             sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
           }
-          // Fallback to old keyword matching for backward compatibility
+          // Fallback keyword matching - simple да/yes/нет/no should work
           else if (userTextLower.includes('no') || 
               userTextLower.includes('нет') ||
               userTextLower.includes('не хочу') ||
               userTextLower.includes('без регистрации') ||
-              userTextLower.includes('сам')) {
+              userTextLower.includes('сам') ||
+              userTextLower.includes('tidak')) {
             console.log('[VoiceAssistant] User declined registration (fallback), ending session');
             sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте в меню. Приятного выбора!" Then STOP.');
             setTimeout(() => {
@@ -671,12 +672,21 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               setState('complete');
             }, 3000);
           }
-          else if (!isBackchannelOnly(transcriptText) && (
+          // User said yes/да - accept registration
+          else if (
+              userTextLower === 'да' ||
+              userTextLower === 'да.' ||
+              userTextLower === 'yes' ||
+              userTextLower === 'yes.' ||
               userTextLower.includes('помог') ||
               userTextLower.includes('хочу') ||
               userTextLower.includes('готов') ||
               userTextLower.includes('давай') ||
-              userTextLower.includes('регистр'))) {
+              userTextLower.includes('регистр') ||
+              userTextLower.includes('ok') ||
+              userTextLower.includes('ок') ||
+              userTextLower.includes('iya') ||
+              userTextLower.includes('ya')) {
             console.log('[VoiceAssistant] User confirmed registration (fallback), redirecting');
             redirectingToAuthRef.current = true;
             pendingAuthContinueRef.current = true;
