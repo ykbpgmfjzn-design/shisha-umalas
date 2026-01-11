@@ -804,18 +804,28 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               setState('complete');
             }, 3000);
           }
-          // User ACCEPTS registration
+          // User ACCEPTS registration - IMMEDIATELY redirect, no questions
           else if (userWantsToRegister && !userDeclinesRegistration) {
-            console.log('[VoiceAssistant] User confirmed registration, redirecting to /auth');
+            console.log('[VoiceAssistant] User confirmed registration, redirecting to /auth IMMEDIATELY');
             
             redirectingToAuthRef.current = true;
             pendingAuthContinueRef.current = true;
             
-            // Navigate immediately
-            navigate('/auth');
+            // Use detected language
+            const lang = detectedLanguageRef.current;
+            const isRussian = lang === 'ru' || lang === 'uk' || !lang;
             
-            // Voice feedback
-            sendFollowUpMessage('Say ONLY: "Открываю регистрацию!" or "Opening registration!" Then STOP.');
+            // Voice feedback - SHORT, then redirect
+            if (isRussian) {
+              sendFollowUpMessage('Скажи ТОЛЬКО: "Открываю регистрацию!" Потом ЗАМОЛЧИ. НЕ СПРАШИВАЙ имя или телефон.');
+            } else {
+              sendFollowUpMessage('Say ONLY: "Opening registration!" Then STOP. DO NOT ask for name or phone.');
+            }
+            
+            // Navigate IMMEDIATELY - don't wait
+            setTimeout(() => {
+              navigate('/auth');
+            }, 500);
           }
         }
         

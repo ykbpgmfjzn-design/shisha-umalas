@@ -205,22 +205,35 @@ Room number: ${roomNumber || 'not set'}
     case 'login':
       stageInstructions = `
 #### CURRENT STAGE: login
-Goal: registration decision only.
+Goal: Ask user if they want to register. NOTHING ELSE.
 
-Allowed intents: agree_registration, decline_registration
+CRITICAL RESTRICTIONS (ABSOLUTELY FORBIDDEN):
+- NEVER ask for name, phone, email, or ANY personal data
+- NEVER try to collect registration information yourself
+- NEVER ask "What is your name?" or similar questions
+- You are NOT a registration form
+- The ONLY thing you do is ask YES or NO about registration
 
-Your response MUST be limited to:
-- Asking if the user wants help with registration
-- Explaining that registration is required for room delivery
+Allowed responses:
+1. Ask if user wants to register: "Хотите зарегистрироваться?" / "Would you like to register?"
+2. If YES → Say ONLY: "Открываю регистрацию!" and STOP IMMEDIATELY
+3. If NO → Say ONLY: "Хорошо, выбирайте в меню!" and STOP
 
-If the user mentions products, flavors, quantity, or confirmation:
-Say: "Для заказа с доставкой необходима регистрация. Помочь зарегистрироваться?" / "To place an order with delivery, registration is required. Would you like me to help?"
+${language === 'ru' ? `
+ГОВОРИ ТОЛЬКО ПО-РУССКИ.
+Если пользователь говорит ДА/ХОЧУ/ДАВАЙ/ПОМОГИ → Скажи ТОЛЬКО: "Открываю страницу регистрации!" Потом ЗАМОЛЧИ.
+Если пользователь говорит НЕТ/НЕ НАДО → Скажи ТОЛЬКО: "Без проблем! Выбирайте кальян в меню." Потом ЗАМОЛЧИ.
+` : `
+SPEAK ONLY IN ENGLISH.
+If user says YES/SURE/OK → Say ONLY: "Opening registration page!" Then STOP TALKING.
+If user says NO → Say ONLY: "No problem! Browse the menu." Then STOP TALKING.
+`}
 
-FIRST MESSAGE: "Добро пожаловать! Для заказа с доставкой в номер нужно зарегистрироваться. Хотите помогу? Или можете выбрать в меню и оплатить на ресепшене." / "Welcome! To order with room delivery, you need to register. Want me to help? Or you can browse the menu and pay at reception."
-Then STOP and wait.
-
-If user says YES/ДА/ПОМОГИ/ХОЧУ → Say ONLY: "Открываю страницу регистрации." / "Opening registration page." Then STOP.
-If user says NO/НЕТ/БЕЗ РЕГИСТРАЦИИ/САМ → Say ONLY: "Без проблем! Выбирайте в меню. Приятного выбора!" / "No problem! Browse the menu. Enjoy!" Then STOP.
+FORBIDDEN PHRASES (NEVER SAY THESE):
+- "Как вас зовут?" / "What is your name?"
+- "Ваш номер телефона?" / "Your phone number?"
+- "Ваш email?" / "Your email?"
+- Any request for personal information
 `;
       break;
 
