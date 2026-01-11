@@ -240,40 +240,40 @@ FORBIDDEN PHRASES (NEVER SAY THESE):
     case 'room':
       stageInstructions = `
 #### CURRENT STAGE: room
-Goal: obtain room number, then IMMEDIATELY proceed to ordering.
+Goal: Get room number and ASK FOR CONFIRMATION before proceeding.
 
-Allowed intent: provide_room_number
-
-CRITICAL: After getting room number, you MUST ask about hookah strength. DO NOT say goodbye. DO NOT end conversation.
+CRITICAL: You must CONFIRM the room number before moving on!
 
 ${language === 'ru' ? `
-FIRST MESSAGE: "Какой номер вашей комнаты для доставки?"
-Ждите ответ.
+FLOW:
+1. Спроси номер комнаты: "Какой номер вашей комнаты для доставки?"
+2. Когда пользователь называет номер → Скажи: "Комната [НОМЕР], верно? Скажите да или назовите другой номер."
+3. Если пользователь говорит ДА/ВЕРНО → Скажи: "Отлично! Какую крепость кальяна? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
+4. Если пользователь говорит НЕТ или называет другой номер → Повтори с новым номером: "Комната [НОВЫЙ НОМЕР], верно?"
 
-Когда пользователь называет номер → Скажите ТОЛЬКО: "Отлично, комната [НОМЕР]! Какую крепость кальяна выберете? Ультра лёгкий, Лёгкий, Средний или Крепкий?"
-Затем СТОП и ждите ответ о крепости.
-
-Если пользователь говорит что-то другое → Повторите: "Пожалуйста, назовите номер комнаты."
+ГОВОРИ ТОЛЬКО ПО-РУССКИ.
 ` : language === 'id' ? `
-FIRST MESSAGE: "Nomor kamar Anda untuk pengiriman?"
-Tunggu jawaban.
+FLOW:
+1. Ask for room: "Nomor kamar Anda untuk pengiriman?"
+2. When user gives number → Say: "Kamar [NUMBER], benar? Katakan ya atau berikan nomor lain."
+3. If user says YES → Say: "Baik! Kekuatan shisha? Ultra Light, Light, Medium, atau Bold Strong?"
+4. If user says NO or gives different number → Repeat with new number
 
-Ketika user memberikan nomor → Katakan HANYA: "Baik, kamar [NUMBER]! Kekuatan shisha apa yang Anda pilih? Ultra Light, Light, Medium, atau Bold Strong?"
-Lalu BERHENTI dan tunggu jawaban tentang kekuatan.
+BERBICARA HANYA DALAM BAHASA INDONESIA.
 ` : `
-FIRST MESSAGE: "What's your room number for delivery?"
-Wait for answer.
+FLOW:
+1. Ask for room: "What's your room number for delivery?"
+2. When user gives number → Say: "Room [NUMBER], correct? Say yes or tell me a different number."
+3. If user says YES → Say: "Great! What hookah strength? Ultra Light, Light, Medium, or Bold Strong?"
+4. If user says NO or gives different number → Repeat with new number: "Room [NEW NUMBER], correct?"
 
-When user provides a number → Say ONLY: "Great, room [NUMBER]! What hookah strength would you like? Ultra Light, Light, Medium, or Bold Strong?"
-Then STOP and wait for strength answer.
-
-If user says something else → Repeat: "Please tell me your room number."
+SPEAK ONLY IN ENGLISH.
 `}
 
 FORBIDDEN:
-- NEVER say "order will be delivered" and end conversation
+- NEVER skip confirmation step
+- NEVER proceed to ordering without user saying YES/ВЕРНО/CORRECT
 - NEVER say goodbye after getting room number
-- MUST continue to ask about hookah strength
 `;
       break;
 

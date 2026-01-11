@@ -28,8 +28,8 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
-// FSM Stages: login → room → hookah (strength→flavor→more loop) → cart → payment → ready
-export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
+// FSM Stages: login → room → room_confirm → hookah (strength→flavor→more loop) → cart → payment → ready
+export type OrderStage = 'login' | 'room' | 'room_confirm' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
 
 interface OrderState {
   flavor?: string;
@@ -359,13 +359,80 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
     const currentStage = orderStateRef.current.stage;
     console.log('[VoiceAssistant] Processing transcript:', text, 'Current stage:', currentStage);
     
-    // ROOM STAGE: Extract and save room number, then move to strength
+    // ROOM STAGE: Extract room number and ASK FOR CONFIRMATION (don't save yet!)
     if (currentStage === 'room') {
       const roomNumber = extractRoomNumber(text);
       if (roomNumber) {
-        console.log('[VoiceAssistant] Detected room number at room stage:', roomNumber);
-        updateOrderState(prev => ({ ...prev, roomNumber, stage: 'strength' }));
-        saveRoomNumber(roomNumber);
+        console.log('[VoiceAssistant] Detected room number, asking for confirmation:', roomNumber);
+        // Store room number temporarily but DON'T save to profile yet
+        updateOrderState(prev => ({ ...prev, roomNumber, stage: 'room_confirm' }));
+        
+        // Use detected language
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
+        setTimeout(() => {
+          if (isRussian) {
+            sendFollowUpMessage(`Скажи ТОЛЬКО: "Комната ${roomNumber}, верно? Скажите да или назовите другой номер." Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
+          } else {
+            sendFollowUpMessage(`Say ONLY: "Room ${roomNumber}, correct? Say yes or tell me a different number." Then STOP. SPEAK ONLY IN ENGLISH.`);
+          }
+        }, 500);
+        return;
+      }
+    }
+    
+    // ROOM CONFIRM STAGE: User confirms or corrects room number
+    if (currentStage === 'room_confirm') {
+      const pendingRoom = orderStateRef.current.roomNumber;
+      
+      // Check if user says YES/correct
+      const confirmsRoom = ['да', 'yes', 'верно', 'correct', 'правильно', 'ок', 'okay', 'угу', 'ага'].some(kw => lowerText.includes(kw));
+      // Check if user says NO or provides different number
+      const rejectsRoom = ['нет', 'no', 'неверно', 'wrong', 'другой', 'другая', 'исправ', 'не та', 'не тот'].some(kw => lowerText.includes(kw));
+      const newRoomNumber = extractRoomNumber(text);
+      
+      if (newRoomNumber && newRoomNumber !== pendingRoom) {
+        // User provided a DIFFERENT room number - ask to confirm that one
+        console.log('[VoiceAssistant] User corrected room to:', newRoomNumber);
+        updateOrderState(prev => ({ ...prev, roomNumber: newRoomNumber }));
+        
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
+        setTimeout(() => {
+          if (isRussian) {
+            sendFollowUpMessage(`Скажи ТОЛЬКО: "Комната ${newRoomNumber}, верно?" Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
+          } else {
+            sendFollowUpMessage(`Say ONLY: "Room ${newRoomNumber}, correct?" Then STOP. SPEAK ONLY IN ENGLISH.`);
+          }
+        }, 500);
+        return;
+      }
+      
+      if (confirmsRoom && pendingRoom) {
+        // User confirmed - NOW save to profile and proceed to ordering
+        console.log('[VoiceAssistant] Room confirmed, saving:', pendingRoom);
+        updateOrderState(prev => ({ ...prev, stage: 'strength' }));
+        saveRoomNumber(pendingRoom);
+        return;
+      }
+      
+      if (rejectsRoom) {
+        // User says no but didn't provide new number - ask again
+        console.log('[VoiceAssistant] User rejected room, asking again');
+        updateOrderState(prev => ({ ...prev, roomNumber: undefined, stage: 'room' }));
+        
+        const lang = detectedLanguageRef.current;
+        const isRussian = lang === 'ru' || lang === 'uk' || !lang;
+        
+        setTimeout(() => {
+          if (isRussian) {
+            sendFollowUpMessage('Скажи ТОЛЬКО: "Хорошо, назовите правильный номер комнаты." Потом СТОП. ГОВОРИ ТОЛЬКО ПО-РУССКИ.');
+          } else {
+            sendFollowUpMessage('Say ONLY: "Okay, please tell me the correct room number." Then STOP. SPEAK ONLY IN ENGLISH.');
+          }
+        }, 500);
         return;
       }
     }
