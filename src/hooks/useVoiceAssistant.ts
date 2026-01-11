@@ -28,8 +28,8 @@ export type VoiceAssistantState =
   | 'complete'
   | 'error';
 
-// FSM Stages: login → room → strength → flavor → cart → payment → ready
-export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'cart' | 'payment' | 'ready';
+// FSM Stages: login → room → hookah (strength→flavor→more loop) → cart → payment → ready
+export type OrderStage = 'login' | 'room' | 'strength' | 'flavor' | 'more' | 'cart' | 'payment' | 'ready';
 
 interface OrderState {
   flavor?: string;
@@ -344,7 +344,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       }
     }
     
-    // FLAVOR STAGE: Detect flavor/menu item and add to cart
+    // FLAVOR STAGE: Detect flavor/menu item and add to cart, then ask "want more?"
     if (currentStage === 'flavor') {
       const menuItem = findMenuItemByKeyword(lowerText);
       if (menuItem) {
@@ -360,9 +360,10 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           strength: menuItem.strength || prev.strength,
           quantity,
           flavorAsked: true,
+          addedToCart: true,
         }));
         
-        // Add to cart using the addItem from context
+        // Add to cart using the addItem from context (DON'T open cart yet!)
         for (let i = 0; i < quantity; i++) {
           addItem({
             id: menuItem.id,
@@ -376,15 +377,13 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         }
         
         toast.success(`Добавлено ${quantity}x ${menuItem.name}!`);
-        updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true, addedToCart: true }));
         
-        // Open cart and ask for confirmation
+        // Move to "more" stage - ask if they want another hookah
+        updateOrderState(prev => ({ ...prev, stage: 'more' }));
+        
         setTimeout(() => {
-          setCartOpen(true);
-          setTimeout(() => {
-            sendFollowUpMessage(`${quantity}x ${menuItem.name} добавлено в корзину. Say ONLY: "Проверьте заказ. Всё верно? Скажите 'подтверждаю' для оформления." or "Check your order. Say 'confirm' to proceed." Then STOP and wait.`);
-          }, 800);
-        }, 300);
+          sendFollowUpMessage(`${quantity}x ${menuItem.name} added to cart. Now ask ONLY: "Добавлено! Хотите заказать ещё один кальян?" / "Added! Would you like to order another hookah?" Then STOP and wait for yes/no.`);
+        }, 500);
         return;
       }
       
@@ -412,6 +411,42 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             break;
           }
         }
+      }
+    }
+    
+    // MORE STAGE: User deciding whether to add more hookahs or proceed to cart
+    if (currentStage === 'more') {
+      const wantsMore = [
+        'да', 'yes', 'ещё', 'more', 'another', 'хочу', 'давай', 'конечно', 'sure', 'iya', 'ya', 'ок', 'okay'
+      ].some(kw => lowerText.includes(kw));
+      
+      const noMore = [
+        'нет', 'no', 'хватит', 'достаточно', 'enough', 'всё', 'все', 'done', 'готов', 'stop', 'стоп', 'не надо', 'больше не', 'это всё'
+      ].some(kw => lowerText.includes(kw));
+      
+      if (wantsMore && !noMore) {
+        // User wants to add more - go back to strength selection
+        console.log('[VoiceAssistant] User wants more hookahs, returning to strength');
+        updateOrderState(prev => ({ ...prev, stage: 'strength', strength: undefined, flavor: undefined, quantity: undefined, itemId: undefined }));
+        
+        setTimeout(() => {
+          sendFollowUpMessage('User wants another hookah. Say ONLY: "Отлично! Какую крепость? Ультра лёгкий, Лёгкий, Средний или Крепкий." / "Great! What strength? Ultra Light, Light, Medium, or Bold Strong." Then STOP and wait.');
+        }, 500);
+        return;
+      }
+      
+      if (noMore && !wantsMore) {
+        // User is done - open cart for verification
+        console.log('[VoiceAssistant] User done ordering, opening cart for verification');
+        updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
+        
+        setTimeout(() => {
+          setCartOpen(true);
+          setTimeout(() => {
+            sendFollowUpMessage('User is done ordering. Cart is open. Say ONLY: "Открываю корзину. Проверьте заказ - всё верно? Если да, скажите \'подтверждаю\'. Если нужно что-то изменить - скажите." / "Opening cart. Check your order - is everything correct? If yes, say \'confirm\'. If you need to change something - tell me." Then STOP and wait.');
+          }, 800);
+        }, 300);
+        return;
       }
     }
   }, [extractRoomNumber, saveRoomNumber, updateOrderState, sendFollowUpMessage, addItem, setCartOpen]);
@@ -525,49 +560,27 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
           updateOrderState(prev => ({ ...prev, stage: 'flavor' }));
         }
         
-        if (transcriptLower.includes('added to cart') || 
+        // Handle "added to cart" - move to 'more' stage (ask if want another)
+        if ((transcriptLower.includes('added to cart') || 
             transcriptLower.includes('добавлено в корзину') ||
-            transcriptLower.includes('opening cart') ||
-            transcriptLower.includes('открываю корзину')) {
-          let currentOrder = orderStateRef.current;
-          console.log('[VoiceAssistant] Current order state before AI parse:', currentOrder);
-          
-          if (!currentOrder.itemId) {
-            const menuItem = findMenuItemByKeyword(event.transcript || '');
-            if (menuItem) {
-              console.log('[VoiceAssistant] Found item from AI message:', menuItem.name);
-              updateOrderState(prev => ({ 
-                ...prev, 
-                itemId: menuItem.id,
-                flavor: menuItem.name,
-                strength: menuItem.strength,
-              }));
-              orderStateRef.current = { 
-                ...orderStateRef.current, 
-                itemId: menuItem.id,
-                flavor: menuItem.name,
-                strength: menuItem.strength,
-              };
-              currentOrder = orderStateRef.current;
-            }
-          }
-          
-          if (currentOrder.itemId) {
-            const qty = currentOrder.quantity || 1;
-            addToCart(currentOrder.itemId, qty);
-          }
-          
+            transcriptLower.includes('добавлено!')) &&
+            !transcriptLower.includes('открываю корзину')) {
+          console.log('[VoiceAssistant] Item added, moving to more stage');
+          updateOrderState(prev => ({ ...prev, stage: 'more' }));
+        }
+        
+        // Handle "opening cart" - only when user said they don't want more
+        if (transcriptLower.includes('opening cart') ||
+            transcriptLower.includes('открываю корзину') ||
+            transcriptLower.includes('открываю для проверки')) {
+          console.log('[VoiceAssistant] Opening cart for verification');
+          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
           setTimeout(() => {
             setCartOpen(true);
-            setTimeout(() => {
-              sendFollowUpMessage('The order has been added to cart. Now ask the user to confirm: "Check your order. Is everything correct? Say yes to proceed to payment." Be brief, max 15 words. Use the same language as the conversation.');
-            }, 800);
           }, 300);
-          updateOrderState(prev => ({ ...prev, stage: 'cart', cartOpened: true }));
         }
         
         // ONLY mark as complete if order was actually submitted (stage is cart and submitting was triggered)
-        // Don't end session just because AI said goodbye-like words
         if (orderStateRef.current.stage === 'cart' && submittingOrderRef.current) {
           if (transcriptLower.includes('order guide complete') || 
               transcriptLower.includes('сопровождение заказа завершено') ||

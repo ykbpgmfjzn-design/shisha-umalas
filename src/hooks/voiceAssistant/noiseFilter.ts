@@ -47,6 +47,11 @@ const STAGE_KEYWORDS: Record<OrderStage, string[]> = {
     'yes', 'no', 'да', 'нет', 'confirm', 'подтвержда', 'cancel', 'отмена',
     'correct', 'верно', 'wrong', 'неверно', 'submit', 'оформ', 'готов'
   ],
+  more: [
+    // "Want more?" stage - yes/no responses
+    'yes', 'no', 'да', 'нет', 'ещё', 'more', 'another', 'хватит', 'достаточно',
+    'enough', 'всё', 'все', 'done', 'готов', 'stop', 'стоп', 'ок', 'okay'
+  ],
   payment: [
     // Payment related
     'pay', 'оплат', 'card', 'карт', 'cash', 'наличн', 'transfer', 'перевод'
