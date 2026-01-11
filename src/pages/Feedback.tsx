@@ -51,7 +51,17 @@ const Feedback = () => {
         has_message: !!feedback,
       });
       
-      toast.success(t("feedback.success"));
+      // If 5 stars, redirect to Google Reviews
+      if (rating === 5) {
+        toast.success(t("feedback.thankYouRedirect"));
+        setTimeout(() => {
+          window.open("https://g.page/r/CWUVTUf3-kd2EAI/review", "_blank");
+        }, 1000);
+      } else {
+        // Less than 5 stars - just thank them
+        toast.success(t("feedback.thankYou"));
+      }
+      
       setRating(0);
       setFeedback("");
     }
