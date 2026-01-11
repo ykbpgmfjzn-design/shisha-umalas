@@ -277,7 +277,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
   }, [cancelCurrentResponse]);
 
   // Save room number to profile
-  const saveRoomNumber = useCallback(async (roomNumber: string) => {
+  const saveRoomNumber = useCallback(async (roomNumber: string): Promise<boolean> => {
     console.log('[VoiceAssistant] Attempting to save room number:', roomNumber);
     
     const { data: { session } } = await supabase.auth.getSession();
@@ -302,13 +302,15 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         return false;
       }
       
-      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber);
+      console.log('[VoiceAssistant] Room number saved successfully:', roomNumber, 'data:', data);
       toast.success(`Комната ${roomNumber} сохранена!`);
       
       // Use detected language for follow-up, default to Russian
       const lang = detectedLanguageRef.current;
       const isRussian = lang === 'ru' || lang === 'uk' || !lang;
       
+      // NOTE: Stage is already updated to 'strength' by processTranscript before calling this
+      // Just send the follow-up message asking for strength selection
       setTimeout(() => {
         if (isRussian) {
           sendFollowUpMessage(`Комната ${roomNumber} сохранена. Скажи ТОЛЬКО: "Отлично, комната ${roomNumber}! Какую крепость кальяна выберете? Ультра лёгкий, Лёгкий, Средний или Крепкий?" Потом СТОП и жди ответ. ГОВОРИ ТОЛЬКО ПО-РУССКИ.`);
@@ -484,8 +486,16 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
       if (confirmsRoom && pendingRoom) {
         // User confirmed - NOW save to profile and proceed to ordering
         console.log('[VoiceAssistant] Room confirmed, saving:', pendingRoom);
+        // CRITICAL: Update stage FIRST to 'strength' and sync to singleton
         updateOrderState(prev => ({ ...prev, stage: 'strength' }));
-        saveRoomNumber(pendingRoom);
+        voiceAssistantSingleton.setStage('strength'); // Explicit sync
+        
+        // Save room number (async)
+        saveRoomNumber(pendingRoom).then(success => {
+          if (!success) {
+            console.error('[VoiceAssistant] Failed to save room, but continuing with order');
+          }
+        });
         return;
       }
       
@@ -805,14 +815,19 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         }
         
         // ============= HOOKAH SELECTION STAGE TRIGGERS =============
-        // AI mentions strength selection
+        // AI mentions strength selection - EXPANDED triggers
         const strengthTriggers = [
           'ultra light', 'ультра лёгкий', 'ультра легкий', 'what strength', 'какую крепость',
-          'light, medium', 'лёгкий, средний', 'легкий, средний', 'choose strength', 'выберите крепость'
+          'light, medium', 'лёгкий, средний', 'легкий, средний', 'choose strength', 'выберите крепость',
+          'комната', 'room', 'крепость кальяна', 'hookah strength', 'лёгкий или', 'light or',
+          'средний или', 'medium or', 'крепкий', 'bold strong', 'отлично, комната', 'great, room'
         ];
-        if (strengthTriggers.some(phrase => transcriptLower.includes(phrase))) {
+        if (strengthTriggers.some(phrase => transcriptLower.includes(phrase)) && 
+            (transcriptLower.includes('крепость') || transcriptLower.includes('strength') || 
+             transcriptLower.includes('комната') || transcriptLower.includes('room'))) {
           console.log('[VoiceAssistant] AI asking about strength, updating to strength stage');
           updateOrderState(prev => ({ ...prev, stage: 'strength' }));
+          voiceAssistantSingleton.setStage('strength'); // Explicit sync
         }
         
         // AI mentions flavor selection
