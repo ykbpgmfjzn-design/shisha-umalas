@@ -6,6 +6,18 @@ import { menuItems, findMenuItemByKeyword, getStrengthFromKeyword } from '@/data
 import { toast } from 'sonner';
 import voiceAssistantSingleton from './useVoiceAssistantSingleton';
 import { Language } from '@/contexts/LanguageContext';
+import { 
+  filterTranscript, 
+  getNoiseResponse 
+} from './voiceAssistant/noiseFilter';
+import { 
+  detectIntent, 
+  guardIntent, 
+  isBackchannelOnly,
+  STAGE_REMINDERS,
+  CONFIDENCE_THRESHOLDS
+} from './voiceAssistant/intentConfig';
+import { eventStore } from './voiceAssistant/eventStore';
 
 export type VoiceAssistantState = 
   | 'idle' 
@@ -526,6 +538,55 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
         const userTextLower = transcriptText.toLowerCase();
         console.log('[VoiceAssistant] User said:', transcriptText);
         setTranscript(transcriptText);
+        
+        // ============= FSM NOISE & BACKCHANNEL FILTER =============
+        const currentStage = orderStateRef.current.stage;
+        const filterResult = filterTranscript(transcriptText, currentStage);
+        
+        if (filterResult.type === 'noise' || filterResult.type === 'backchannel') {
+          console.log('[VoiceAssistant] Filtered out:', filterResult.type, filterResult.reason);
+          
+          // Log event for analytics
+          eventStore.logEvent(
+            instanceId,
+            currentStage,
+            filterResult.type,
+            0,
+            false,
+            filterResult.reason
+          );
+          
+          // Ask to repeat - don't process further
+          const noiseResponse = getNoiseResponse(filterResult, detectedLanguageRef.current === 'ru' ? 'ru' : 'en');
+          if (noiseResponse) {
+            sendFollowUpMessage(`Say ONLY: "${noiseResponse}" Then STOP and wait.`);
+          }
+          setState('listening');
+          break; // Exit early - don't process noise/backchannel
+        }
+        
+        // ============= FSM INTENT DETECTION WITH CONFIDENCE =============
+        const slots = {
+          roomNumber: orderStateRef.current.roomNumber,
+          strength: orderStateRef.current.strength,
+          flavor: orderStateRef.current.flavor,
+          quantity: orderStateRef.current.quantity,
+        };
+        
+        const intentResult = detectIntent(transcriptText, currentStage, slots);
+        console.log('[VoiceAssistant] Intent detected:', intentResult);
+        
+        // Log intent event
+        eventStore.logEvent(
+          instanceId,
+          currentStage,
+          intentResult.intent,
+          intentResult.confidence,
+          intentResult.accepted,
+          intentResult.reason
+        );
+        
+        // ============= PROCESS VALID TRANSCRIPT =============
         processTranscript(transcriptText);
         
         // Detect language from user speech and switch app language + AI language
@@ -572,19 +633,7 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             !redirectingToAuthRef.current) {
           
           // User DECLINES registration - politely end session and let them browse
-          if (userTextLower.includes('no') || 
-              userTextLower.includes('нет') ||
-              userTextLower.includes('не хочу') ||
-              userTextLower.includes('не надо') ||
-              userTextLower.includes('без регистрации') ||
-              userTextLower.includes('without') ||
-              userTextLower.includes('skip') ||
-              userTextLower.includes('пропустить') ||
-              userTextLower.includes('потом') ||
-              userTextLower.includes('later') ||
-              userTextLower.includes('just browse') ||
-              userTextLower.includes('просто посмотреть') ||
-              userTextLower.includes('сам')) {
+          if (intentResult.intent === 'decline_registration' && intentResult.accepted) {
             console.log('[VoiceAssistant] User declined registration, ending session politely');
             
             // Tell user they can browse and pay at reception, then end
@@ -596,23 +645,8 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
               setState('complete');
             }, 3000);
           }
-          // User ACCEPTS registration
-          else if (userTextLower.includes('yes') || 
-              userTextLower.includes('да') ||
-              userTextLower.includes('готов') ||
-              userTextLower.includes('хочу') ||
-              userTextLower.includes('register') ||
-              userTextLower.includes('регистр') ||
-              userTextLower.includes('sign up') ||
-              userTextLower.includes('help') ||
-              userTextLower.includes('помог') ||
-              userTextLower.includes('okay') ||
-              userTextLower.includes('ок') ||
-              userTextLower.includes('давай') ||
-              userTextLower.includes('конечно') ||
-              userTextLower.includes('sure') ||
-              userTextLower.includes('let\'s go') ||
-              userTextLower.includes('поехали')) {
+          // User ACCEPTS registration - check intent confidence
+          else if (intentResult.intent === 'agree_registration' && intentResult.accepted) {
             console.log('[VoiceAssistant] User confirmed registration, redirecting to auth page');
             
             redirectingToAuthRef.current = true;
@@ -624,47 +658,101 @@ export const useVoiceAssistant = (props?: UseVoiceAssistantProps): UseVoiceAssis
             // Also send follow-up for voice feedback
             sendFollowUpMessage('Say ONLY in 5 words or less: "Открываю регистрацию!" or "Opening registration!" Then STOP immediately.');
           }
+          // Fallback to old keyword matching for backward compatibility
+          else if (userTextLower.includes('no') || 
+              userTextLower.includes('нет') ||
+              userTextLower.includes('не хочу') ||
+              userTextLower.includes('без регистрации') ||
+              userTextLower.includes('сам')) {
+            console.log('[VoiceAssistant] User declined registration (fallback), ending session');
+            sendFollowUpMessage('User declined registration. Say ONLY: "Без проблем! Выбирайте в меню. Приятного выбора!" Then STOP.');
+            setTimeout(() => {
+              updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+              setState('complete');
+            }, 3000);
+          }
+          else if (!isBackchannelOnly(transcriptText) && (
+              userTextLower.includes('помог') ||
+              userTextLower.includes('хочу') ||
+              userTextLower.includes('готов') ||
+              userTextLower.includes('давай') ||
+              userTextLower.includes('регистр'))) {
+            console.log('[VoiceAssistant] User confirmed registration (fallback), redirecting');
+            redirectingToAuthRef.current = true;
+            pendingAuthContinueRef.current = true;
+            navigate('/auth');
+            sendFollowUpMessage('Say ONLY: "Открываю регистрацию!" Then STOP.');
+          }
         }
         
-        // Detect user confirmation to submit order
-        if (orderStateRef.current.stage === 'cart' && 
-            !submittingOrderRef.current &&
-            (userTextLower.includes('yes') || 
-             userTextLower.includes('да') ||
-             userTextLower.includes('confirm') ||
-             userTextLower.includes('подтвержда') ||
-             userTextLower.includes('согласен') ||
-             userTextLower.includes('верно') ||
-             userTextLower.includes('correct') ||
-             userTextLower.includes('proceed') ||
-             userTextLower.includes('готов') ||
-             userTextLower.includes('оформ') ||
-             userTextLower.includes('submit') ||
-             userTextLower.includes('отправ') ||
-             userTextLower.includes('okay') ||
-             userTextLower.includes('ок') ||
-             userTextLower.includes('хорошо'))) {
-          console.log('[VoiceAssistant] User confirmed order, submitting...');
+        // ============= STRICT CONFIRM ORDER CHECK =============
+        // CRITICAL: Simple "да/yes/ok" is NOT enough for order confirmation
+        if (orderStateRef.current.stage === 'cart' && !submittingOrderRef.current) {
           
-          submittingOrderRef.current = true;
-          
-          sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
-          
-          setTimeout(() => {
-            submitOrderProgrammatically().then((success) => {
-              if (success) {
-                console.log('[VoiceAssistant] Order submitted successfully');
-                setTimeout(() => {
-                  sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
-                }, 800);
-                updateOrderState(prev => ({ ...prev, stage: 'ready' }));
-              } else {
-                console.log('[VoiceAssistant] Order submission failed');
-                submittingOrderRef.current = false;
-                sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
-              }
-            });
-          }, 500);
+          // Check if it's just backchannel (should not confirm order)
+          if (isBackchannelOnly(transcriptText)) {
+            console.log('[VoiceAssistant] Backchannel detected at cart stage, asking for explicit confirmation');
+            sendFollowUpMessage('Say ONLY: "Пожалуйста, скажите \'подтверждаю заказ\' для оформления." or "Please say \'confirm order\' to proceed." Then STOP.');
+          }
+          // Check if it's a valid confirm_order intent with high confidence
+          else if (intentResult.intent === 'confirm_order') {
+            if (intentResult.accepted && intentResult.confidence >= CONFIDENCE_THRESHOLDS.confirm_order) {
+              console.log('[VoiceAssistant] User explicitly confirmed order, submitting...');
+              
+              submittingOrderRef.current = true;
+              
+              sendFollowUpMessage('Great! Submitting your order now. Please wait a moment.');
+              
+              setTimeout(() => {
+                submitOrderProgrammatically().then((success) => {
+                  if (success) {
+                    console.log('[VoiceAssistant] Order submitted successfully');
+                    setTimeout(() => {
+                      sendFollowUpMessage('Order submitted successfully! Thank the user warmly, wish them to enjoy their hookah, and say goodbye. Be brief and friendly, max 20 words. Say it in the same language as the user.');
+                    }, 800);
+                    updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+                  } else {
+                    console.log('[VoiceAssistant] Order submission failed');
+                    submittingOrderRef.current = false;
+                    sendFollowUpMessage('There was an issue submitting the order. Please try clicking the Submit Order button manually, or try again.');
+                  }
+                });
+              }, 500);
+            } else {
+              // Confidence too low - ask for explicit confirmation
+              console.log('[VoiceAssistant] Confirm intent detected but confidence too low:', intentResult.confidence);
+              sendFollowUpMessage('Say ONLY: "Для подтверждения заказа скажите \'подтверждаю\'." or "To confirm your order, please say \'confirm\'." Then STOP.');
+            }
+          }
+          // Check for explicit confirmation keywords (stricter set)
+          else if (
+            userTextLower.includes('подтверждаю') ||
+            userTextLower.includes('confirm') ||
+            userTextLower.includes('оформить заказ') ||
+            userTextLower.includes('да, всё верно') ||
+            userTextLower.includes('yes, correct') ||
+            userTextLower.includes('submit order')
+          ) {
+            console.log('[VoiceAssistant] User confirmed order with explicit keywords, submitting...');
+            
+            submittingOrderRef.current = true;
+            sendFollowUpMessage('Great! Submitting your order now.');
+            
+            setTimeout(() => {
+              submitOrderProgrammatically().then((success) => {
+                if (success) {
+                  console.log('[VoiceAssistant] Order submitted successfully');
+                  setTimeout(() => {
+                    sendFollowUpMessage('Order submitted successfully! Thank the user warmly. Be brief, max 15 words.');
+                  }, 800);
+                  updateOrderState(prev => ({ ...prev, stage: 'ready' }));
+                } else {
+                  submittingOrderRef.current = false;
+                  sendFollowUpMessage('There was an issue. Please try the Submit button manually.');
+                }
+              });
+            }, 500);
+          }
         }
         
         setState('processing');
