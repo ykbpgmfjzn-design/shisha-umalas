@@ -114,10 +114,6 @@ const OrderConfirmationContent = () => {
           const invoiceMatch = data.notes.match(/DOKU Invoice: (INV-[^\s\n]+)/);
           if (invoiceMatch) {
             setDokuInvoiceNumber(invoiceMatch[1]);
-            // If still pending, auto-check DOKU status (in case webhook didn't fire)
-            if (data.payment_status === "pending") {
-              checkDokuPaymentStatus(invoiceMatch[1]);
-            }
           }
         }
       }
@@ -154,6 +150,25 @@ const OrderConfirmationContent = () => {
       supabase.removeChannel(channel);
     };
   }, [orderId, t, toast]);
+
+  // Auto-check payment status every 5 seconds while awaiting payment
+  useEffect(() => {
+    if (!dokuInvoiceNumber || isPaid || paymentStatus === "paid" || paymentStatus === "delivered") {
+      return;
+    }
+
+    // Initial check when invoice number is set
+    checkDokuPaymentStatus(dokuInvoiceNumber);
+
+    // Set up interval for periodic checking
+    const intervalId = setInterval(() => {
+      if (!isCheckingPayment) {
+        checkDokuPaymentStatus(dokuInvoiceNumber);
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [dokuInvoiceNumber, isPaid, paymentStatus]);
 
   // Timer only starts when payment is confirmed
   useEffect(() => {
