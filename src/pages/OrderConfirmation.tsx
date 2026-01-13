@@ -16,9 +16,13 @@ const OrderConfirmationContent = () => {
   const { toast } = useToast();
   
   const orderId = searchParams.get("id") || "";
-  const total = searchParams.get("total") || "0";
-  const items = searchParams.get("items") || "";
-  const hookahCount = parseInt(searchParams.get("count") || "1");
+  const urlTotal = searchParams.get("total");
+  const urlItems = searchParams.get("items");
+  const urlHookahCount = searchParams.get("count");
+  
+  const [orderAmount, setOrderAmount] = useState<number>(urlTotal ? parseInt(urlTotal) : 0);
+  const [orderItems, setOrderItems] = useState<string>(urlItems || "");
+  const [hookahCount, setHookahCount] = useState<number>(urlHookahCount ? parseInt(urlHookahCount) : 1);
   
   // Estimate wait time: 10-15 min per hookah, min 15 min
   const estimatedMinutes = Math.max(15, hookahCount * 12);
@@ -35,6 +39,7 @@ const OrderConfirmationContent = () => {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [dokuInvoiceNumber, setDokuInvoiceNumber] = useState<string | null>(null);
+  const [dokuInvoiceUrl, setDokuInvoiceUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -94,14 +99,14 @@ const OrderConfirmationContent = () => {
     }
   };
 
-  // Fetch initial payment status and subscribe to changes
+  // Fetch initial payment status and order details, subscribe to changes
   useEffect(() => {
     if (!orderId) return;
 
-    const fetchPaymentStatus = async () => {
+    const fetchOrderDetails = async () => {
       const { data } = await supabase
         .from("purchases")
-        .select("payment_status, notes")
+        .select("payment_status, notes, amount, hookah_count, xendit_invoice_id, xendit_invoice_url")
         .eq("id", orderId)
         .maybeSingle();
       
@@ -109,17 +114,30 @@ const OrderConfirmationContent = () => {
         setPaymentStatus(data.payment_status);
         setIsPaid(data.payment_status === "paid" || data.payment_status === "delivered");
         
-        // Extract and save DOKU invoice number for manual check
+        // Load order details from database (fallback if URL params missing)
+        if (data.amount && !orderAmount) {
+          setOrderAmount(Math.round(data.amount / 1000)); // Convert from full amount to display
+        }
+        if (data.hookah_count && !hookahCount) {
+          setHookahCount(data.hookah_count);
+        }
+        
+        // Extract and save DOKU invoice number and URL for reuse
         if (data.notes) {
           const invoiceMatch = data.notes.match(/DOKU Invoice: (INV-[^\s\n]+)/);
           if (invoiceMatch) {
             setDokuInvoiceNumber(invoiceMatch[1]);
           }
         }
+        
+        // Save DOKU invoice URL if available (for "Continue Payment" feature)
+        if (data.xendit_invoice_url) {
+          setDokuInvoiceUrl(data.xendit_invoice_url);
+        }
       }
     };
 
-    fetchPaymentStatus();
+    fetchOrderDetails();
 
     // Subscribe to realtime changes for this purchase
     const channel = supabase
@@ -257,11 +275,17 @@ const OrderConfirmationContent = () => {
     setIsProcessingPayment(true);
     
     try {
+      // If we already have a DOKU invoice URL, redirect to it instead of creating new
+      if (dokuInvoiceUrl) {
+        window.location.href = dokuInvoiceUrl;
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-doku-checkout', {
         body: {
           purchaseId: orderId,
-          amount: parseInt(total) * 1000, // Convert back to full amount
-          description: items,
+          amount: orderAmount * 1000, // Convert back to full amount
+          description: orderItems || `Order #${orderNumber}`,
           customerName: userName || "Guest",
           customerEmail: userEmail,
         },
@@ -471,10 +495,10 @@ const OrderConfirmationContent = () => {
                   {t("order.summary")}
                 </h3>
                 <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
-                  <p className="text-foreground mb-2 line-clamp-3">{items}</p>
+                  <p className="text-foreground mb-2 line-clamp-3">{orderItems || `${hookahCount} item(s)`}</p>
                   <div className="flex justify-between items-center pt-3 border-t border-border/30">
                     <span className="text-muted-foreground">{t("cart.total")}</span>
-                    <span className="font-display text-xl text-golden">IDR {total}K</span>
+                    <span className="font-display text-xl text-golden">IDR {orderAmount}K</span>
                   </div>
                 </div>
               </div>
