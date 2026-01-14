@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.openai-realtime-session]
 verify_jwt = false
+
+[functions.google-analytics]
+verify_jwt = false
