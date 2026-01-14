@@ -34,6 +34,9 @@ async function createJWT(clientEmail: string, privateKey: string): Promise<strin
   // The key might come with escaped \\n, literal \n, or actual newlines
   let cleanedKey = privateKey;
   
+  // Remove surrounding quotes if present (from JSON copy-paste)
+  cleanedKey = cleanedKey.replace(/^["']|["']$/g, '');
+  
   // First, handle double-escaped newlines (\\n -> \n)
   cleanedKey = cleanedKey.replace(/\\\\n/g, '\n');
   // Then handle single-escaped newlines (\n as string -> actual newline)
@@ -46,8 +49,8 @@ async function createJWT(clientEmail: string, privateKey: string): Promise<strin
     .replace(/-----BEGIN RSA PRIVATE KEY-----/g, '')
     .replace(/-----END RSA PRIVATE KEY-----/g, '');
   
-  // Remove all whitespace, newlines, carriage returns
-  cleanedKey = cleanedKey.replace(/[\n\r\s]/g, '');
+  // Remove all whitespace, newlines, carriage returns, and any remaining quotes
+  cleanedKey = cleanedKey.replace(/[\n\r\s"']/g, '');
   
   // Log key length for debugging (not the actual key!)
   console.log(`Private key base64 length after cleaning: ${cleanedKey.length}`);
