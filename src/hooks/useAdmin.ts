@@ -216,6 +216,13 @@ export const useAdmin = () => {
     status: string,
     notes?: string
   ) => {
+    // First get the current purchase to retrieve telegram message info
+    const { data: currentPurchase } = await supabase
+      .from("purchases")
+      .select("telegram_message_id, telegram_chat_id")
+      .eq("id", purchaseId)
+      .single();
+
     const { data, error } = await supabase
       .from("purchases")
       .update({
@@ -242,6 +249,18 @@ export const useAdmin = () => {
         amount: data.amount,
         user_id: data.user_id,
       });
+
+      // Update Telegram message if we have the message ID
+      if (currentPurchase?.telegram_message_id && currentPurchase?.telegram_chat_id) {
+        supabase.functions.invoke('update-telegram-status', {
+          body: {
+            orderId: purchaseId,
+            newStatus: status,
+            telegramMessageId: currentPurchase.telegram_message_id,
+            telegramChatId: currentPurchase.telegram_chat_id,
+          },
+        }).catch(err => console.error('Failed to update Telegram status:', err));
+      }
     }
 
     return { data, error };

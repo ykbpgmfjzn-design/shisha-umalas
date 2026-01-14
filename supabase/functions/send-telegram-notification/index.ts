@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,6 +44,10 @@ serve(async (req) => {
       console.error('TELEGRAM_CHAT_ID not configured');
       throw new Error('Telegram chat ID not configured');
     }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const data: OrderNotification = await req.json();
 
@@ -134,9 +139,26 @@ ${itemsList}
       throw new Error(`Telegram API error: ${result.description}`);
     }
 
-    console.log('Telegram notification sent successfully');
+    console.log('Telegram notification sent successfully, message_id:', result.result?.message_id);
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Save telegram message_id and chat_id to the purchase record for later updates
+    if (data.type !== 'reservation' && data.orderId && result.result?.message_id) {
+      const { error: updateError } = await supabase
+        .from('purchases')
+        .update({
+          telegram_message_id: result.result.message_id,
+          telegram_chat_id: parseInt(chatId),
+        })
+        .eq('id', data.orderId);
+
+      if (updateError) {
+        console.error('Failed to save telegram message ID:', updateError);
+      } else {
+        console.log('Saved telegram message ID to purchase record');
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, messageId: result.result?.message_id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

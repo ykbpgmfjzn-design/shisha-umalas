@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.telegram-webhook]
 verify_jwt = false
+
+[functions.update-telegram-status]
+verify_jwt = false
