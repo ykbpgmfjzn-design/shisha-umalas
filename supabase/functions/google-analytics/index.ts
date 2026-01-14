@@ -30,16 +30,23 @@ async function createJWT(clientEmail: string, privateKey: string): Promise<strin
   const payloadB64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Import private key
-  const pemContent = privateKey.replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\n/g, '');
+  // Import private key - handle escaped newlines and clean PEM format
+  const cleanedKey = privateKey
+    .replace(/\\n/g, '\n')  // Handle escaped newlines from env
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/[\n\r\s]/g, '');  // Remove all whitespace and newlines
   
-  const binaryKey = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
+  let binaryKey: Uint8Array;
+  try {
+    binaryKey = Uint8Array.from(atob(cleanedKey), c => c.charCodeAt(0));
+  } catch (e) {
+    throw new Error(`Failed to decode private key. Make sure GA_PRIVATE_KEY is properly formatted. Original error: ${e}`);
+  }
   
   const key = await crypto.subtle.importKey(
     "pkcs8",
-    binaryKey,
+    binaryKey.buffer as ArrayBuffer,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["sign"]
