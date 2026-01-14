@@ -51,44 +51,46 @@ serve(async (req) => {
     let message: string;
 
     if (data.type === 'reservation') {
-      // Reservation notification
+      // Reservation notification in English
       console.log('Sending Telegram notification for reservation');
       
-      message = `📅 *Новое бронирование!*
+      message = `📅 *New Reservation!*
 
-📆 *Дата:* ${data.reservationDate}
-🕐 *Время:* ${data.reservationTime}
-👥 *Гостей:* ${data.partySize}
-🚬 *Кальянов:* ${data.hookahCount}
+📆 *Date:* ${data.reservationDate}
+🕐 *Time:* ${data.reservationTime}
+👥 *Guests:* ${data.partySize}
+🚬 *Hookahs:* ${data.hookahCount}
 
-📞 *Телефон:* ${data.phone}
+📞 *Phone:* ${data.phone}
 ${data.userEmail ? `📧 *Email:* ${data.userEmail}` : ''}
-${data.location ? `📍 *Локация:* ${data.location}` : ''}
-${data.notes ? `📝 *Примечания:* ${data.notes}` : ''}
+${data.location ? `📍 *Location:* ${data.location}` : ''}
+${data.notes ? `📝 *Notes:* ${data.notes}` : ''}
 
-⏰ *Создано:* ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Jakarta' })}`;
+⏰ *Created:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
     } else {
-      // Order notification
+      // Order notification in English
       console.log('Sending Telegram notification for order:', data.orderId);
 
       const itemsList = data.items?.map(item => 
         `  • ${item.name} x${item.quantity} - ${item.price.toLocaleString()} IDR`
       ).join('\n') || '';
 
-      message = `🔔 *Новый заказ!*
+      message = `🔔 *New Order!*
 
-📋 *ID заказа:* \`${data.orderId?.slice(0, 8)}\`
-${data.roomNumber ? `🏨 *Номер комнаты:* ${data.roomNumber}` : ''}
+📋 *Order ID:* \`${data.orderId?.slice(0, 8)}\`
+${data.roomNumber ? `🏨 *Room Number:* ${data.roomNumber}` : ''}
 ${data.userEmail ? `📧 *Email:* ${data.userEmail}` : ''}
 
-🚬 *Кол-во кальянов:* ${data.hookahCount}
+🚬 *Hookahs:* ${data.hookahCount}
 
-📝 *Позиции:*
+📝 *Items:*
 ${itemsList}
 
-💰 *Сумма:* ${data.totalAmount?.toLocaleString()} IDR
+💰 *Amount:* ${data.totalAmount?.toLocaleString()} IDR
 
-⏰ *Время:* ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Jakarta' })}`;
+⚠️ *Status:* Awaiting Payment
+
+⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
     }
 
     // Send to Telegram
