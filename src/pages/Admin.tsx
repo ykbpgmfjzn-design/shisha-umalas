@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Shield, Plus, LogOut,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import FeedbackList from "@/components/admin/FeedbackList";
 import FeedbackChart from "@/components/admin/FeedbackChart";
 import RecentFeedback from "@/components/admin/RecentFeedback";
 import ReservationsList from "@/components/admin/ReservationsList";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -352,7 +353,7 @@ const AdminContent = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5 bg-card/60 backdrop-blur-xl">
+          <TabsList className="grid w-full max-w-3xl grid-cols-6 bg-card/60 backdrop-blur-xl">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Обзор</span>
@@ -377,6 +378,10 @@ const AdminContent = () => {
             <TabsTrigger value="feedback" className="gap-2">
               <MessageSquare className="w-4 h-4" />
               <span className="hidden sm:inline">Отзывы</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Аналитика</span>
             </TabsTrigger>
           </TabsList>
 
@@ -484,6 +489,11 @@ const AdminContent = () => {
             <FeedbackList 
               onStatsUpdate={(count, avgRating) => setFeedbackStats({ count, avgRating })}
             />
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>
