@@ -38,8 +38,6 @@ serve(async (req) => {
       throw new Error('Telegram bot not configured');
     }
 
-    // You need to set this after getting your chat ID
-    // Send /start to your bot, then use https://api.telegram.org/bot<TOKEN>/getUpdates to get your chat_id
     const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
     if (!chatId) {
       console.error('TELEGRAM_CHAT_ID not configured');
@@ -49,6 +47,7 @@ serve(async (req) => {
     const data: OrderNotification = await req.json();
 
     let message: string;
+    let inlineKeyboard: any = null;
 
     if (data.type === 'reservation') {
       // Reservation notification in English
@@ -91,19 +90,41 @@ ${itemsList}
 ⚠️ *Status:* Awaiting Payment
 
 ⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
+
+      // Add inline keyboard with action buttons for orders
+      if (data.orderId) {
+        inlineKeyboard = {
+          inline_keyboard: [
+            [
+              { text: "✅ Confirm Paid", callback_data: `confirm_paid:${data.orderId}` },
+              { text: "🚀 Start Preparing", callback_data: `start_preparing:${data.orderId}` }
+            ],
+            [
+              { text: "📦 Delivered", callback_data: `delivered:${data.orderId}` },
+              { text: "❌ Cancel Order", callback_data: `cancel_order:${data.orderId}` }
+            ]
+          ]
+        };
+      }
     }
 
-    // Send to Telegram
+    // Send to Telegram with inline keyboard if available
+    const telegramBody: any = {
+      chat_id: chatId,
+      text: message,
+      parse_mode: 'Markdown',
+    };
+
+    if (inlineKeyboard) {
+      telegramBody.reply_markup = inlineKeyboard;
+    }
+
     const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'Markdown',
-      }),
+      body: JSON.stringify(telegramBody),
     });
 
     const result = await telegramResponse.json();

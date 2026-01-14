@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.google-analytics]
 verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
