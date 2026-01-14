@@ -30,18 +30,49 @@ async function createJWT(clientEmail: string, privateKey: string): Promise<strin
   const payloadB64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Import private key - handle escaped newlines and clean PEM format
-  const cleanedKey = privateKey
-    .replace(/\\n/g, '\n')  // Handle escaped newlines from env
+  // Import private key - handle various formats from env variables
+  // The key might come with escaped \\n, literal \n, or actual newlines
+  let cleanedKey = privateKey;
+  
+  // First, handle double-escaped newlines (\\n -> \n)
+  cleanedKey = cleanedKey.replace(/\\\\n/g, '\n');
+  // Then handle single-escaped newlines (\n as string -> actual newline)
+  cleanedKey = cleanedKey.replace(/\\n/g, '\n');
+  
+  // Remove PEM headers/footers
+  cleanedKey = cleanedKey
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')
-    .replace(/[\n\r\s]/g, '');  // Remove all whitespace and newlines
+    .replace(/-----BEGIN RSA PRIVATE KEY-----/g, '')
+    .replace(/-----END RSA PRIVATE KEY-----/g, '');
+  
+  // Remove all whitespace, newlines, carriage returns
+  cleanedKey = cleanedKey.replace(/[\n\r\s]/g, '');
+  
+  // Log key length for debugging (not the actual key!)
+  console.log(`Private key base64 length after cleaning: ${cleanedKey.length}`);
+  
+  if (cleanedKey.length === 0) {
+    throw new Error("Private key is empty after cleaning. Check GA_PRIVATE_KEY format.");
+  }
+  
+  // Validate base64 characters
+  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Regex.test(cleanedKey)) {
+    // Try to find invalid characters
+    const invalidChars = cleanedKey.match(/[^A-Za-z0-9+/=]/g);
+    throw new Error(`Private key contains invalid base64 characters: ${invalidChars?.slice(0, 5).join(', ')}`);
+  }
   
   let binaryKey: Uint8Array;
   try {
-    binaryKey = Uint8Array.from(atob(cleanedKey), c => c.charCodeAt(0));
+    const decoded = atob(cleanedKey);
+    binaryKey = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      binaryKey[i] = decoded.charCodeAt(i);
+    }
   } catch (e) {
-    throw new Error(`Failed to decode private key. Make sure GA_PRIVATE_KEY is properly formatted. Original error: ${e}`);
+    throw new Error(`Failed to decode private key base64. Length: ${cleanedKey.length}. Error: ${e}`);
   }
   
   const key = await crypto.subtle.importKey(
