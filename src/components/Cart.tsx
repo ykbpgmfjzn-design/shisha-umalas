@@ -127,8 +127,24 @@ const Cart = () => {
         room_number: roomNumber,
       });
 
-      // NOTE: Telegram notification is now sent ONLY after payment is confirmed
-      // This happens in: create-card-payment, xendit-webhook, doku-webhook edge functions
+      // Send Telegram notification immediately when order is created
+      const itemsArray = currentItems.map((item: any) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      supabase.functions.invoke('send-telegram-notification', {
+        body: {
+          type: 'order',
+          orderId: data.id,
+          roomNumber: roomNumber,
+          userEmail: user.email,
+          hookahCount: currentHookahCount,
+          totalAmount: currentTotalPrice,
+          items: itemsArray,
+        },
+      }).catch(err => console.error('Telegram notification error:', err));
 
       // Navigate to confirmation page with order details
       const params = new URLSearchParams({

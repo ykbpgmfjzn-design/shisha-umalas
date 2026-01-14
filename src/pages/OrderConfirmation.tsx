@@ -275,33 +275,6 @@ const OrderConfirmationContent = () => {
     setIsProcessingPayment(true);
     
     try {
-      // Send Telegram notification immediately when Payment button is clicked
-      // Parse items from orderItems string to array format
-      const itemsArray = orderItems ? orderItems.split(", ").map(item => {
-        const match = item.match(/^(\d+)x (.+)$/);
-        if (match) {
-          return {
-            name: match[2],
-            quantity: parseInt(match[1]),
-            price: 0, // Price per item not stored in string format
-          };
-        }
-        return { name: item, quantity: 1, price: 0 };
-      }) : [];
-
-      // Send Telegram notification (fire and forget - don't block payment flow)
-      supabase.functions.invoke('send-telegram-notification', {
-        body: {
-          type: 'order',
-          orderId: orderId,
-          roomNumber: roomNumber,
-          userEmail: userEmail,
-          hookahCount: hookahCount,
-          totalAmount: orderAmount * 1000,
-          items: itemsArray,
-        },
-      }).catch(err => console.error('Telegram notification error:', err));
-
       // If we already have a DOKU invoice URL, redirect to it instead of creating new
       if (dokuInvoiceUrl) {
         window.location.href = dokuInvoiceUrl;
