@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Send } from "lucide-react";
+import { Star, Send, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -16,6 +17,7 @@ const Feedback = () => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -33,12 +35,18 @@ const Feedback = () => {
       return;
     }
 
+    if (!name.trim()) {
+      toast.error(t("feedback.nameRequired"));
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { error } = await supabase.from("feedback").insert({
       user_id: userId,
       rating,
       message: feedback || null,
+      name: name.trim(),
     });
     
     if (error) {
@@ -64,6 +72,7 @@ const Feedback = () => {
       
       setRating(0);
       setFeedback("");
+      setName("");
     }
     
     setIsSubmitting(false);
@@ -95,6 +104,21 @@ const Feedback = () => {
               {t("feedback.subtitle")}
             </p>
           </div>
+
+          {/* Name Input */}
+          <section className="space-y-3">
+            <h2 className="font-display text-xl text-foreground flex items-center gap-2">
+              <User className="w-5 h-5 text-golden" />
+              {t("feedback.yourName")}
+            </h2>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("feedback.namePlaceholder")}
+              className="bg-card/50 border-golden/30 focus:border-golden"
+              maxLength={50}
+            />
+          </section>
 
           {/* Star Rating */}
           <section className="space-y-4">
@@ -135,6 +159,9 @@ const Feedback = () => {
               placeholder={t("feedback.placeholder")}
               className="bg-card/50 border-golden/30 focus:border-golden min-h-[150px]"
             />
+            <p className="text-xs text-muted-foreground">
+              {t("feedback.publicNote")}
+            </p>
           </section>
 
           {/* Submit Button */}
