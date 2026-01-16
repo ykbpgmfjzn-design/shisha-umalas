@@ -71,6 +71,7 @@ export type Database = {
           id: string
           message: string | null
           name: string | null
+          photo_url: string | null
           rating: number
           user_id: string | null
         }
@@ -79,6 +80,7 @@ export type Database = {
           id?: string
           message?: string | null
           name?: string | null
+          photo_url?: string | null
           rating: number
           user_id?: string | null
         }
@@ -87,6 +89,7 @@ export type Database = {
           id?: string
           message?: string | null
           name?: string | null
+          photo_url?: string | null
           rating?: number
           user_id?: string | null
         }

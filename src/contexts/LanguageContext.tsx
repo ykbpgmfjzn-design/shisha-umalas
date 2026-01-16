@@ -123,10 +123,18 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.yourName": "Your Name",
     "feedback.namePlaceholder": "Enter your name",
     "feedback.publicNote": "5-star reviews with comments will be displayed publicly",
+    "feedback.addPhoto": "Add Photo (optional)",
+    "feedback.tapToAddPhoto": "Tap to add photo",
+    "feedback.loginToAddPhoto": "Login to add photo",
+    "feedback.photoTooLarge": "Photo must be less than 5MB",
+    "feedback.uploading": "Uploading...",
     
     // Reviews
     "reviews.title": "Guest Reviews",
     "reviews.subtitle": "What our guests say about us",
+    "reviews.reviewsCount": "reviews",
+    "reviews.showMore": "Show more",
+    "reviews.remaining": "remaining",
     
     // Order Confirmation
     "order.confirmed": "Order Confirmed!",
@@ -565,10 +573,18 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.yourName": "Ваше имя",
     "feedback.namePlaceholder": "Введите ваше имя",
     "feedback.publicNote": "Отзывы на 5 звёзд с комментарием будут показаны публично",
+    "feedback.addPhoto": "Добавить фото (опционально)",
+    "feedback.tapToAddPhoto": "Нажмите, чтобы добавить фото",
+    "feedback.loginToAddPhoto": "Войдите, чтобы добавить фото",
+    "feedback.photoTooLarge": "Фото должно быть меньше 5МБ",
+    "feedback.uploading": "Загрузка...",
     
     // Reviews
     "reviews.title": "Отзывы гостей",
     "reviews.subtitle": "Что говорят наши гости о нас",
+    "reviews.reviewsCount": "отзывов",
+    "reviews.showMore": "Показать ещё",
+    "reviews.remaining": "осталось",
     
     "order.confirmed": "Заказ подтверждён!",
     "order.thankYou": "Спасибо за ваш заказ",

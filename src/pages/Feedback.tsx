@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, Send, User } from "lucide-react";
+import { Star, Send, User, Camera, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,10 @@ const Feedback = () => {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -28,6 +32,55 @@ const Feedback = () => {
     };
     getUser();
   }, []);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t("feedback.photoTooLarge"));
+        return;
+      }
+      setPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhoto(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photo || !userId) return null;
+
+    setIsUploading(true);
+    const fileExt = photo.name.split(".").pop();
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("feedback-photos")
+      .upload(fileName, photo);
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      setIsUploading(false);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("feedback-photos")
+      .getPublicUrl(fileName);
+
+    setIsUploading(false);
+    return publicUrl;
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -42,37 +95,42 @@ const Feedback = () => {
 
     setIsSubmitting(true);
 
+    let photoUrl: string | null = null;
+    if (photo && userId) {
+      photoUrl = await uploadPhoto();
+    }
+
     const { error } = await supabase.from("feedback").insert({
       user_id: userId,
       rating,
       message: feedback || null,
       name: name.trim(),
+      photo_url: photoUrl,
     });
     
     if (error) {
       toast.error("Ошибка при отправке отзыва");
       console.error(error);
     } else {
-      // Log feedback submission
       await logActivity('feedback', 'Отзыв отправлен', {
         rating,
         has_message: !!feedback,
+        has_photo: !!photoUrl,
       });
       
-      // If 5 stars, redirect to Google Reviews
       if (rating === 5) {
         toast.success(t("feedback.thankYouRedirect"));
         setTimeout(() => {
           window.open("https://g.page/r/CWUVTUf3-kd2EAI/review", "_blank");
         }, 1000);
       } else {
-        // Less than 5 stars - just thank them
         toast.success(t("feedback.thankYou"));
       }
       
       setRating(0);
       setFeedback("");
       setName("");
+      removePhoto();
     }
     
     setIsSubmitting(false);
@@ -157,8 +215,52 @@ const Feedback = () => {
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t("feedback.placeholder")}
-              className="bg-card/50 border-golden/30 focus:border-golden min-h-[150px]"
+              className="bg-card/50 border-golden/30 focus:border-golden min-h-[120px]"
             />
+          </section>
+
+          {/* Photo Upload */}
+          <section className="space-y-4">
+            <h2 className="font-display text-xl text-foreground flex items-center gap-2">
+              <Camera className="w-5 h-5 text-golden" />
+              {t("feedback.addPhoto")}
+            </h2>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+
+            {!photoPreview ? (
+              <motion.button
+                onClick={() => fileInputRef.current?.click()}
+                whileTap={{ scale: 0.98 }}
+                className="w-full h-32 border-2 border-dashed border-golden/30 rounded-xl flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-golden/50 hover:bg-golden/5 transition-colors"
+                disabled={!userId}
+              >
+                <Camera className="w-8 h-8" />
+                <span className="text-sm">
+                  {userId ? t("feedback.tapToAddPhoto") : t("feedback.loginToAddPhoto")}
+                </span>
+              </motion.button>
+            ) : (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-xl"
+                />
+                <button
+                  onClick={removePhoto}
+                  className="absolute top-2 right-2 p-2 bg-background/80 rounded-full hover:bg-background transition-colors"
+                >
+                  <X className="w-5 h-5 text-foreground" />
+                </button>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               {t("feedback.publicNote")}
             </p>
@@ -167,11 +269,15 @@ const Feedback = () => {
           {/* Submit Button */}
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploading}
             className="w-full h-14 bg-golden hover:bg-golden/90 text-primary-foreground font-semibold text-lg rounded-xl shadow-lg"
           >
-            <Send className="w-5 h-5 mr-2" />
-            {isSubmitting ? t("feedback.submitting") : t("feedback.submit")}
+            {(isSubmitting || isUploading) ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5 mr-2" />
+            )}
+            {isUploading ? t("feedback.uploading") : isSubmitting ? t("feedback.submitting") : t("feedback.submit")}
           </Button>
         </motion.div>
       </div>
