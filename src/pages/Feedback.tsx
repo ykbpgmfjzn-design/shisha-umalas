@@ -261,9 +261,6 @@ const Feedback = () => {
                 </button>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              {t("feedback.publicNote")}
-            </p>
           </section>
 
           {/* Submit Button */}

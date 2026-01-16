@@ -69,6 +69,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_approved: boolean | null
           message: string | null
           name: string | null
           photo_url: string | null
@@ -78,6 +79,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_approved?: boolean | null
           message?: string | null
           name?: string | null
           photo_url?: string | null
@@ -87,6 +89,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_approved?: boolean | null
           message?: string | null
           name?: string | null
           photo_url?: string | null
