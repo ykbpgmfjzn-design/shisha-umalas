@@ -7,6 +7,7 @@ import FooterSection from "@/components/FooterSection";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
+import PublicReviews from "@/components/PublicReviews";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,6 +30,7 @@ const Index = () => {
       <LanguageSelector />
       <HeroSection />
       <MenuSection />
+      <PublicReviews />
       <FooterSection />
       <Cart />
       <BottomNavigation />

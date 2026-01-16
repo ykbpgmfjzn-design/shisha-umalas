@@ -116,9 +116,17 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.submit": "Submit Feedback",
     "feedback.submitting": "Submitting...",
     "feedback.ratingRequired": "Please select a rating",
+    "feedback.nameRequired": "Please enter your name",
     "feedback.success": "Thank you for your feedback!",
     "feedback.thankYou": "Thank you for your feedback!",
     "feedback.thankYouRedirect": "Thank you! Redirecting to Google Reviews...",
+    "feedback.yourName": "Your Name",
+    "feedback.namePlaceholder": "Enter your name",
+    "feedback.publicNote": "5-star reviews with comments will be displayed publicly",
+    
+    // Reviews
+    "reviews.title": "Guest Reviews",
+    "reviews.subtitle": "What our guests say about us",
     
     // Order Confirmation
     "order.confirmed": "Order Confirmed!",
@@ -550,9 +558,17 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.submit": "Отправить отзыв",
     "feedback.submitting": "Отправка...",
     "feedback.ratingRequired": "Выберите оценку",
+    "feedback.nameRequired": "Введите ваше имя",
     "feedback.success": "Спасибо за ваш отзыв!",
     "feedback.thankYou": "Спасибо за ваш отзыв!",
     "feedback.thankYouRedirect": "Спасибо! Перенаправляем на Google Reviews...",
+    "feedback.yourName": "Ваше имя",
+    "feedback.namePlaceholder": "Введите ваше имя",
+    "feedback.publicNote": "Отзывы на 5 звёзд с комментарием будут показаны публично",
+    
+    // Reviews
+    "reviews.title": "Отзывы гостей",
+    "reviews.subtitle": "Что говорят наши гости о нас",
     
     "order.confirmed": "Заказ подтверждён!",
     "order.thankYou": "Спасибо за ваш заказ",
