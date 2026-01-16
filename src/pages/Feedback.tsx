@@ -112,6 +112,21 @@ const Feedback = () => {
       toast.error("Ошибка при отправке отзыва");
       console.error(error);
     } else {
+      // Send Telegram notification
+      try {
+        await supabase.functions.invoke('send-telegram-notification', {
+          body: {
+            type: 'feedback',
+            feedbackName: name.trim(),
+            feedbackRating: rating,
+            feedbackMessage: feedback || null,
+            feedbackPhotoUrl: photoUrl,
+          }
+        });
+      } catch (telegramError) {
+        console.error('Failed to send Telegram notification:', telegramError);
+      }
+
       await logActivity('feedback', 'Отзыв отправлен', {
         rating,
         has_message: !!feedback,

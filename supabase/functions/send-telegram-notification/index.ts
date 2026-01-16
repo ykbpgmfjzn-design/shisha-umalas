@@ -7,11 +7,11 @@ const corsHeaders = {
 };
 
 interface OrderNotification {
-  type?: 'order' | 'reservation';
+  type?: 'order' | 'reservation' | 'feedback';
   orderId?: string;
   roomNumber?: string;
   userEmail?: string;
-  hookahCount: number;
+  hookahCount?: number;
   totalAmount?: number;
   items?: Array<{
     name: string;
@@ -25,6 +25,11 @@ interface OrderNotification {
   phone?: string;
   location?: string;
   notes?: string;
+  // Feedback fields
+  feedbackName?: string;
+  feedbackRating?: number;
+  feedbackMessage?: string;
+  feedbackPhotoUrl?: string;
 }
 
 serve(async (req) => {
@@ -54,7 +59,24 @@ serve(async (req) => {
     let message: string;
     let inlineKeyboard: any = null;
 
-    if (data.type === 'reservation') {
+    if (data.type === 'feedback') {
+      // Feedback notification
+      console.log('Sending Telegram notification for feedback');
+      
+      const stars = '⭐'.repeat(data.feedbackRating || 0);
+      
+      message = `📝 *New Review!*
+
+${stars} (${data.feedbackRating}/5)
+
+👤 *Name:* ${data.feedbackName || 'Anonymous'}
+${data.feedbackMessage ? `💬 *Message:* ${data.feedbackMessage}` : ''}
+${data.feedbackPhotoUrl ? `📷 *Photo attached*` : ''}
+
+⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
+
+🔗 [Open Admin Panel](https://shisha-umalas.lovable.app/admin)`;
+    } else if (data.type === 'reservation') {
       // Reservation notification in English
       console.log('Sending Telegram notification for reservation');
       
