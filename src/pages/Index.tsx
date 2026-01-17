@@ -8,6 +8,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
 import PublicReviews from "@/components/PublicReviews";
+import WhatsAppChat from "@/components/WhatsAppChat";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +34,7 @@ const Index = () => {
       <PublicReviews />
       <FooterSection />
       <Cart />
+      <WhatsAppChat />
       <BottomNavigation />
     </main>
   );
