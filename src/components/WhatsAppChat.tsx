@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const WHATSAPP_NUMBER = "6285190268329";
+const WHATSAPP_NUMBER = "6287750783373";
 
 const WhatsAppChat = () => {
   const { t } = useLanguage();
