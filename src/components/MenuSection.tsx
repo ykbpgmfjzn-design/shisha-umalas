@@ -195,21 +195,15 @@ const MenuCategory = ({ title, subtitle, strength, children, delay = 0 }: MenuCa
       className="relative"
     >
       <div className={`bg-gradient-to-br ${strengthColors[strength]} backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-card border border-border/30`}>
-        {/* Category Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/30">
-          <div>
-            <h3 className="font-display text-2xl md:text-3xl text-foreground tracking-wide">
-              {title}
-            </h3>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground mt-1 tracking-widest uppercase font-body">
-                {subtitle}
-              </p>
-            )}
-          </div>
-          <span className={`${strengthBadge[strength]} text-xs uppercase tracking-widest px-3 py-1.5 rounded-full font-body border`}>
-            {t(strengthLabels[strength])}
-          </span>
+        <div className="mb-6 pb-4 border-b border-border/30">
+          <h3 className="font-display text-2xl md:text-3xl text-foreground tracking-wide">
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground mt-1 tracking-widest uppercase font-body">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {/* Menu Items */}
