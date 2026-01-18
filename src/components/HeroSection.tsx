@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import heroVideo from "@/assets/hero-animated-bg.mp4";
-import logo from "@/assets/logo-shisha-cool.png";
+import logo from "@/assets/shisha-cool-logo-new.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRef } from "react";
 
@@ -68,11 +68,11 @@ const HeroSection = () => {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <div className="mb-6 flex justify-center">
-            <div className="p-8 md:p-12 lg:p-16 rounded-3xl bg-black/65 backdrop-blur-xl border border-white/10 shadow-2xl">
+            <div className="p-10 md:p-14 lg:p-16 rounded-[2rem] bg-black/75 backdrop-blur-xl border border-white/20 shadow-2xl">
               <img 
                 src={logo} 
                 alt="Shisha Cool" 
-                className="w-40 h-40 md:w-52 md:h-52 lg:w-64 lg:h-64 object-contain drop-shadow-2xl"
+                className="w-56 h-auto md:w-72 lg:w-80 object-contain drop-shadow-2xl"
                 style={{
                   filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.5))'
                 }}
