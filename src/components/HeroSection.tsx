@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import heroVideo from "@/assets/hero-animated-bg.mp4";
-import logo from "@/assets/shisha-cool-logo-new.png";
+import logo from "@/assets/shisha-cool-logo-new.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRef } from "react";
 
