@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import shishaImage from "@/assets/shisha-smoke.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
-import PaymentMethods from "./PaymentMethods";
 
 const FooterSection = () => {
   const { t } = useLanguage();
@@ -19,16 +18,6 @@ const FooterSection = () => {
       </div>
 
       <div className="container max-w-4xl mx-auto px-6 relative z-10">
-        {/* Payment Methods */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-16"
-        >
-          <PaymentMethods />
-        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
