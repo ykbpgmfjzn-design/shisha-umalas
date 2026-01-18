@@ -68,14 +68,16 @@ const HeroSection = () => {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <div className="mb-6 flex justify-center">
-            <img 
-              src={logo} 
-              alt="Shisha Cool" 
-              className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl"
-              style={{
-                filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.5))'
-              }}
-            />
+            <div className="p-8 md:p-12 lg:p-16 rounded-3xl bg-black/65 backdrop-blur-xl border border-white/10 shadow-2xl">
+              <img 
+                src={logo} 
+                alt="Shisha Cool" 
+                className="w-40 h-40 md:w-52 md:h-52 lg:w-64 lg:h-64 object-contain drop-shadow-2xl"
+                style={{
+                  filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.5))'
+                }}
+              />
+            </div>
           </div>
           <p 
             className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4"
