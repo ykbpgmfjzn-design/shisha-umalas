@@ -43,6 +43,75 @@ serve(async (req) => {
     const update: TelegramUpdate = await req.json();
     console.log('Received Telegram update:', JSON.stringify(update));
 
+    // Handle /start command - subscribe user to notifications
+    if (update.message?.text === '/start') {
+      const chat = update.message.chat;
+      const from = update.message.from;
+      
+      console.log(`User ${from?.first_name} (${chat.id}) started the bot`);
+      
+      // Add or update subscriber
+      const { error: upsertError } = await supabase
+        .from('telegram_subscribers')
+        .upsert({
+          chat_id: chat.id,
+          username: from?.username || null,
+          first_name: from?.first_name || null,
+          is_active: true,
+        }, {
+          onConflict: 'chat_id',
+        });
+
+      if (upsertError) {
+        console.error('Failed to add subscriber:', upsertError);
+      } else {
+        console.log(`Subscriber ${chat.id} added/updated successfully`);
+      }
+
+      // Send welcome message
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chat.id,
+          text: '✅ Вы подписаны на уведомления Shisha Cool!\n\nВы будете получать уведомления о новых заказах, бронированиях и отзывах.\n\n🔔 You are now subscribed to Shisha Cool notifications!',
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle /stop command - unsubscribe user
+    if (update.message?.text === '/stop') {
+      const chatId = update.message.chat.id;
+      
+      const { error: updateError } = await supabase
+        .from('telegram_subscribers')
+        .update({ is_active: false })
+        .eq('chat_id', chatId);
+
+      if (updateError) {
+        console.error('Failed to unsubscribe:', updateError);
+      }
+
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: '❌ Вы отписаны от уведомлений.\n\nОтправьте /start чтобы подписаться снова.',
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Handle callback queries (button presses)
     if (update.callback_query) {
       const callbackQuery = update.callback_query;
@@ -81,7 +150,7 @@ serve(async (req) => {
 
       // Update order status in database
       if (newStatus && orderId) {
-        const updateData: any = { payment_status: newStatus };
+        const updateData: Record<string, unknown> = { payment_status: newStatus };
         
         if (newStatus === 'paid') {
           updateData.paid_at = new Date().toISOString();
