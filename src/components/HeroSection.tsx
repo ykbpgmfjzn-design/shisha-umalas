@@ -83,7 +83,7 @@ const HeroSection = () => {
             <motion.img 
               src={logo} 
               alt="Shisha Cool" 
-              className="w-56 h-auto md:w-72 lg:w-80 object-contain"
+              className="w-72 h-auto md:w-96 lg:w-[28rem] object-contain"
               animate={{
                 filter: [
                   'drop-shadow(0 0 20px rgba(212,175,55,0.3))',
