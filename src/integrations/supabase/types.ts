@@ -177,6 +177,7 @@ export type Database = {
         Row: {
           amount: number | null
           created_at: string
+          delivery_status: string
           discount_applied: number | null
           free_drink_used: boolean | null
           free_snack_used: boolean | null
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           created_at?: string
+          delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
           free_snack_used?: boolean | null
@@ -211,6 +213,7 @@ export type Database = {
         Update: {
           amount?: number | null
           created_at?: string
+          delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
           free_snack_used?: boolean | null

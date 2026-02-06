@@ -128,22 +128,18 @@ ${itemsList}
 
 💰 *Amount:* ${data.totalAmount?.toLocaleString()} IDR
 
-⚠️ *Status:* Awaiting Payment
+⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
 
-⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
+⏳ *Payment:* UNPAID
+📋 *Delivery:* PENDING`;
 
-      // Add inline keyboard with action buttons for orders
+      // Add inline keyboard with separate payment and delivery buttons
       if (data.orderId) {
         inlineKeyboard = {
           inline_keyboard: [
-            [
-              { text: "✅ Confirm Paid", callback_data: `confirm_paid:${data.orderId}` },
-              { text: "🚀 Start Preparing", callback_data: `start_preparing:${data.orderId}` }
-            ],
-            [
-              { text: "📦 Delivered", callback_data: `delivered:${data.orderId}` },
-              { text: "❌ Cancel Order", callback_data: `cancel_order:${data.orderId}` }
-            ]
+            [{ text: "💳 Mark Paid", callback_data: `mark_paid:${data.orderId}` }],
+            [{ text: "👨‍🍳 Start Preparing", callback_data: `start_preparing:${data.orderId}` }],
+            [{ text: "❌ Cancel Order", callback_data: `cancel_order:${data.orderId}` }]
           ]
         };
       }
