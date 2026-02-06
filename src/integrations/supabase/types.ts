@@ -283,6 +283,36 @@ export type Database = {
           },
         ]
       }
+      telegram_subscribers: {
+        Row: {
+          chat_id: number
+          created_at: string
+          first_name: string | null
+          id: string
+          is_active: boolean
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       training_materials: {
         Row: {
           created_at: string

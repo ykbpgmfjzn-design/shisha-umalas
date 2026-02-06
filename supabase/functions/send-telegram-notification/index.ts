@@ -44,20 +44,34 @@ serve(async (req) => {
       throw new Error('Telegram bot not configured');
     }
 
-    const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
-    if (!chatId) {
-      console.error('TELEGRAM_CHAT_ID not configured');
-      throw new Error('Telegram chat ID not configured');
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get all active subscribers
+    const { data: subscribers, error: subscribersError } = await supabase
+      .from('telegram_subscribers')
+      .select('chat_id')
+      .eq('is_active', true);
+
+    if (subscribersError) {
+      console.error('Failed to fetch subscribers:', subscribersError);
+      throw new Error('Failed to fetch subscribers');
+    }
+
+    if (!subscribers || subscribers.length === 0) {
+      console.log('No active subscribers found');
+      return new Response(JSON.stringify({ success: true, message: 'No subscribers' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Found ${subscribers.length} active subscribers`);
+
     const data: OrderNotification = await req.json();
 
     let message: string;
-    let inlineKeyboard: any = null;
+    let inlineKeyboard: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> } | null = null;
 
     if (data.type === 'feedback') {
       // Feedback notification
@@ -135,52 +149,81 @@ ${itemsList}
       }
     }
 
-    // Send to Telegram with inline keyboard if available
-    const telegramBody: any = {
-      chat_id: chatId,
-      text: message,
-      parse_mode: 'Markdown',
-    };
+    // Send to ALL active subscribers
+    const sendPromises = subscribers.map(async (subscriber) => {
+      const telegramBody: Record<string, unknown> = {
+        chat_id: subscriber.chat_id,
+        text: message,
+        parse_mode: 'Markdown',
+      };
 
-    if (inlineKeyboard) {
-      telegramBody.reply_markup = inlineKeyboard;
-    }
+      if (inlineKeyboard) {
+        telegramBody.reply_markup = inlineKeyboard;
+      }
 
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(telegramBody),
+      try {
+        const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(telegramBody),
+        });
+
+        const result = await telegramResponse.json();
+
+        if (!telegramResponse.ok) {
+          console.error(`Failed to send to ${subscriber.chat_id}:`, result);
+          
+          // If user blocked the bot, mark them as inactive
+          if (result.error_code === 403) {
+            await supabase
+              .from('telegram_subscribers')
+              .update({ is_active: false })
+              .eq('chat_id', subscriber.chat_id);
+            console.log(`Marked subscriber ${subscriber.chat_id} as inactive (blocked bot)`);
+          }
+          return null;
+        }
+
+        console.log(`Sent to ${subscriber.chat_id}, message_id:`, result.result?.message_id);
+        return { chatId: subscriber.chat_id, messageId: result.result?.message_id };
+      } catch (err) {
+        console.error(`Error sending to ${subscriber.chat_id}:`, err);
+        return null;
+      }
     });
 
-    const result = await telegramResponse.json();
+    const results = await Promise.all(sendPromises);
+    const successfulSends = results.filter(r => r !== null);
 
-    if (!telegramResponse.ok) {
-      console.error('Telegram API error:', result);
-      throw new Error(`Telegram API error: ${result.description}`);
-    }
+    console.log(`Successfully sent to ${successfulSends.length}/${subscribers.length} subscribers`);
 
-    console.log('Telegram notification sent successfully, message_id:', result.result?.message_id);
+    // Save first successful telegram message_id to the purchase record for later updates
+    if (data.type !== 'reservation' && data.type !== 'feedback' && data.orderId && successfulSends.length > 0) {
+      const firstSuccess = successfulSends[0];
+      if (firstSuccess) {
+        const { error: updateError } = await supabase
+          .from('purchases')
+          .update({
+            telegram_message_id: firstSuccess.messageId,
+            telegram_chat_id: firstSuccess.chatId,
+          })
+          .eq('id', data.orderId);
 
-    // Save telegram message_id and chat_id to the purchase record for later updates
-    if (data.type !== 'reservation' && data.orderId && result.result?.message_id) {
-      const { error: updateError } = await supabase
-        .from('purchases')
-        .update({
-          telegram_message_id: result.result.message_id,
-          telegram_chat_id: parseInt(chatId),
-        })
-        .eq('id', data.orderId);
-
-      if (updateError) {
-        console.error('Failed to save telegram message ID:', updateError);
-      } else {
-        console.log('Saved telegram message ID to purchase record');
+        if (updateError) {
+          console.error('Failed to save telegram message ID:', updateError);
+        } else {
+          console.log('Saved telegram message ID to purchase record');
+        }
       }
     }
 
-    return new Response(JSON.stringify({ success: true, messageId: result.result?.message_id }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      sentTo: successfulSends.length,
+      totalSubscribers: subscribers.length 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
