@@ -217,12 +217,6 @@ export const useAdmin = () => {
     status: string,
     notes?: string
   ) => {
-    const { data: currentPurchase } = await supabase
-      .from("purchases")
-      .select("telegram_message_id, telegram_chat_id")
-      .eq("id", purchaseId)
-      .single();
-
     const { data, error } = await supabase
       .from("purchases")
       .update({
@@ -244,16 +238,14 @@ export const useAdmin = () => {
         user_id: data.user_id,
       });
 
-      if (currentPurchase?.telegram_message_id && currentPurchase?.telegram_chat_id) {
-        supabase.functions.invoke('update-telegram-status', {
-          body: {
-            orderId: purchaseId,
-            newStatus: status,
-            telegramMessageId: currentPurchase.telegram_message_id,
-            telegramChatId: currentPurchase.telegram_chat_id,
-          },
-        }).catch(err => console.error('Failed to update Telegram status:', err));
-      }
+      // Broadcast to all Telegram subscribers
+      supabase.functions.invoke('update-telegram-status', {
+        body: {
+          orderId: purchaseId,
+          statusType: 'payment',
+          newStatus: status,
+        },
+      }).catch(err => console.error('Failed to broadcast Telegram status:', err));
     }
 
     return { data, error };
@@ -286,6 +278,15 @@ export const useAdmin = () => {
         hookah_count: data.hookah_count,
         user_id: data.user_id,
       });
+
+      // Broadcast to all Telegram subscribers
+      supabase.functions.invoke('update-telegram-status', {
+        body: {
+          orderId: purchaseId,
+          statusType: 'delivery',
+          newStatus: status,
+        },
+      }).catch(err => console.error('Failed to broadcast Telegram status:', err));
     }
 
     return { data, error };
