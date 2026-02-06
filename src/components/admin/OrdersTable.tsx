@@ -25,7 +25,7 @@ interface OrdersTableProps {
   title?: string;
 }
 
-type PaymentFilter = "all" | "pending" | "paid" | "unpaid";
+type PaymentFilter = "all" | "pending" | "paid" | "unpaid" | "unpaid_delivered";
 type DeliveryFilter = "all" | "pending" | "preparing" | "delivered" | "cancelled";
 
 const OrdersTable = ({ 
@@ -43,6 +43,10 @@ const OrdersTable = ({
 
   const filteredOrders = orders
     .filter(order => {
+      if (paymentFilter === "unpaid_delivered") {
+        const isPaid = order.payment_status?.toLowerCase() === "paid";
+        return !isPaid && order.delivery_status === "delivered";
+      }
       if (paymentFilter !== "all") {
         const isPaid = order.payment_status?.toLowerCase() === "paid";
         if (paymentFilter === "paid" && !isPaid) return false;
@@ -147,13 +151,14 @@ const OrdersTable = ({
             <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-muted-foreground" />
               <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
-                <SelectTrigger className="w-[130px] bg-background/50">
+                <SelectTrigger className="w-[160px] bg-background/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все</SelectItem>
                   <SelectItem value="paid">Оплачены</SelectItem>
                   <SelectItem value="unpaid">Не оплачены</SelectItem>
+                  <SelectItem value="unpaid_delivered">⚠️ Долг</SelectItem>
                 </SelectContent>
               </Select>
             </div>
