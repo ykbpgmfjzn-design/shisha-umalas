@@ -179,6 +179,11 @@ export default function OrdersList() {
       return;
     }
 
+    // Broadcast to Telegram
+    supabase.functions.invoke('update-telegram-status', {
+      body: { orderId, statusType: 'delivery', newStatus: 'delivered' },
+    }).catch(err => console.error('Telegram broadcast failed:', err));
+
     toast.success(t("shishaMaster.orders.delivered"));
     fetchOrders();
   };
@@ -194,6 +199,11 @@ export default function OrdersList() {
       return;
     }
 
+    // Broadcast to Telegram
+    supabase.functions.invoke('update-telegram-status', {
+      body: { orderId, statusType: 'delivery', newStatus: 'preparing' },
+    }).catch(err => console.error('Telegram broadcast failed:', err));
+
     toast.success(t("shishaMaster.orders.preparing") || "Order is being prepared");
     fetchOrders();
   };
@@ -208,6 +218,11 @@ export default function OrdersList() {
       toast.error(t("shishaMaster.orders.error"));
       return;
     }
+
+    // Broadcast to Telegram
+    supabase.functions.invoke('update-telegram-status', {
+      body: { orderId, statusType: 'payment', newStatus: 'paid' },
+    }).catch(err => console.error('Telegram broadcast failed:', err));
 
     toast.success(t("shishaMaster.orders.paid") || "Order marked as paid");
     fetchOrders();
@@ -229,6 +244,11 @@ export default function OrdersList() {
       toast.error(t("shishaMaster.orders.error"));
       return;
     }
+
+    // Broadcast to Telegram
+    supabase.functions.invoke('update-telegram-status', {
+      body: { orderId: selectedOrderId, statusType: 'delivery', newStatus: 'cancelled' },
+    }).catch(err => console.error('Telegram broadcast failed:', err));
 
     toast.success(t("shishaMaster.orders.cancelled"));
     setCancelDialogOpen(false);
