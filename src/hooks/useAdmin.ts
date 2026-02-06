@@ -23,6 +23,7 @@ export interface PurchaseWithProfile {
   notes: string | null;
   created_at: string;
   payment_status: string | null;
+  delivery_status: string;
   paid_at: string | null;
   xendit_invoice_url: string | null;
   // Joined profile data
@@ -210,13 +211,12 @@ export const useAdmin = () => {
     return { error };
   }, []);
 
-  // Update purchase status
-  const updatePurchaseStatus = useCallback(async (
+  // Update payment status
+  const updatePaymentStatus = useCallback(async (
     purchaseId: string,
     status: string,
     notes?: string
   ) => {
-    // First get the current purchase to retrieve telegram message info
     const { data: currentPurchase } = await supabase
       .from("purchases")
       .select("telegram_message_id, telegram_chat_id")
@@ -228,20 +228,14 @@ export const useAdmin = () => {
       .update({
         payment_status: status,
         notes: notes,
-        paid_at: status === "PAID" ? new Date().toISOString() : null,
+        paid_at: status === "paid" ? new Date().toISOString() : null,
       })
       .eq("id", purchaseId)
       .select()
       .single();
 
-    // Log order status change
     if (!error && data) {
-      const action = status === "cancelled" 
-        ? "Заказ отменён" 
-        : status === "PAID" 
-          ? "Заказ оплачен" 
-          : `Статус заказа изменён на ${status}`;
-      
+      const action = status === "paid" ? "Заказ оплачен" : "Статус оплаты изменён";
       await logActivity('order', action, {
         purchase_id: purchaseId,
         new_status: status,
@@ -250,7 +244,6 @@ export const useAdmin = () => {
         user_id: data.user_id,
       });
 
-      // Update Telegram message if we have the message ID
       if (currentPurchase?.telegram_message_id && currentPurchase?.telegram_chat_id) {
         supabase.functions.invoke('update-telegram-status', {
           body: {
@@ -265,6 +258,47 @@ export const useAdmin = () => {
 
     return { data, error };
   }, []);
+
+  // Update delivery status
+  const updateDeliveryStatus = useCallback(async (
+    purchaseId: string,
+    status: string
+  ) => {
+    const { data, error } = await supabase
+      .from("purchases")
+      .update({
+        delivery_status: status,
+        paid_at: status === "delivered" || status === "cancelled" ? new Date().toISOString() : null,
+      })
+      .eq("id", purchaseId)
+      .select()
+      .single();
+
+    if (!error && data) {
+      const actionMap: Record<string, string> = {
+        preparing: "Заказ готовится",
+        delivered: "Заказ доставлен",
+        cancelled: "Заказ отменён",
+      };
+      await logActivity('order', actionMap[status] || `Статус доставки: ${status}`, {
+        purchase_id: purchaseId,
+        delivery_status: status,
+        hookah_count: data.hookah_count,
+        user_id: data.user_id,
+      });
+    }
+
+    return { data, error };
+  }, []);
+
+  // Legacy: Update purchase status (for backwards compatibility)
+  const updatePurchaseStatus = useCallback(async (
+    purchaseId: string,
+    status: string,
+    notes?: string
+  ) => {
+    return updatePaymentStatus(purchaseId, status, notes);
+  }, [updatePaymentStatus]);
 
   // Add purchase for a user
   const addPurchase = useCallback(async (
@@ -311,6 +345,8 @@ export const useAdmin = () => {
     addUserRole,
     removeUserRole,
     updatePurchaseStatus,
+    updatePaymentStatus,
+    updateDeliveryStatus,
     addPurchase,
     refetchAdmin: checkAdminStatus,
   };

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
-  Hash, Calendar, Coffee, Cookie, Shield, Building2, User,
-  ChevronDown, ChevronUp, Filter
+  Hash, Calendar, Coffee, Cookie, Building2, User,
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,22 +18,39 @@ import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
 interface OrdersTableProps {
   orders: PurchaseWithProfile[];
-  onUpdateStatus: (id: string, status: string) => Promise<void>;
+  onUpdatePaymentStatus?: (id: string, status: string) => Promise<void>;
+  onUpdateDeliveryStatus?: (id: string, status: string) => Promise<void>;
+  onUpdateStatus?: (id: string, status: string) => Promise<void>; // Legacy support
   showFilters?: boolean;
   title?: string;
 }
 
-type StatusFilter = "all" | "pending" | "PAID" | "cancelled";
+type PaymentFilter = "all" | "pending" | "paid" | "unpaid";
+type DeliveryFilter = "all" | "pending" | "preparing" | "delivered" | "cancelled";
 
-const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "Заказы" }: OrdersTableProps) => {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+const OrdersTable = ({ 
+  orders, 
+  onUpdatePaymentStatus,
+  onUpdateDeliveryStatus,
+  onUpdateStatus,
+  showFilters = true, 
+  title = "Заказы" 
+}: OrdersTableProps) => {
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [updating, setUpdating] = useState<string | null>(null);
 
   const filteredOrders = orders
     .filter(order => {
-      if (statusFilter === "all") return true;
-      return order.payment_status === statusFilter;
+      if (paymentFilter !== "all") {
+        const isPaid = order.payment_status?.toLowerCase() === "paid";
+        if (paymentFilter === "paid" && !isPaid) return false;
+        if (paymentFilter === "unpaid" && isPaid) return false;
+        if (paymentFilter === "pending" && order.payment_status !== "pending") return false;
+      }
+      if (deliveryFilter !== "all" && order.delivery_status !== deliveryFilter) return false;
+      return true;
     })
     .sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
@@ -51,13 +68,38 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
     });
   };
 
-  const getStatusBadge = (status: string | null) => {
+  const getPaymentBadge = (status: string | null) => {
+    const isPaid = status?.toLowerCase() === "paid";
+    if (isPaid) {
+      return (
+        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+          <CreditCard className="w-3 h-3 mr-1" />
+          Оплачено
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+        <Clock className="w-3 h-3 mr-1" />
+        Не оплачено
+      </Badge>
+    );
+  };
+
+  const getDeliveryBadge = (status: string) => {
     switch (status) {
-      case "PAID":
+      case "preparing":
+        return (
+          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+            <ChefHat className="w-3 h-3 mr-1" />
+            Готовится
+          </Badge>
+        );
+      case "delivered":
         return (
           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
             <CheckCircle className="w-3 h-3 mr-1" />
-            Оплачено
+            Доставлено
           </Badge>
         );
       case "cancelled":
@@ -69,17 +111,29 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
         );
       default:
         return (
-          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-            <Clock className="w-3 h-3 mr-1" />
+          <Badge className="bg-muted text-muted-foreground border-border">
+            <Truck className="w-3 h-3 mr-1" />
             Ожидает
           </Badge>
         );
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handlePaymentChange = async (orderId: string, newStatus: string) => {
     setUpdating(orderId);
-    await onUpdateStatus(orderId, newStatus);
+    if (onUpdatePaymentStatus) {
+      await onUpdatePaymentStatus(orderId, newStatus);
+    } else if (onUpdateStatus) {
+      await onUpdateStatus(orderId, newStatus);
+    }
+    setUpdating(null);
+  };
+
+  const handleDeliveryChange = async (orderId: string, newStatus: string) => {
+    setUpdating(orderId);
+    if (onUpdateDeliveryStatus) {
+      await onUpdateDeliveryStatus(orderId, newStatus);
+    }
     setUpdating(null);
   };
 
@@ -89,17 +143,32 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
         <h2 className="font-display text-xl">{title}</h2>
         
         {showFilters && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="w-[140px] bg-background/50">
+              <CreditCard className="w-4 h-4 text-muted-foreground" />
+              <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
+                <SelectTrigger className="w-[130px] bg-background/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все</SelectItem>
+                  <SelectItem value="paid">Оплачены</SelectItem>
+                  <SelectItem value="unpaid">Не оплачены</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Truck className="w-4 h-4 text-muted-foreground" />
+              <Select value={deliveryFilter} onValueChange={(v) => setDeliveryFilter(v as DeliveryFilter)}>
+                <SelectTrigger className="w-[130px] bg-background/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все</SelectItem>
                   <SelectItem value="pending">Ожидают</SelectItem>
-                  <SelectItem value="PAID">Оплачены</SelectItem>
+                  <SelectItem value="preparing">Готовятся</SelectItem>
+                  <SelectItem value="delivered">Доставлены</SelectItem>
                   <SelectItem value="cancelled">Отменены</SelectItem>
                 </SelectContent>
               </Select>
@@ -149,7 +218,7 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
                     <Hash className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">{order.hookah_count} кальян(ов)</span>
                     {order.amount && (
-                      <span className="text-golden font-medium">
+                      <span className="text-primary font-medium">
                         IDR {order.amount.toLocaleString('id-ID')}
                       </span>
                     )}
@@ -159,7 +228,7 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
                   {order.profile && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       {order.profile.guest_type === "special" ? (
-                        <Building2 className="w-3 h-3 text-golden" />
+                        <Building2 className="w-3 h-3 text-primary" />
                       ) : (
                         <User className="w-3 h-3" />
                       )}
@@ -178,13 +247,13 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
                       {formatDate(order.created_at)}
                     </div>
                     {order.free_drink_used && (
-                      <div className="flex items-center gap-1 text-golden">
+                      <div className="flex items-center gap-1 text-primary">
                         <Coffee className="w-3 h-3" />
                         Напиток
                       </div>
                     )}
                     {order.free_snack_used && (
-                      <div className="flex items-center gap-1 text-golden">
+                      <div className="flex items-center gap-1 text-primary">
                         <Cookie className="w-3 h-3" />
                         Снек
                       </div>
@@ -200,33 +269,68 @@ const OrdersTable = ({ orders, onUpdateStatus, showFilters = true, title = "За
 
                 {/* Status & Actions */}
                 <div className="flex flex-col items-end gap-2">
-                  {getStatusBadge(order.payment_status)}
-                  
+                  {/* Status Badges */}
                   <div className="flex gap-2">
-                    {order.payment_status !== "PAID" && (
+                    {getPaymentBadge(order.payment_status)}
+                    {getDeliveryBadge(order.delivery_status)}
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    {/* Payment Actions */}
+                    {order.payment_status?.toLowerCase() !== "paid" && (
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-green-400 border-green-400/30 hover:bg-green-400/10"
                         disabled={updating === order.id}
-                        onClick={() => handleStatusChange(order.id, "PAID")}
+                        onClick={() => handlePaymentChange(order.id, "paid")}
                       >
-                        <CheckCircle className="w-3 h-3 mr-1" />
+                        <CreditCard className="w-3 h-3 mr-1" />
                         Оплачено
                       </Button>
                     )}
-                    {order.payment_status === "pending" && (
+                    
+                    {/* Delivery Actions */}
+                    {order.delivery_status === "pending" && onUpdateDeliveryStatus && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
+                        disabled={updating === order.id}
+                        onClick={() => handleDeliveryChange(order.id, "preparing")}
+                      >
+                        <ChefHat className="w-3 h-3 mr-1" />
+                        Готовить
+                      </Button>
+                    )}
+                    
+                    {(order.delivery_status === "pending" || order.delivery_status === "preparing") && onUpdateDeliveryStatus && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-400 border-green-400/30 hover:bg-green-400/10"
+                        disabled={updating === order.id}
+                        onClick={() => handleDeliveryChange(order.id, "delivered")}
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Доставлено
+                      </Button>
+                    )}
+                    
+                    {order.delivery_status !== "delivered" && order.delivery_status !== "cancelled" && onUpdateDeliveryStatus && (
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-red-400 border-red-400/30 hover:bg-red-400/10"
                         disabled={updating === order.id}
-                        onClick={() => handleStatusChange(order.id, "cancelled")}
+                        onClick={() => handleDeliveryChange(order.id, "cancelled")}
                       >
                         <XCircle className="w-3 h-3 mr-1" />
                         Отмена
                       </Button>
                     )}
+                    
                     {order.xendit_invoice_url && (
                       <Button
                         size="sm"
