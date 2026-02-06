@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, History, Crown, CreditCard, ChefHat, Truck } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,7 +38,11 @@ interface OrderWithProfile {
   } | null;
 }
 
-export default function OrdersList() {
+interface OrdersListProps {
+  showHistory?: boolean;
+}
+
+export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const { t } = useLanguage();
   const [activeOrders, setActiveOrders] = useState<OrderWithProfile[]>([]);
   const [historyOrders, setHistoryOrders] = useState<OrderWithProfile[]>([]);
@@ -72,8 +75,8 @@ export default function OrdersList() {
         if (order) {
           const prev = prevOrdersRef.current.get(id);
           const statusChange = prev?.delivery_status !== order.delivery_status 
-            ? `${t("history.delivery")}: ${order.delivery_status}`
-            : `${t("history.payment")}: ${order.payment_status}`;
+            ? `${t("history.delivery") || "Delivery"}: ${order.delivery_status}`
+            : `${t("history.payment") || "Payment"}: ${order.payment_status}`;
           toast.info(t("shishaMaster.orders.statusUpdated") || "Order updated", {
             description: `${order.hookah_count}x Hookah • ${statusChange}`,
           });
@@ -202,18 +205,17 @@ export default function OrdersList() {
   };
 
   const getTimerStyle = (percentRemaining: number, isOverdue: boolean) => {
-    // Use theme colors: primary (golden) -> destructive (red)
-    if (isOverdue) return { colorClass: "text-destructive", bgClass: "bg-destructive/20", borderClass: "border-destructive" };
-    if (percentRemaining > 50) return { colorClass: "text-primary", bgClass: "bg-primary/20", borderClass: "border-primary" };
-    if (percentRemaining > 25) return { colorClass: "text-accent", bgClass: "bg-accent/20", borderClass: "border-accent" };
-    return { colorClass: "text-destructive", bgClass: "bg-destructive/20", borderClass: "border-destructive" };
+    if (isOverdue) return { colorClass: "text-destructive", bgClass: "bg-destructive/20" };
+    if (percentRemaining > 50) return { colorClass: "text-primary", bgClass: "bg-primary/20" };
+    if (percentRemaining > 25) return { colorClass: "text-accent", bgClass: "bg-accent/20" };
+    return { colorClass: "text-destructive", bgClass: "bg-destructive/20" };
   };
 
   const formatTimer = (createdAt: string) => {
     const { minutes, seconds, isOverdue } = getTimeRemaining(createdAt);
     
     if (isOverdue) {
-      return t("shishaMaster.orders.overdue");
+      return t("shishaMaster.orders.overdue") || "OVERDUE";
     }
     
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -226,7 +228,7 @@ export default function OrdersList() {
       .eq("id", orderId);
 
     if (error) {
-      toast.error(t("shishaMaster.orders.error"));
+      toast.error(t("shishaMaster.orders.error") || "Error updating order");
       return;
     }
 
@@ -235,7 +237,7 @@ export default function OrdersList() {
       body: { orderId, statusType: 'delivery', newStatus: 'delivered' },
     }).catch(err => console.error('Telegram broadcast failed:', err));
 
-    toast.success(t("shishaMaster.orders.delivered"));
+    toast.success(t("shishaMaster.orders.delivered") || "Order delivered");
     fetchOrders();
   };
 
@@ -246,7 +248,7 @@ export default function OrdersList() {
       .eq("id", orderId);
 
     if (error) {
-      toast.error(t("shishaMaster.orders.error"));
+      toast.error(t("shishaMaster.orders.error") || "Error updating order");
       return;
     }
 
@@ -255,7 +257,7 @@ export default function OrdersList() {
       body: { orderId, statusType: 'delivery', newStatus: 'preparing' },
     }).catch(err => console.error('Telegram broadcast failed:', err));
 
-    toast.success(t("shishaMaster.orders.preparing") || "Order is being prepared");
+    toast.success(t("shishaMaster.orders.preparingStarted") || "Preparing started");
     fetchOrders();
   };
 
@@ -266,7 +268,7 @@ export default function OrdersList() {
       .eq("id", orderId);
 
     if (error) {
-      toast.error(t("shishaMaster.orders.error"));
+      toast.error(t("shishaMaster.orders.error") || "Error updating order");
       return;
     }
 
@@ -275,7 +277,7 @@ export default function OrdersList() {
       body: { orderId, statusType: 'payment', newStatus: 'paid' },
     }).catch(err => console.error('Telegram broadcast failed:', err));
 
-    toast.success(t("shishaMaster.orders.paid") || "Order marked as paid");
+    toast.success(t("shishaMaster.orders.markedPaid") || "Marked as paid");
     fetchOrders();
   };
 
@@ -287,12 +289,12 @@ export default function OrdersList() {
       .update({ 
         delivery_status: "cancelled", 
         paid_at: new Date().toISOString(),
-        notes: cancelReason ? `${t("shishaMaster.orders.cancelReason")}: ${cancelReason}` : null
+        notes: cancelReason ? `${t("shishaMaster.orders.cancelReason") || "Reason"}: ${cancelReason}` : null
       })
       .eq("id", selectedOrderId);
 
     if (error) {
-      toast.error(t("shishaMaster.orders.error"));
+      toast.error(t("shishaMaster.orders.error") || "Error");
       return;
     }
 
@@ -301,7 +303,7 @@ export default function OrdersList() {
       body: { orderId: selectedOrderId, statusType: 'delivery', newStatus: 'cancelled' },
     }).catch(err => console.error('Telegram broadcast failed:', err));
 
-    toast.success(t("shishaMaster.orders.cancelled"));
+    toast.success(t("shishaMaster.orders.cancelled") || "Order cancelled");
     setCancelDialogOpen(false);
     setSelectedOrderId(null);
     setCancelReason("");
@@ -321,308 +323,298 @@ export default function OrdersList() {
     );
   }
 
-  const renderActiveOrder = (order: OrderWithProfile) => {
-    const { isOverdue, percentRemaining } = getTimeRemaining(order.created_at);
-    const { colorClass, bgClass, borderClass } = getTimerStyle(percentRemaining, isOverdue);
-    const isUrgent = percentRemaining < 25;
-    const orderTime = format(new Date(order.created_at), "HH:mm");
-    const loyaltyLevel = order.profile?.loyalty_level || 1;
-    const isPaid = order.payment_status?.toLowerCase() === "paid";
-    const isPreparing = order.delivery_status === "preparing";
-    const isJustUpdated = recentlyUpdated.has(order.id);
-    
+  const orders = showHistory ? historyOrders : activeOrders;
+
+  // Empty state
+  if (orders.length === 0) {
     return (
-      <motion.div
-        key={order.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          scale: isJustUpdated ? [1, 1.02, 1] : 1,
-        }}
-        exit={{ opacity: 0, x: -100 }}
-        layout
-        transition={{ scale: { duration: 0.3 } }}
-      >
-        <Card className={`overflow-hidden border-2 transition-all duration-300 ${
-          isJustUpdated 
-            ? "ring-2 ring-primary shadow-lg shadow-primary/30 border-primary" 
-            : borderClass
-        } ${(isOverdue || isUrgent) && !isJustUpdated ? "animate-pulse" : ""}`}>
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-4">
-              {/* Timer circle */}
-              <div className={`w-16 h-16 rounded-full ${bgClass} flex items-center justify-center shrink-0`}>
-                <span className={`text-lg font-mono font-bold ${colorClass}`}>
-                  {formatTimer(order.created_at)}
-                </span>
-              </div>
-              
-              {/* Order info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wind className="h-5 w-5 text-primary shrink-0" />
-                  <span className="font-semibold text-lg">{order.hookah_count}x Hookah</span>
-                </div>
-                {order.amount && (
-                  <p className="text-muted-foreground">Rp {order.amount.toLocaleString()}</p>
-                )}
-                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{orderTime}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Crown className="h-3.5 w-3.5 text-primary" />
-                    <span>Lvl {loyaltyLevel}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Status badges */}
-              <div className="flex flex-col gap-1.5">
-                <Badge 
-                  variant={isPaid ? "default" : "secondary"}
-                  className="flex items-center gap-1"
-                >
-                  <CreditCard className="h-3 w-3" />
-                  {isPaid ? t("admin.paid") : t("admin.pending")}
-                </Badge>
-                <Badge 
-                  variant={isPreparing ? "default" : "outline"}
-                  className={`flex items-center gap-1 ${isPreparing ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""}`}
-                >
-                  {isPreparing ? <ChefHat className="h-3 w-3" /> : <Truck className="h-3 w-3" />}
-                  {isPreparing ? t("shishaMaster.orders.preparing") || "Preparing" : t("shishaMaster.orders.waiting") || "Waiting"}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-3">
-            {/* Progress bar */}
-            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ${isOverdue ? "bg-destructive w-full" : percentRemaining > 50 ? "bg-primary" : percentRemaining > 25 ? "bg-accent" : "bg-destructive"}`}
-                style={{ width: isOverdue ? "100%" : `${percentRemaining}%` }}
-              />
-            </div>
-
-            {/* Customer info */}
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>{order.profile?.full_name || order.profile?.email || t("admin.guest")}</span>
-            </div>
-            
-            {order.profile?.room_number && (
-              <div className="flex items-center gap-2 text-sm p-2 bg-primary/10 rounded-lg border border-primary/20">
-                <Home className="h-4 w-4 text-primary" />
-                <span className="font-medium text-primary">{t("admin.room")}: {order.profile.room_number}</span>
-              </div>
-            )}
-            
-            {order.notes && (
-              <div className="flex items-start gap-2 text-sm p-2 bg-muted rounded-lg">
-                <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <span className="text-foreground">{order.notes}</span>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              {/* Payment button */}
-              {!isPaid && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="h-10"
-                  onClick={() => handleMarkPaid(order.id)}
-                >
-                  <CreditCard className="h-4 w-4 mr-1.5" />
-                  {t("shishaMaster.orders.markPaid") || "Mark Paid"}
-                </Button>
-              )}
-              
-              {/* Preparing button */}
-              {!isPreparing && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="h-10"
-                  onClick={() => handleMarkPreparing(order.id)}
-                >
-                  <ChefHat className="h-4 w-4 mr-1.5" />
-                  {t("shishaMaster.orders.startPreparing") || "Start Preparing"}
-                </Button>
-              )}
-              
-              {/* Delivered button */}
-              <Button 
-                className="flex-1 h-10" 
-                onClick={() => handleMarkDelivered(order.id)}
-              >
-                <CheckCircle className="h-4 w-4 mr-1.5" />
-                {t("shishaMaster.orders.markDelivered")}
-              </Button>
-              
-              {/* Cancel button */}
-              <Button 
-                variant="outline" 
-                size="icon"
-                className="h-10 w-10"
-                onClick={() => openCancelDialog(order.id)}
-              >
-                <XCircle className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <Wind className="h-16 w-16 mb-4 opacity-30" />
+        <p className="text-lg">
+          {showHistory 
+            ? (t("shishaMaster.orders.noHistory") || "No completed orders yet")
+            : (t("shishaMaster.orders.noOrders") || "No active orders")
+          }
+        </p>
+      </div>
     );
-  };
+  }
 
-  const renderHistoryOrder = (order: OrderWithProfile) => {
-    const isDelivered = order.delivery_status === "delivered";
-    const isPaid = order.payment_status?.toLowerCase() === "paid";
-    
+  // History view - simple cards
+  if (showHistory) {
     return (
-      <Card key={order.id} className="overflow-hidden">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
-                {isDelivered ? (
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-destructive" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium">
-                  {order.profile?.full_name || order.profile?.email || t("admin.guest")}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Badge variant={isPaid ? "default" : "secondary"} className="flex items-center gap-1">
-                <CreditCard className="h-3 w-3" />
-                {isPaid ? t("admin.paid") : t("admin.pending")}
-              </Badge>
-              <Badge variant={isDelivered ? "default" : "destructive"} className="flex items-center gap-1">
-                {isDelivered ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                {isDelivered ? t("shishaMaster.orders.statusDelivered") : t("shishaMaster.orders.statusCancelled")}
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">{t("admin.hookahCount")}: </span>
-              <span className="font-medium">{order.hookah_count}</span>
-            </div>
-            {order.amount && (
-              <div>
-                <span className="text-muted-foreground">{t("admin.amount")}: </span>
-                <span className="font-medium">Rp {order.amount.toLocaleString()}</span>
-              </div>
-            )}
-          </div>
+      <div className="grid gap-3">
+        {historyOrders.map((order) => {
+          const isDelivered = order.delivery_status === "delivered";
+          const isPaid = order.payment_status?.toLowerCase() === "paid";
           
-          {order.profile?.room_number && (
-            <div className="flex items-center gap-2 text-sm">
-              <Home className="h-4 w-4 text-muted-foreground" />
-              <span>{t("admin.room")}: {order.profile.room_number}</span>
-            </div>
-          )}
-          
-          {order.notes && (
-            <div className="flex items-start gap-2 text-sm p-2 bg-muted/50 rounded">
-              <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-              <span>{order.notes}</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          return (
+            <Card key={order.id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
+                      {isDelivered ? (
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {order.hookah_count}x Hookah
+                        {order.amount && <span className="text-muted-foreground ml-2">• Rp {order.amount.toLocaleString()}</span>}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.profile?.full_name || order.profile?.email || (t("admin.guest") || "Guest")}
+                        {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex gap-1.5 justify-end mb-1">
+                      <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
+                        {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
+                      </Badge>
+                      <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
+                        {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     );
-  };
+  }
 
+  // Active orders view - detailed cards
   return (
     <>
-      <Tabs defaultValue="active" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="active" className="flex items-center gap-2">
-            <Wind className="h-4 w-4" />
-            {t("shishaMaster.orders.activeOrders")}
-            {activeOrders.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{activeOrders.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            {t("shishaMaster.orders.history")}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid gap-4">
+        <AnimatePresence>
+          {activeOrders.map((order) => {
+            const { isOverdue, percentRemaining } = getTimeRemaining(order.created_at);
+            const { colorClass, bgClass } = getTimerStyle(percentRemaining, isOverdue);
+            const orderTime = format(new Date(order.created_at), "HH:mm");
+            const loyaltyLevel = order.profile?.loyalty_level || 1;
+            const isPaid = order.payment_status?.toLowerCase() === "paid";
+            const isPreparing = order.delivery_status === "preparing";
+            const isJustUpdated = recentlyUpdated.has(order.id);
+            
+            return (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  scale: isJustUpdated ? [1, 1.02, 1] : 1,
+                }}
+                exit={{ opacity: 0, x: -100 }}
+                layout
+                transition={{ scale: { duration: 0.3 } }}
+              >
+                <Card className={`overflow-hidden transition-all duration-300 ${
+                  isJustUpdated 
+                    ? "ring-2 ring-primary shadow-lg shadow-primary/30" 
+                    : ""
+                }`}>
+                  <CardContent className="p-4 space-y-4">
+                    {/* Header row: Timer, Order info, Status badges */}
+                    <div className="flex items-start gap-4">
+                      {/* Timer */}
+                      <div className={`w-14 h-14 rounded-xl ${bgClass} flex items-center justify-center shrink-0`}>
+                        <span className={`text-sm font-mono font-bold ${colorClass}`}>
+                          {formatTimer(order.created_at)}
+                        </span>
+                      </div>
+                      
+                      {/* Order details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Wind className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-semibold">{order.hookah_count}x Hookah</span>
+                          {order.amount && (
+                            <span className="text-muted-foreground text-sm">• Rp {order.amount.toLocaleString()}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {orderTime}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Crown className="h-3 w-3 text-primary" />
+                            Lvl {loyaltyLevel}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Status badges */}
+                      <div className="flex flex-col gap-1.5 shrink-0">
+                        <Badge 
+                          variant={isPaid ? "default" : "secondary"}
+                          className="text-xs justify-center"
+                        >
+                          {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
+                        </Badge>
+                        <Badge 
+                          variant="outline"
+                          className={`text-xs justify-center ${isPreparing ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""}`}
+                        >
+                          {isPreparing ? (t("shishaMaster.orders.preparing") || "Preparing") : (t("shishaMaster.orders.waiting") || "Waiting")}
+                        </Badge>
+                      </div>
+                    </div>
 
-        <TabsContent value="active" className="space-y-4">
-          {activeOrders.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                <Wind className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("shishaMaster.orders.noOrders")}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <AnimatePresence>
-              {activeOrders.map(renderActiveOrder)}
-            </AnimatePresence>
-          )}
-        </TabsContent>
+                    {/* Progress bar */}
+                    <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          isOverdue ? "bg-destructive w-full" : 
+                          percentRemaining > 50 ? "bg-primary" : 
+                          percentRemaining > 25 ? "bg-accent" : "bg-destructive"
+                        }`}
+                        style={{ width: isOverdue ? "100%" : `${percentRemaining}%` }}
+                      />
+                    </div>
 
-        <TabsContent value="history" className="space-y-4">
-          {historyOrders.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("shishaMaster.orders.noHistory")}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {historyOrders.map(renderHistoryOrder)}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                    {/* Customer info */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>{order.profile?.full_name || order.profile?.email || (t("admin.guest") || "Guest")}</span>
+                    </div>
+                    
+                    {/* Room - highlighted */}
+                    {order.profile?.room_number && (
+                      <div className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg border border-primary/20">
+                        <Home className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-primary">{t("admin.room") || "Room"}: {order.profile.room_number}</span>
+                      </div>
+                    )}
+                    
+                    {/* Notes */}
+                    {order.notes && (
+                      <div className="flex items-start gap-2 p-2.5 bg-muted rounded-lg">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <span className="text-sm">{order.notes}</span>
+                      </div>
+                    )}
+
+                    {/* Action buttons - compact layout */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {!isPaid && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkPaid(order.id)}
+                        >
+                          <CreditCard className="h-4 w-4 mr-1.5" />
+                          {t("shishaMaster.orders.markPaid") || "Mark Paid"}
+                        </Button>
+                      )}
+                      
+                      {!isPreparing && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkPreparing(order.id)}
+                        >
+                          <ChefHat className="h-4 w-4 mr-1.5" />
+                          {t("shishaMaster.orders.startPreparing") || "Start Preparing"}
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleMarkDelivered(order.id)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1.5" />
+                        {t("shishaMaster.orders.markDelivered") || "Mark Delivered"}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        onClick={() => openCancelDialog(order.id)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("shishaMaster.orders.cancelOrderTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("shishaMaster.orders.cancelOrderTitle") || "Cancel Order"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("shishaMaster.orders.cancelOrderDesc")}
+              {t("shishaMaster.orders.cancelOrderDesc") || "Please provide a reason for cancelling this order."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
             <Textarea
-              placeholder={t("shishaMaster.orders.cancelReasonPlaceholder")}
+              placeholder={t("shishaMaster.orders.cancelReasonPlaceholder") || "Enter cancellation reason..."}
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               rows={3}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
-              {t("shishaMaster.orders.confirmCancel")}
+              {t("shishaMaster.orders.confirmCancel") || "Confirm Cancel"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
   );
+}
+
+// Export active orders count hook for parent component
+export function useActiveOrdersCount() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count: orderCount } = await supabase
+        .from("purchases")
+        .select("*", { count: "exact", head: true })
+        .not("delivery_status", "in", '("delivered","cancelled")');
+      
+      setCount(orderCount || 0);
+    };
+
+    fetchCount();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('orders-count')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchases' },
+        () => fetchCount()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return count;
 }

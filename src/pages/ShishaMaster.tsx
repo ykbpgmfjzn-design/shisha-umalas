@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Wind, BookOpen } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Wind, BookOpen, History } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
-import OrdersList from "@/components/shisha-master/OrdersList";
+import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/OrdersList";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 
 function ShishaMasterContent() {
@@ -14,6 +15,7 @@ function ShishaMasterContent() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const activeOrdersCount = useActiveOrdersCount();
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -53,36 +55,51 @@ function ShishaMasterContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Header */}
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <Wind className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">{t("shishaMaster.title")}</h1>
+              <Wind className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold">{t("shishaMaster.title") || "Shisha Master"}</h1>
             </div>
           </div>
           <LanguageSelector />
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="orders" className="gap-2">
+      {/* Main content */}
+      <main className="container mx-auto px-4 py-6">
+        <Tabs defaultValue="active" className="space-y-6">
+          <TabsList className="grid w-full max-w-lg grid-cols-3 mx-auto">
+            <TabsTrigger value="active" className="gap-2">
               <Wind className="h-4 w-4" />
-              {t("shishaMaster.orders.activeOrders")}
+              <span className="hidden sm:inline">{t("shishaMaster.orders.active") || "Active"}</span>
+              {activeOrdersCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {activeOrdersCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("shishaMaster.orders.history") || "History"}</span>
             </TabsTrigger>
             <TabsTrigger value="training" className="gap-2">
               <BookOpen className="h-4 w-4" />
-              {t("shishaMaster.training.title")}
+              <span className="hidden sm:inline">{t("shishaMaster.training.title") || "Training"}</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="orders">
-            <OrdersList />
+          <TabsContent value="active">
+            <OrdersList showHistory={false} />
+          </TabsContent>
+
+          <TabsContent value="history">
+            <OrdersList showHistory={true} />
           </TabsContent>
 
           <TabsContent value="training">
