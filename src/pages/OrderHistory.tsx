@@ -15,6 +15,7 @@ interface Order {
   hookah_count: number;
   amount: number | null;
   payment_status: string | null;
+  delivery_status: string;
   notes: string | null;
   paid_at: string | null;
 }
@@ -24,12 +25,6 @@ const OrderHistory = () => {
   const { user } = useProfile();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-    }
-  }, [user]);
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -46,6 +41,31 @@ const OrderHistory = () => {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!user) return;
+    
+    fetchOrders();
+
+    // Subscribe to realtime updates for this user's orders
+    const channel = supabase
+      .channel('user-orders-realtime')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'purchases',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => fetchOrders()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const getStatusConfig = (status: string | null) => {
     switch (status) {
@@ -78,6 +98,35 @@ const OrderHistory = () => {
           icon: <Clock className="w-4 h-4" />,
           text: t("history.pending"),
           className: "bg-golden/20 text-golden border-golden/30"
+        };
+    }
+  };
+
+  const getDeliveryStatusConfig = (status: string) => {
+    switch (status) {
+      case "preparing":
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          text: t("history.preparing") || "Preparing",
+          className: "bg-blue-500/20 text-blue-400 border-blue-500/30"
+        };
+      case "delivered":
+        return {
+          icon: <Truck className="w-3 h-3" />,
+          text: t("history.delivered"),
+          className: "bg-green-500/20 text-green-400 border-green-500/30"
+        };
+      case "cancelled":
+        return {
+          icon: <XCircle className="w-3 h-3" />,
+          text: t("history.cancelled"),
+          className: "bg-red-500/20 text-red-400 border-red-500/30"
+        };
+      default:
+        return {
+          icon: <Package className="w-3 h-3" />,
+          text: t("history.pending"),
+          className: "bg-muted text-muted-foreground border-border"
         };
     }
   };
@@ -137,15 +186,28 @@ const OrderHistory = () => {
                         {order.hookah_count} {t("history.hookahs")}
                       </p>
                     </div>
-                    {(() => {
-                      const config = getStatusConfig(order.payment_status);
-                      return (
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${config.className}`}>
-                          {config.icon}
-                          <span>{config.text}</span>
-                        </div>
-                      );
-                    })()}
+                    <div className="flex flex-col gap-1 items-end">
+                      {/* Payment status */}
+                      {(() => {
+                        const config = getStatusConfig(order.payment_status);
+                        return (
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${config.className}`}>
+                            {config.icon}
+                            <span>{config.text}</span>
+                          </div>
+                        );
+                      })()}
+                      {/* Delivery status */}
+                      {(() => {
+                        const deliveryConfig = getDeliveryStatusConfig(order.delivery_status);
+                        return (
+                          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs ${deliveryConfig.className}`}>
+                            {deliveryConfig.icon}
+                            <span>{deliveryConfig.text}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
