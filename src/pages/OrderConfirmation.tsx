@@ -237,12 +237,25 @@ const OrderConfirmationContent = () => {
   const handleCancelOrder = async () => {
     setIsCancelling(true);
     try {
+      // Update delivery_status to cancelled instead of deleting
       const { error } = await supabase
         .from("purchases")
-        .delete()
+        .update({ 
+          delivery_status: "cancelled",
+          payment_status: "cancelled"
+        })
         .eq("id", orderId);
       
       if (error) throw error;
+
+      // Broadcast to Telegram subscribers
+      supabase.functions.invoke('update-telegram-status', {
+        body: {
+          orderId: orderId,
+          statusType: 'delivery',
+          newStatus: 'cancelled',
+        },
+      }).catch(err => console.error('Failed to broadcast Telegram status:', err));
       
       toast({
         title: t("order.cancelled"),
