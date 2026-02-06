@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Clock, Package, CheckCircle, XCircle, CreditCard, Truck } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -51,6 +52,20 @@ const OrderHistory = () => {
 
       if (newUpdated.size > 0) {
         setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
+        
+        // Show toast notification for updated orders
+        newUpdated.forEach(id => {
+          const order = data.find(o => o.id === id);
+          if (order) {
+            const prev = prevOrdersRef.current.get(id);
+            const statusChange = prev?.delivery_status !== order.delivery_status 
+              ? `${t("history.delivery") || "Delivery"}: ${order.delivery_status}`
+              : `${t("history.payment") || "Payment"}: ${order.payment_status}`;
+            toast.info(t("history.orderUpdated") || "Order updated", {
+              description: `${order.hookah_count} ${t("history.hookahs")} • ${statusChange}`,
+            });
+          }
+        });
         
         // Clear highlight after 3 seconds
         setTimeout(() => {
