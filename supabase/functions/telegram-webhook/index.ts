@@ -8,19 +8,16 @@ const corsHeaders = {
 
 interface TelegramUpdate {
   update_id: number;
+  message?: {
+    message_id: number;
+    chat: { id: number };
+    from?: { id: number; first_name: string; username?: string };
+    text: string;
+  };
   callback_query?: {
     id: string;
-    from: {
-      id: number;
-      first_name: string;
-    };
-    message: {
-      message_id: number;
-      chat: {
-        id: number;
-      };
-      text: string;
-    };
+    from: { id: number; first_name: string };
+    message: { message_id: number; chat: { id: number }; text: string };
     data: string;
   };
 }
@@ -43,14 +40,11 @@ serve(async (req) => {
     const update: TelegramUpdate = await req.json();
     console.log('Received Telegram update:', JSON.stringify(update));
 
-    // Handle /start command - subscribe user to notifications
+    // Handle /start command
     if (update.message?.text === '/start') {
       const chat = update.message.chat;
       const from = update.message.from;
       
-      console.log(`User ${from?.first_name} (${chat.id}) started the bot`);
-      
-      // Add or update subscriber
       const { error: upsertError } = await supabase
         .from('telegram_subscribers')
         .upsert({
@@ -58,23 +52,16 @@ serve(async (req) => {
           username: from?.username || null,
           first_name: from?.first_name || null,
           is_active: true,
-        }, {
-          onConflict: 'chat_id',
-        });
+        }, { onConflict: 'chat_id' });
 
-      if (upsertError) {
-        console.error('Failed to add subscriber:', upsertError);
-      } else {
-        console.log(`Subscriber ${chat.id} added/updated successfully`);
-      }
+      if (upsertError) console.error('Failed to add subscriber:', upsertError);
 
-      // Send welcome message
       await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chat.id,
-          text: '✅ Вы подписаны на уведомления Shisha Cool!\n\nВы будете получать уведомления о новых заказах, бронированиях и отзывах.\n\n🔔 You are now subscribed to Shisha Cool notifications!',
+          text: '✅ You are subscribed to Shisha Cool notifications!\n\nYou will receive notifications about new orders, reservations, and reviews.',
           parse_mode: 'Markdown',
         }),
       });
@@ -84,25 +71,21 @@ serve(async (req) => {
       });
     }
 
-    // Handle /stop command - unsubscribe user
+    // Handle /stop command
     if (update.message?.text === '/stop') {
       const chatId = update.message.chat.id;
       
-      const { error: updateError } = await supabase
+      await supabase
         .from('telegram_subscribers')
         .update({ is_active: false })
         .eq('chat_id', chatId);
-
-      if (updateError) {
-        console.error('Failed to unsubscribe:', updateError);
-      }
 
       await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: '❌ Вы отписаны от уведомлений.\n\nОтправьте /start чтобы подписаться снова.',
+          text: '❌ You are unsubscribed.\n\nSend /start to subscribe again.',
           parse_mode: 'Markdown',
         }),
       });
@@ -119,46 +102,59 @@ serve(async (req) => {
       
       console.log(`Processing action: ${action} for order: ${orderId}`);
 
-      let newStatus: string | null = null;
       let responseText = '';
-      let updatedMessage = '';
-
+      let updateField = '';
+      let updateValue = '';
       let statusEmoji = '';
-      
+      let statusLabel = '';
+
       switch (action) {
-        case 'confirm_paid':
-          newStatus = 'paid';
-          responseText = '✅ Payment confirmed!';
-          updatedMessage = '💳 *PAID*';
+        // Payment actions
+        case 'mark_paid':
+          updateField = 'payment_status';
+          updateValue = 'paid';
+          responseText = '💳 Marked as PAID!';
           statusEmoji = '💳';
+          statusLabel = 'Payment: PAID';
           break;
+        case 'mark_unpaid':
+          updateField = 'payment_status';
+          updateValue = 'pending';
+          responseText = '⏳ Marked as UNPAID!';
+          statusEmoji = '⏳';
+          statusLabel = 'Payment: UNPAID';
+          break;
+        // Delivery actions
         case 'start_preparing':
-          newStatus = 'preparing';
-          responseText = '🚀 Order is being prepared!';
-          updatedMessage = '👨‍🍳 *PREPARING*';
+          updateField = 'delivery_status';
+          updateValue = 'preparing';
+          responseText = '👨‍🍳 Started preparing!';
           statusEmoji = '👨‍🍳';
+          statusLabel = 'Delivery: PREPARING';
           break;
-        case 'delivered':
-          newStatus = 'delivered';
-          responseText = '📦 Order delivered successfully!';
-          updatedMessage = '✅ *DELIVERED*';
+        case 'mark_delivered':
+          updateField = 'delivery_status';
+          updateValue = 'delivered';
+          responseText = '✅ Marked as DELIVERED!';
           statusEmoji = '✅';
+          statusLabel = 'Delivery: DELIVERED';
           break;
         case 'cancel_order':
-          newStatus = 'cancelled';
-          responseText = '❌ Order cancelled.';
-          updatedMessage = '❌ *CANCELLED*';
+          updateField = 'delivery_status';
+          updateValue = 'cancelled';
+          responseText = '❌ Order CANCELLED!';
           statusEmoji = '❌';
+          statusLabel = 'Order: CANCELLED';
           break;
         default:
           responseText = 'Unknown action';
       }
 
-      // Update order status in database
-      if (newStatus && orderId) {
-        const updateData: Record<string, unknown> = { payment_status: newStatus };
+      // Update database
+      if (updateField && orderId) {
+        const updateData: Record<string, unknown> = { [updateField]: updateValue };
         
-        if (newStatus === 'paid') {
+        if (updateField === 'payment_status' && updateValue === 'paid') {
           updateData.paid_at = new Date().toISOString();
         }
 
@@ -171,11 +167,11 @@ serve(async (req) => {
           console.error('Database update error:', updateError);
           responseText = `❌ Error: ${updateError.message}`;
         } else {
-          console.log(`Order ${orderId} updated to status: ${newStatus}`);
+          console.log(`Order ${orderId}: ${updateField} = ${updateValue}`);
         }
       }
 
-      // Answer the callback query (removes loading state on button)
+      // Answer callback query
       await fetch(`https://api.telegram.org/bot${telegramToken}/answerCallbackQuery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,52 +182,79 @@ serve(async (req) => {
         }),
       });
 
-      // Get inline keyboard based on new status
-      const getInlineKeyboard = (status: string, oid: string) => {
-        if (status === 'delivered' || status === 'cancelled') {
+      // Get current order status for buttons
+      const { data: orderData } = await supabase
+        .from('purchases')
+        .select('payment_status, delivery_status')
+        .eq('id', orderId)
+        .single();
+
+      const paymentStatus = orderData?.payment_status || 'pending';
+      const deliveryStatus = orderData?.delivery_status || 'pending';
+
+      // Generate inline keyboard based on current statuses
+      const getInlineKeyboard = (pStatus: string, dStatus: string, oid: string) => {
+        if (dStatus === 'cancelled') {
           return { inline_keyboard: [] };
         }
-        if (status === 'paid') {
+
+        const paymentRow = pStatus === 'paid' 
+          ? [{ text: "⏳ Mark Unpaid", callback_data: `mark_unpaid:${oid}` }]
+          : [{ text: "💳 Mark Paid", callback_data: `mark_paid:${oid}` }];
+
+        let deliveryRow: Array<{ text: string; callback_data: string }> = [];
+        
+        if (dStatus === 'pending') {
+          deliveryRow = [
+            { text: "👨‍🍳 Start Preparing", callback_data: `start_preparing:${oid}` },
+          ];
+        } else if (dStatus === 'preparing') {
+          deliveryRow = [
+            { text: "✅ Mark Delivered", callback_data: `mark_delivered:${oid}` },
+          ];
+        }
+        
+        if (dStatus === 'delivered') {
           return {
-            inline_keyboard: [
-              [{ text: "🚀 Start Preparing", callback_data: `start_preparing:${oid}` }],
-              [
-                { text: "📦 Delivered", callback_data: `delivered:${oid}` },
-                { text: "❌ Cancel", callback_data: `cancel_order:${oid}` }
-              ]
-            ]
+            inline_keyboard: [paymentRow]
           };
         }
-        if (status === 'preparing') {
-          return {
-            inline_keyboard: [
-              [
-                { text: "📦 Delivered", callback_data: `delivered:${oid}` },
-                { text: "❌ Cancel", callback_data: `cancel_order:${oid}` }
-              ]
-            ]
-          };
-        }
-        // Default: pending/unpaid
+
+        const cancelRow = [{ text: "❌ Cancel Order", callback_data: `cancel_order:${oid}` }];
+
         return {
           inline_keyboard: [
-            [
-              { text: "✅ Confirm Paid", callback_data: `confirm_paid:${oid}` },
-              { text: "🚀 Start Preparing", callback_data: `start_preparing:${oid}` }
-            ],
-            [
-              { text: "📦 Delivered", callback_data: `delivered:${oid}` },
-              { text: "❌ Cancel Order", callback_data: `cancel_order:${oid}` }
-            ]
-          ]
+            paymentRow,
+            deliveryRow.length > 0 ? deliveryRow : [],
+            cancelRow,
+          ].filter(row => row.length > 0)
         };
       };
 
-      // Update the original message for the user who clicked
+      const inlineKeyboard = getInlineKeyboard(paymentStatus, deliveryStatus, orderId);
+
+      // Update original message
+      const paymentEmoji = paymentStatus === 'paid' ? '💳' : '⏳';
+      const paymentLabel = paymentStatus === 'paid' ? 'PAID' : 'UNPAID';
+      
+      let deliveryEmoji = '📋';
+      let deliveryLabel = 'PENDING';
+      if (deliveryStatus === 'preparing') { deliveryEmoji = '👨‍🍳'; deliveryLabel = 'PREPARING'; }
+      if (deliveryStatus === 'delivered') { deliveryEmoji = '✅'; deliveryLabel = 'DELIVERED'; }
+      if (deliveryStatus === 'cancelled') { deliveryEmoji = '❌'; deliveryLabel = 'CANCELLED'; }
+
       const originalMessage = callbackQuery.message.text;
-      const statusLine = originalMessage.includes('*Status:*') 
-        ? originalMessage.replace(/\*Status:\*.*$/m, `*Status:* ${updatedMessage.replace(/\*/g, '')}`)
-        : `${originalMessage}\n\n${updatedMessage}`;
+      // Update or append status section
+      let updatedMessage = originalMessage;
+      const statusSection = `\n\n${paymentEmoji} *Payment:* ${paymentLabel}\n${deliveryEmoji} *Delivery:* ${deliveryLabel}`;
+      
+      if (originalMessage.includes('*Payment:*')) {
+        updatedMessage = originalMessage.replace(/\n\n[💳⏳].*\*Payment:\*.*\n[📋👨‍🍳✅❌].*\*Delivery:\*.*/s, statusSection);
+      } else if (originalMessage.includes('⚠️ *Status:*')) {
+        updatedMessage = originalMessage.replace(/⚠️ \*Status:\*.*$/m, statusSection.trim());
+      } else {
+        updatedMessage = originalMessage + statusSection;
+      }
 
       await fetch(`https://api.telegram.org/bot${telegramToken}/editMessageText`, {
         method: 'POST',
@@ -239,28 +262,31 @@ serve(async (req) => {
         body: JSON.stringify({
           chat_id: callbackQuery.message.chat.id,
           message_id: callbackQuery.message.message_id,
-          text: statusLine,
+          text: updatedMessage,
           parse_mode: 'Markdown',
-          reply_markup: getInlineKeyboard(newStatus || '', orderId),
+          reply_markup: inlineKeyboard,
         }),
       });
 
-      // BROADCAST: Send status update to ALL other subscribers
-      if (newStatus && orderId) {
+      // BROADCAST to all other subscribers
+      if (updateField && orderId) {
         const { data: allSubscribers } = await supabase
           .from('telegram_subscribers')
           .select('chat_id')
           .eq('is_active', true);
 
         if (allSubscribers && allSubscribers.length > 0) {
-          const broadcastMessage = `${statusEmoji} *Order Status Update*
+          const broadcastMessage = `${statusEmoji} *Status Update*
 
 📋 Order: \`${orderId.slice(0, 8)}\`
-📊 New Status: ${updatedMessage}
+📊 ${statusLabel}
 👤 Updated by: ${callbackQuery.from.first_name}
-⏰ Time: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
+⏰ ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
 
-          // Send to all subscribers except the one who clicked
+Current Status:
+${paymentEmoji} Payment: ${paymentLabel}
+${deliveryEmoji} Delivery: ${deliveryLabel}`;
+
           const broadcastPromises = allSubscribers
             .filter(sub => sub.chat_id !== callbackQuery.message.chat.id)
             .map(async (subscriber) => {
@@ -272,7 +298,7 @@ serve(async (req) => {
                     chat_id: subscriber.chat_id,
                     text: broadcastMessage,
                     parse_mode: 'Markdown',
-                    reply_markup: getInlineKeyboard(newStatus || '', orderId),
+                    reply_markup: inlineKeyboard,
                   }),
                 });
               } catch (err) {
@@ -281,7 +307,6 @@ serve(async (req) => {
             });
 
           await Promise.all(broadcastPromises);
-          console.log(`Broadcasted status update to ${allSubscribers.length - 1} other subscribers`);
         }
       }
     }
