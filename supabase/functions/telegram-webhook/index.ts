@@ -98,7 +98,20 @@ serve(async (req) => {
     // Handle callback queries (button presses)
     if (update.callback_query) {
       const callbackQuery = update.callback_query;
-      const [action, orderId] = callbackQuery.data.split(':');
+      const callbackData = callbackQuery.data;
+      
+      // Support both formats: "action:orderId" and "action_orderId"
+      let action: string;
+      let orderId: string;
+      
+      if (callbackData.includes(':')) {
+        [action, orderId] = callbackData.split(':');
+      } else {
+        // Format: pay_uuid, unpay_uuid, prepare_uuid, deliver_uuid, cancel_uuid
+        const underscoreIndex = callbackData.indexOf('_');
+        action = callbackData.substring(0, underscoreIndex);
+        orderId = callbackData.substring(underscoreIndex + 1);
+      }
       
       console.log(`Processing action: ${action} for order: ${orderId}`);
 
@@ -109,8 +122,9 @@ serve(async (req) => {
       let statusLabel = '';
 
       switch (action) {
-        // Payment actions
+        // Payment actions (support both naming conventions)
         case 'mark_paid':
+        case 'pay':
           updateField = 'payment_status';
           updateValue = 'paid';
           responseText = '💳 Marked as PAID!';
@@ -118,6 +132,7 @@ serve(async (req) => {
           statusLabel = 'Payment: PAID';
           break;
         case 'mark_unpaid':
+        case 'unpay':
           updateField = 'payment_status';
           updateValue = 'pending';
           responseText = '⏳ Marked as UNPAID!';
@@ -126,6 +141,7 @@ serve(async (req) => {
           break;
         // Delivery actions
         case 'start_preparing':
+        case 'prepare':
           updateField = 'delivery_status';
           updateValue = 'preparing';
           responseText = '👨‍🍳 Started preparing!';
@@ -133,6 +149,7 @@ serve(async (req) => {
           statusLabel = 'Delivery: PREPARING';
           break;
         case 'mark_delivered':
+        case 'deliver':
           updateField = 'delivery_status';
           updateValue = 'delivered';
           responseText = '✅ Marked as DELIVERED!';
@@ -140,6 +157,7 @@ serve(async (req) => {
           statusLabel = 'Delivery: DELIVERED';
           break;
         case 'cancel_order':
+        case 'cancel':
           updateField = 'delivery_status';
           updateValue = 'cancelled';
           responseText = '❌ Order CANCELLED!';
