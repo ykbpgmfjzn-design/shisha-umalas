@@ -186,15 +186,24 @@ const AdminContent = () => {
     }
   }, [selectedUser, fetchUserPurchases]);
 
-  // Auto-refresh orders every 30 seconds
+  // Realtime subscription for orders
   useEffect(() => {
     if (!isAdmin) return;
     
-    const interval = setInterval(() => {
-      fetchAllPurchases();
-    }, 30000);
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchases' },
+        () => {
+          fetchAllPurchases();
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAdmin, fetchAllPurchases]);
 
   const handleAddPurchase = async () => {
