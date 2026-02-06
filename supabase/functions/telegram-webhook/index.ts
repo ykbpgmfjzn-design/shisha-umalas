@@ -243,14 +243,14 @@ serve(async (req) => {
       if (deliveryStatus === 'delivered') { deliveryEmoji = '✅'; deliveryLabel = 'DELIVERED'; }
       if (deliveryStatus === 'cancelled') { deliveryEmoji = '❌'; deliveryLabel = 'CANCELLED'; }
 
-      const originalMessage = callbackQuery.message.text;
+      const originalMessage = callbackQuery.message?.text || '';
       // Update or append status section
       let updatedMessage = originalMessage;
       const statusSection = `\n\n${paymentEmoji} *Payment:* ${paymentLabel}\n${deliveryEmoji} *Delivery:* ${deliveryLabel}`;
       
-      if (originalMessage.includes('*Payment:*')) {
+      if (originalMessage && originalMessage.includes('*Payment:*')) {
         updatedMessage = originalMessage.replace(/\n\n[💳⏳].*\*Payment:\*.*\n[📋👨‍🍳✅❌].*\*Delivery:\*.*/s, statusSection);
-      } else if (originalMessage.includes('⚠️ *Status:*')) {
+      } else if (originalMessage && originalMessage.includes('⚠️ *Status:*')) {
         updatedMessage = originalMessage.replace(/⚠️ \*Status:\*.*$/m, statusSection.trim());
       } else {
         updatedMessage = originalMessage + statusSection;
