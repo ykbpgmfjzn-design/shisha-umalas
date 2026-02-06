@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Clock, Package, CheckCircle, XCircle, CreditCard, Truck } from "lucide-react";
 import { format } from "date-fns";
@@ -25,6 +25,8 @@ const OrderHistory = () => {
   const { user } = useProfile();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -37,6 +39,36 @@ const OrderHistory = () => {
       .limit(50);
 
     if (!error && data) {
+      // Track changes for highlight effect
+      const newUpdated = new Set<string>();
+      
+      data.forEach(order => {
+        const prev = prevOrdersRef.current.get(order.id);
+        if (prev && (prev.payment_status !== order.payment_status || prev.delivery_status !== order.delivery_status)) {
+          newUpdated.add(order.id);
+        }
+      });
+
+      if (newUpdated.size > 0) {
+        setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
+        
+        // Clear highlight after 3 seconds
+        setTimeout(() => {
+          setRecentlyUpdated(prev => {
+            const updated = new Set(prev);
+            newUpdated.forEach(id => updated.delete(id));
+            return updated;
+          });
+        }, 3000);
+      }
+
+      // Update ref with current order states
+      const newMap = new Map<string, { payment_status: string | null; delivery_status: string }>();
+      data.forEach(order => {
+        newMap.set(order.id, { payment_status: order.payment_status, delivery_status: order.delivery_status });
+      });
+      prevOrdersRef.current = newMap;
+      
       setOrders(data);
     }
     setLoading(false);
@@ -169,13 +201,26 @@ const OrderHistory = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map((order, index) => (
+              {orders.map((order, index) => {
+                const isJustUpdated = recentlyUpdated.has(order.id);
+                return (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-card/50 backdrop-blur-sm border border-border/30 rounded-xl p-4"
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    scale: isJustUpdated ? [1, 1.02, 1] : 1,
+                  }}
+                  transition={{ 
+                    delay: index * 0.05,
+                    scale: { duration: 0.3 }
+                  }}
+                  className={`backdrop-blur-sm border rounded-xl p-4 transition-all duration-300 ${
+                    isJustUpdated 
+                      ? "bg-primary/20 ring-2 ring-primary/50 shadow-lg shadow-primary/20 border-primary/50" 
+                      : "bg-card/50 border-border/30"
+                  }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -230,7 +275,8 @@ const OrderHistory = () => {
                     </p>
                   )}
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           )}
         </motion.div>

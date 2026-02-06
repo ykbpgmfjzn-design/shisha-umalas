@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
@@ -40,6 +40,40 @@ const OrdersTable = ({
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
+
+  // Track order changes for highlight effect
+  useEffect(() => {
+    const newUpdated = new Set<string>();
+    
+    orders.forEach(order => {
+      const prev = prevOrdersRef.current.get(order.id);
+      if (prev && (prev.payment_status !== order.payment_status || prev.delivery_status !== order.delivery_status)) {
+        newUpdated.add(order.id);
+      }
+    });
+
+    if (newUpdated.size > 0) {
+      setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
+      
+      // Clear highlight after 3 seconds
+      setTimeout(() => {
+        setRecentlyUpdated(prev => {
+          const updated = new Set(prev);
+          newUpdated.forEach(id => updated.delete(id));
+          return updated;
+        });
+      }, 3000);
+    }
+
+    // Update ref with current order states
+    const newMap = new Map<string, { payment_status: string | null; delivery_status: string }>();
+    orders.forEach(order => {
+      newMap.set(order.id, { payment_status: order.payment_status, delivery_status: order.delivery_status });
+    });
+    prevOrdersRef.current = newMap;
+  }, [orders]);
 
   const filteredOrders = orders
     .filter(order => {
@@ -208,13 +242,26 @@ const OrdersTable = ({
             <p>Нет заказов</p>
           </div>
         ) : (
-          filteredOrders.map((order, index) => (
+          filteredOrders.map((order, index) => {
+            const isJustUpdated = recentlyUpdated.has(order.id);
+            return (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.02 }}
-              className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                scale: isJustUpdated ? [1, 1.02, 1] : 1,
+              }}
+              transition={{ 
+                delay: index * 0.02,
+                scale: { duration: 0.3 }
+              }}
+              className={`p-4 rounded-xl transition-all duration-300 ${
+                isJustUpdated 
+                  ? "bg-primary/20 ring-2 ring-primary/50 shadow-lg shadow-primary/20" 
+                  : "bg-muted/30 hover:bg-muted/50"
+              }`}
             >
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 {/* Order Info */}
@@ -351,7 +398,8 @@ const OrdersTable = ({
                 </div>
               </div>
             </motion.div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

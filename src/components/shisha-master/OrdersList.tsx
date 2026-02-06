@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,40 @@ export default function OrdersList() {
   const [cancelReason, setCancelReason] = useState("");
   const [now, setNow] = useState(new Date());
   const [deliveryTimeMinutes, setDeliveryTimeMinutes] = useState(15);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
+
+  // Track order changes for highlight effect
+  const trackOrderChanges = (orders: OrderWithProfile[]) => {
+    const newUpdated = new Set<string>();
+    
+    orders.forEach(order => {
+      const prev = prevOrdersRef.current.get(order.id);
+      if (prev && (prev.payment_status !== order.payment_status || prev.delivery_status !== order.delivery_status)) {
+        newUpdated.add(order.id);
+      }
+    });
+
+    if (newUpdated.size > 0) {
+      setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
+      
+      // Clear highlight after 3 seconds
+      setTimeout(() => {
+        setRecentlyUpdated(prev => {
+          const updated = new Set(prev);
+          newUpdated.forEach(id => updated.delete(id));
+          return updated;
+        });
+      }, 3000);
+    }
+
+    // Update ref with current order states
+    const newMap = new Map<string, { payment_status: string | null; delivery_status: string }>();
+    orders.forEach(order => {
+      newMap.set(order.id, { payment_status: order.payment_status, delivery_status: order.delivery_status });
+    });
+    prevOrdersRef.current = newMap;
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -130,6 +164,9 @@ export default function OrdersList() {
       })
     );
 
+    // Track changes for highlight effect
+    trackOrderChanges([...activeWithProfiles, ...historyWithProfiles]);
+    
     setActiveOrders(activeWithProfiles);
     setHistoryOrders(historyWithProfiles);
     setLoading(false);
@@ -278,16 +315,26 @@ export default function OrdersList() {
     const loyaltyLevel = order.profile?.loyalty_level || 1;
     const isPaid = order.payment_status?.toLowerCase() === "paid";
     const isPreparing = order.delivery_status === "preparing";
+    const isJustUpdated = recentlyUpdated.has(order.id);
     
     return (
       <motion.div
         key={order.id}
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          scale: isJustUpdated ? [1, 1.02, 1] : 1,
+        }}
         exit={{ opacity: 0, x: -100 }}
         layout
+        transition={{ scale: { duration: 0.3 } }}
       >
-        <Card className={`overflow-hidden border-2 ${borderClass} ${isOverdue || isUrgent ? "animate-pulse" : ""}`}>
+        <Card className={`overflow-hidden border-2 transition-all duration-300 ${
+          isJustUpdated 
+            ? "ring-2 ring-primary shadow-lg shadow-primary/30 border-primary" 
+            : borderClass
+        } ${(isOverdue || isUrgent) && !isJustUpdated ? "animate-pulse" : ""}`}>
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-4">
               {/* Timer circle */}
