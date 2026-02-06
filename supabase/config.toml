@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.update-telegram-status]
 verify_jwt = false
+
+[functions.send-telegram-notification]
+verify_jwt = false
+
+[functions.daily-telegram-summary]
+verify_jwt = false
