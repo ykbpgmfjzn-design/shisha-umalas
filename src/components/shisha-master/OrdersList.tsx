@@ -66,6 +66,20 @@ export default function OrdersList() {
     if (newUpdated.size > 0) {
       setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
       
+      // Show toast notification for updated orders
+      newUpdated.forEach(id => {
+        const order = orders.find(o => o.id === id);
+        if (order) {
+          const prev = prevOrdersRef.current.get(id);
+          const statusChange = prev?.delivery_status !== order.delivery_status 
+            ? `${t("history.delivery")}: ${order.delivery_status}`
+            : `${t("history.payment")}: ${order.payment_status}`;
+          toast.info(t("shishaMaster.orders.statusUpdated") || "Order updated", {
+            description: `${order.hookah_count}x Hookah • ${statusChange}`,
+          });
+        }
+      });
+      
       // Clear highlight after 3 seconds
       setTimeout(() => {
         setRecentlyUpdated(prev => {

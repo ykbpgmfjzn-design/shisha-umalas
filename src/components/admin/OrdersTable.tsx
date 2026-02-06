@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,20 @@ const OrdersTable = ({
 
     if (newUpdated.size > 0) {
       setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
+      
+      // Show toast notification for updated orders
+      newUpdated.forEach(id => {
+        const order = orders.find(o => o.id === id);
+        if (order) {
+          const prev = prevOrdersRef.current.get(id);
+          const statusChange = prev?.delivery_status !== order.delivery_status 
+            ? `Доставка: ${order.delivery_status}`
+            : `Оплата: ${order.payment_status}`;
+          toast.info(`Заказ обновлён`, {
+            description: `#${order.hookah_count} кальян • ${statusChange}`,
+          });
+        }
+      });
       
       // Clear highlight after 3 seconds
       setTimeout(() => {
