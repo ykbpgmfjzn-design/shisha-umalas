@@ -123,26 +123,32 @@ serve(async (req) => {
       let responseText = '';
       let updatedMessage = '';
 
+      let statusEmoji = '';
+      
       switch (action) {
         case 'confirm_paid':
           newStatus = 'paid';
           responseText = '✅ Payment confirmed!';
-          updatedMessage = '💳 *Payment Confirmed*';
+          updatedMessage = '💳 *PAID*';
+          statusEmoji = '💳';
           break;
         case 'start_preparing':
           newStatus = 'preparing';
           responseText = '🚀 Order is being prepared!';
-          updatedMessage = '👨‍🍳 *Preparing Order*';
+          updatedMessage = '👨‍🍳 *PREPARING*';
+          statusEmoji = '👨‍🍳';
           break;
         case 'delivered':
           newStatus = 'delivered';
           responseText = '📦 Order delivered successfully!';
-          updatedMessage = '✅ *Order Delivered*';
+          updatedMessage = '✅ *DELIVERED*';
+          statusEmoji = '✅';
           break;
         case 'cancel_order':
           newStatus = 'cancelled';
           responseText = '❌ Order cancelled.';
-          updatedMessage = '❌ *Order Cancelled*';
+          updatedMessage = '❌ *CANCELLED*';
+          statusEmoji = '❌';
           break;
         default:
           responseText = 'Unknown action';
@@ -180,13 +186,53 @@ serve(async (req) => {
         }),
       });
 
-      // Update the message to show the new status
+      // Get inline keyboard based on new status
+      const getInlineKeyboard = (status: string, oid: string) => {
+        if (status === 'delivered' || status === 'cancelled') {
+          return { inline_keyboard: [] };
+        }
+        if (status === 'paid') {
+          return {
+            inline_keyboard: [
+              [{ text: "🚀 Start Preparing", callback_data: `start_preparing:${oid}` }],
+              [
+                { text: "📦 Delivered", callback_data: `delivered:${oid}` },
+                { text: "❌ Cancel", callback_data: `cancel_order:${oid}` }
+              ]
+            ]
+          };
+        }
+        if (status === 'preparing') {
+          return {
+            inline_keyboard: [
+              [
+                { text: "📦 Delivered", callback_data: `delivered:${oid}` },
+                { text: "❌ Cancel", callback_data: `cancel_order:${oid}` }
+              ]
+            ]
+          };
+        }
+        // Default: pending/unpaid
+        return {
+          inline_keyboard: [
+            [
+              { text: "✅ Confirm Paid", callback_data: `confirm_paid:${oid}` },
+              { text: "🚀 Start Preparing", callback_data: `start_preparing:${oid}` }
+            ],
+            [
+              { text: "📦 Delivered", callback_data: `delivered:${oid}` },
+              { text: "❌ Cancel Order", callback_data: `cancel_order:${oid}` }
+            ]
+          ]
+        };
+      };
+
+      // Update the original message for the user who clicked
       const originalMessage = callbackQuery.message.text;
       const statusLine = originalMessage.includes('*Status:*') 
         ? originalMessage.replace(/\*Status:\*.*$/m, `*Status:* ${updatedMessage.replace(/\*/g, '')}`)
         : `${originalMessage}\n\n${updatedMessage}`;
 
-      // Remove inline keyboard after action is taken
       await fetch(`https://api.telegram.org/bot${telegramToken}/editMessageText`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,25 +241,49 @@ serve(async (req) => {
           message_id: callbackQuery.message.message_id,
           text: statusLine,
           parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: newStatus === 'delivered' || newStatus === 'cancelled' 
-              ? [] // Remove all buttons for final states
-              : newStatus === 'paid' 
-                ? [[
-                    { text: "🚀 Start Preparing", callback_data: `start_preparing:${orderId}` }
-                  ], [
-                    { text: "📦 Delivered", callback_data: `delivered:${orderId}` },
-                    { text: "❌ Cancel", callback_data: `cancel_order:${orderId}` }
-                  ]]
-                : newStatus === 'preparing'
-                  ? [[
-                      { text: "📦 Delivered", callback_data: `delivered:${orderId}` },
-                      { text: "❌ Cancel", callback_data: `cancel_order:${orderId}` }
-                    ]]
-                  : []
-          }
+          reply_markup: getInlineKeyboard(newStatus || '', orderId),
         }),
       });
+
+      // BROADCAST: Send status update to ALL other subscribers
+      if (newStatus && orderId) {
+        const { data: allSubscribers } = await supabase
+          .from('telegram_subscribers')
+          .select('chat_id')
+          .eq('is_active', true);
+
+        if (allSubscribers && allSubscribers.length > 0) {
+          const broadcastMessage = `${statusEmoji} *Order Status Update*
+
+📋 Order: \`${orderId.slice(0, 8)}\`
+📊 New Status: ${updatedMessage}
+👤 Updated by: ${callbackQuery.from.first_name}
+⏰ Time: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}`;
+
+          // Send to all subscribers except the one who clicked
+          const broadcastPromises = allSubscribers
+            .filter(sub => sub.chat_id !== callbackQuery.message.chat.id)
+            .map(async (subscriber) => {
+              try {
+                await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: subscriber.chat_id,
+                    text: broadcastMessage,
+                    parse_mode: 'Markdown',
+                    reply_markup: getInlineKeyboard(newStatus || '', orderId),
+                  }),
+                });
+              } catch (err) {
+                console.error(`Failed to broadcast to ${subscriber.chat_id}:`, err);
+              }
+            });
+
+          await Promise.all(broadcastPromises);
+          console.log(`Broadcasted status update to ${allSubscribers.length - 1} other subscribers`);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), {
