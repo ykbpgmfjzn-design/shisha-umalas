@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, History, Crown } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, History, Crown, CreditCard, ChefHat, Truck } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,7 @@ interface OrderWithProfile {
   amount: number | null;
   notes: string | null;
   payment_status: string | null;
+  delivery_status: string;
   created_at: string;
   paid_at: string | null;
   user_id: string;
@@ -85,18 +86,18 @@ export default function OrdersList() {
   };
 
   const fetchOrders = async () => {
-    // Fetch active orders
+    // Fetch active orders (not delivered and not cancelled)
     const { data: active, error: activeError } = await supabase
       .from("purchases")
       .select("*")
-      .in("payment_status", ["pending", "paid"])
+      .not("delivery_status", "in", '("delivered","cancelled")')
       .order("created_at", { ascending: true });
 
     // Fetch history (delivered/cancelled) - last 50
     const { data: history, error: historyError } = await supabase
       .from("purchases")
       .select("*")
-      .in("payment_status", ["delivered", "cancelled"])
+      .in("delivery_status", ["delivered", "cancelled"])
       .order("paid_at", { ascending: false })
       .limit(50);
 
@@ -170,7 +171,7 @@ export default function OrdersList() {
   const handleMarkDelivered = async (orderId: string) => {
     const { error } = await supabase
       .from("purchases")
-      .update({ payment_status: "delivered", paid_at: new Date().toISOString() })
+      .update({ delivery_status: "delivered", paid_at: new Date().toISOString() })
       .eq("id", orderId);
 
     if (error) {
@@ -182,13 +183,43 @@ export default function OrdersList() {
     fetchOrders();
   };
 
+  const handleMarkPreparing = async (orderId: string) => {
+    const { error } = await supabase
+      .from("purchases")
+      .update({ delivery_status: "preparing" })
+      .eq("id", orderId);
+
+    if (error) {
+      toast.error(t("shishaMaster.orders.error"));
+      return;
+    }
+
+    toast.success(t("shishaMaster.orders.preparing") || "Order is being prepared");
+    fetchOrders();
+  };
+
+  const handleMarkPaid = async (orderId: string) => {
+    const { error } = await supabase
+      .from("purchases")
+      .update({ payment_status: "paid" })
+      .eq("id", orderId);
+
+    if (error) {
+      toast.error(t("shishaMaster.orders.error"));
+      return;
+    }
+
+    toast.success(t("shishaMaster.orders.paid") || "Order marked as paid");
+    fetchOrders();
+  };
+
   const handleCancelOrder = async () => {
     if (!selectedOrderId) return;
 
     const { error } = await supabase
       .from("purchases")
       .update({ 
-        payment_status: "cancelled", 
+        delivery_status: "cancelled", 
         paid_at: new Date().toISOString(),
         notes: cancelReason ? `${t("shishaMaster.orders.cancelReason")}: ${cancelReason}` : null
       })
@@ -225,6 +256,8 @@ export default function OrdersList() {
     const isUrgent = percentRemaining < 25;
     const orderTime = format(new Date(order.created_at), "HH:mm");
     const loyaltyLevel = order.profile?.loyalty_level || 1;
+    const isPaid = order.payment_status?.toLowerCase() === "paid";
+    const isPreparing = order.delivery_status === "preparing";
     
     return (
       <motion.div
@@ -265,9 +298,23 @@ export default function OrdersList() {
                 </div>
               </div>
               
-              <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
-                {order.payment_status === "paid" ? t("admin.paid") : t("admin.pending")}
-              </Badge>
+              {/* Status badges */}
+              <div className="flex flex-col gap-1.5">
+                <Badge 
+                  variant={isPaid ? "default" : "secondary"}
+                  className="flex items-center gap-1"
+                >
+                  <CreditCard className="h-3 w-3" />
+                  {isPaid ? t("admin.paid") : t("admin.pending")}
+                </Badge>
+                <Badge 
+                  variant={isPreparing ? "default" : "outline"}
+                  className={`flex items-center gap-1 ${isPreparing ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""}`}
+                >
+                  {isPreparing ? <ChefHat className="h-3 w-3" /> : <Truck className="h-3 w-3" />}
+                  {isPreparing ? t("shishaMaster.orders.preparing") || "Preparing" : t("shishaMaster.orders.waiting") || "Waiting"}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           
@@ -300,18 +347,48 @@ export default function OrdersList() {
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {/* Payment button */}
+              {!isPaid && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="h-10"
+                  onClick={() => handleMarkPaid(order.id)}
+                >
+                  <CreditCard className="h-4 w-4 mr-1.5" />
+                  {t("shishaMaster.orders.markPaid") || "Mark Paid"}
+                </Button>
+              )}
+              
+              {/* Preparing button */}
+              {!isPreparing && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="h-10"
+                  onClick={() => handleMarkPreparing(order.id)}
+                >
+                  <ChefHat className="h-4 w-4 mr-1.5" />
+                  {t("shishaMaster.orders.startPreparing") || "Start Preparing"}
+                </Button>
+              )}
+              
+              {/* Delivered button */}
               <Button 
-                className="flex-1 h-11" 
+                className="flex-1 h-10" 
                 onClick={() => handleMarkDelivered(order.id)}
               >
-                <CheckCircle className="h-5 w-5 mr-2" />
+                <CheckCircle className="h-4 w-4 mr-1.5" />
                 {t("shishaMaster.orders.markDelivered")}
               </Button>
+              
+              {/* Cancel button */}
               <Button 
                 variant="outline" 
                 size="icon"
-                className="h-11 w-11"
+                className="h-10 w-10"
                 onClick={() => openCancelDialog(order.id)}
               >
                 <XCircle className="h-5 w-5" />
@@ -324,16 +401,17 @@ export default function OrdersList() {
   };
 
   const renderHistoryOrder = (order: OrderWithProfile) => {
-    const isDelivered = order.payment_status === "delivered";
+    const isDelivered = order.delivery_status === "delivered";
+    const isPaid = order.payment_status?.toLowerCase() === "paid";
     
     return (
       <Card key={order.id} className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${isDelivered ? "bg-green-500/10" : "bg-destructive/10"}`}>
+              <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
                 {isDelivered ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5 text-primary" />
                 ) : (
                   <XCircle className="h-5 w-5 text-destructive" />
                 )}
@@ -347,9 +425,16 @@ export default function OrdersList() {
                 </p>
               </div>
             </div>
-            <Badge variant={isDelivered ? "default" : "destructive"}>
-              {isDelivered ? t("shishaMaster.orders.statusDelivered") : t("shishaMaster.orders.statusCancelled")}
-            </Badge>
+            <div className="flex flex-col gap-1">
+              <Badge variant={isPaid ? "default" : "secondary"} className="flex items-center gap-1">
+                <CreditCard className="h-3 w-3" />
+                {isPaid ? t("admin.paid") : t("admin.pending")}
+              </Badge>
+              <Badge variant={isDelivered ? "default" : "destructive"} className="flex items-center gap-1">
+                {isDelivered ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                {isDelivered ? t("shishaMaster.orders.statusDelivered") : t("shishaMaster.orders.statusCancelled")}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         

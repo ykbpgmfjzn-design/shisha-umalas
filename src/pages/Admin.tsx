@@ -62,7 +62,8 @@ const AdminContent = () => {
     fetchAllUserRoles,
     addUserRole,
     removeUserRole,
-    updatePurchaseStatus,
+    updatePaymentStatus,
+    updateDeliveryStatus,
     addPurchase 
   } = useAdmin();
   const { logout } = useLogout();
@@ -230,19 +231,42 @@ const AdminContent = () => {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
-    const { error } = await updatePurchaseStatus(orderId, status);
+  const handleUpdatePaymentStatus = async (orderId: string, status: string) => {
+    const { error } = await updatePaymentStatus(orderId, status);
     
     if (error) {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось обновить статус",
+        description: "Не удалось обновить статус оплаты",
       });
     } else {
       toast({
         title: "Статус обновлён",
-        description: status === "PAID" ? "Заказ отмечен как оплаченный" : "Заказ отменён",
+        description: status === "paid" ? "Заказ отмечен как оплаченный" : "Статус оплаты изменён",
+      });
+      fetchAllPurchases();
+    }
+  };
+
+  const handleUpdateDeliveryStatus = async (orderId: string, status: string) => {
+    const { error } = await updateDeliveryStatus(orderId, status);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось обновить статус доставки",
+      });
+    } else {
+      const statusLabels: Record<string, string> = {
+        preparing: "Заказ готовится",
+        delivered: "Заказ доставлен",
+        cancelled: "Заказ отменён",
+      };
+      toast({
+        title: "Статус обновлён",
+        description: statusLabels[status] || "Статус доставки изменён",
       });
       fetchAllPurchases();
     }
@@ -286,8 +310,10 @@ const AdminContent = () => {
     return allUserRoles.some(r => r.user_id === userId && r.role === "admin");
   };
 
-  // Get pending orders for "Current Orders" view
-  const pendingOrders = allPurchases.filter(p => p.payment_status === "pending");
+  // Get pending orders for "Current Orders" view (not delivered and not cancelled)
+  const pendingOrders = allPurchases.filter(p => 
+    p.delivery_status !== "delivered" && p.delivery_status !== "cancelled"
+  );
 
   if (loading) {
     return (
@@ -403,7 +429,8 @@ const AdminContent = () => {
             <div className="grid lg:grid-cols-2 gap-6">
               <OrdersTable
                 orders={pendingOrders}
-                onUpdateStatus={handleUpdateOrderStatus}
+                onUpdatePaymentStatus={handleUpdatePaymentStatus}
+                onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
                 showFilters={false}
                 title="Текущие заказы"
               />
@@ -415,7 +442,8 @@ const AdminContent = () => {
                 {/* Recent Activity */}
                 <OrdersTable
                   orders={allPurchases.slice(0, 5)}
-                  onUpdateStatus={handleUpdateOrderStatus}
+                  onUpdatePaymentStatus={handleUpdatePaymentStatus}
+                  onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
                   showFilters={false}
                   title="Последние заказы"
                 />
@@ -427,7 +455,8 @@ const AdminContent = () => {
           <TabsContent value="orders">
             <OrdersTable
               orders={allPurchases}
-              onUpdateStatus={handleUpdateOrderStatus}
+              onUpdatePaymentStatus={handleUpdatePaymentStatus}
+              onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
               title="Все заказы"
             />
           </TabsContent>
