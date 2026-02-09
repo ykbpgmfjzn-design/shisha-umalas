@@ -28,8 +28,6 @@ import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
 import DeliverySettings from "@/components/admin/DeliverySettings";
 import FeedbackList from "@/components/admin/FeedbackList";
-import FeedbackChart from "@/components/admin/FeedbackChart";
-import RecentFeedback from "@/components/admin/RecentFeedback";
 import ReservationsList from "@/components/admin/ReservationsList";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import type { Profile } from "@/hooks/useProfile";
@@ -428,11 +426,6 @@ const AdminContent = () => {
               avgRating={feedbackStats.avgRating} 
             />
             
-            {/* Feedback Chart + Recent Feedback */}
-            <div className="grid lg:grid-cols-2 gap-6">
-              <FeedbackChart feedbacks={allFeedbacks} />
-              <RecentFeedback feedbacks={allFeedbacks} />
-            </div>
             
             {/* Current Orders + Settings */}
             <div className="grid lg:grid-cols-2 gap-6">
