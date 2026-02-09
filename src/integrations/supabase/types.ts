@@ -181,6 +181,7 @@ export type Database = {
           amount: number | null
           created_at: string
           customer_name: string | null
+          customer_photo_url: string | null
           delivery_status: string
           discount_applied: number | null
           free_drink_used: boolean | null
@@ -200,6 +201,7 @@ export type Database = {
           amount?: number | null
           created_at?: string
           customer_name?: string | null
+          customer_photo_url?: string | null
           delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
@@ -219,6 +221,7 @@ export type Database = {
           amount?: number | null
           created_at?: string
           customer_name?: string | null
+          customer_photo_url?: string | null
           delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
