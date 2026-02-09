@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
   Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
-  Plus, Trash2, Settings2, Save, X, CalendarDays
+  Plus, Trash2, Settings2, Save, X, CalendarDays, History
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,17 @@ interface MonthlyExpense {
   id: string;
   name: string;
   amount: number;
+}
+
+interface ExpenseSnapshot {
+  month: string; // YYYY-MM
+  total: number;
+  items: MonthlyExpense[];
+}
+
+interface ExpenseData {
+  current: MonthlyExpense[];
+  history: ExpenseSnapshot[];
 }
 
 type Period = "week" | "month" | "quarter" | "year";
@@ -105,6 +116,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const { toast } = useToast();
   const [period, setPeriod] = useState<Period>("month");
   const [expenses, setExpenses] = useState<MonthlyExpense[]>([]);
+  const [expenseHistory, setExpenseHistory] = useState<ExpenseSnapshot[]>([]);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [editExpenses, setEditExpenses] = useState<MonthlyExpense[]>([]);
   const [savingExpenses, setSavingExpenses] = useState(false);
@@ -118,7 +130,15 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       .maybeSingle();
     if (data?.value) {
       try {
-        setExpenses(JSON.parse(data.value));
+        const parsed = JSON.parse(data.value);
+        // Support both old format (array) and new format (object with current/history)
+        if (Array.isArray(parsed)) {
+          setExpenses(parsed);
+          setExpenseHistory([]);
+        } else {
+          setExpenses(parsed.current || []);
+          setExpenseHistory(parsed.history || []);
+        }
       } catch { /* ignore */ }
     }
   }, []);
@@ -129,7 +149,29 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
 
   const saveExpenses = async () => {
     setSavingExpenses(true);
-    const value = JSON.stringify(editExpenses.filter(e => e.name.trim() && e.amount > 0));
+    const cleanedExpenses = editExpenses.filter(e => e.name.trim() && e.amount > 0);
+    const currentTotal = cleanedExpenses.reduce((s, e) => s + e.amount, 0);
+
+    // Create a snapshot for the current month
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    // Update or add snapshot for current month
+    const updatedHistory = [...expenseHistory];
+    const existingIdx = updatedHistory.findIndex(h => h.month === currentMonth);
+    const snapshot: ExpenseSnapshot = { month: currentMonth, total: currentTotal, items: cleanedExpenses };
+    if (existingIdx >= 0) {
+      updatedHistory[existingIdx] = snapshot;
+    } else {
+      updatedHistory.push(snapshot);
+    }
+    // Keep sorted and limit to 24 months
+    updatedHistory.sort((a, b) => a.month.localeCompare(b.month));
+    const trimmedHistory = updatedHistory.slice(-24);
+
+    const expenseData: ExpenseData = { current: cleanedExpenses, history: trimmedHistory };
+    const value = JSON.stringify(expenseData);
+
     const { error } = await supabase
       .from("app_settings")
       .upsert({ key: "monthly_expenses", value, updated_at: new Date().toISOString() }, { onConflict: "key" });
@@ -138,7 +180,8 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       toast({ variant: "destructive", title: "Error", description: error.message });
     } else {
       toast({ title: "Expenses saved" });
-      setExpenses(JSON.parse(value));
+      setExpenses(cleanedExpenses);
+      setExpenseHistory(trimmedHistory);
       setShowExpenseDialog(false);
     }
   };
@@ -150,6 +193,18 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const removeExpenseRow = (id: string) => {
     setEditExpenses(editExpenses.filter(e => e.id !== id));
   };
+
+  // Expense history chart data
+  const expenseChartData = useMemo(() => {
+    return expenseHistory.map(h => {
+      const [y, m] = h.month.split("-");
+      const date = new Date(Number(y), Number(m) - 1);
+      return {
+        label: date.toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
+        total: h.total,
+      };
+    });
+  }, [expenseHistory]);
   const metrics = useMemo(() => {
     const now = new Date();
     const range = getPeriodRange(period);
@@ -310,6 +365,10 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
 
   const ratingChartConfig = {
     avg: { label: "Avg Rating", color: "hsl(var(--golden))" },
+  };
+
+  const expenseChartConfig = {
+    total: { label: "Expenses", color: "hsl(var(--destructive))" },
   };
 
   return (
@@ -609,6 +668,62 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           </Card>
         </motion.div>
       </div>
+
+      {/* Expense History Chart */}
+      {expenseChartData.length > 1 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+          <Card className="bg-card/60 backdrop-blur-xl border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <History className="w-5 h-5 text-muted-foreground" />
+                Expense History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={expenseChartConfig} className="h-[220px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={expenseChartData}>
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                    />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      labelFormatter={(label) => label}
+                    />
+                    <Bar dataKey="total" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} opacity={0.8} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              {/* History details */}
+              <div className="mt-4 space-y-2 max-h-[200px] overflow-y-auto">
+                {[...expenseHistory].reverse().map((snapshot) => {
+                  const [y, m] = snapshot.month.split("-");
+                  const date = new Date(Number(y), Number(m) - 1);
+                  const monthLabel = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+                  return (
+                    <div key={snapshot.month} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-muted/20">
+                      <span className="text-sm capitalize">{monthLabel}</span>
+                      <div className="text-right">
+                        <span className="text-sm font-medium">IDR {snapshot.total.toLocaleString("id-ID")}</span>
+                        <span className="text-xs text-muted-foreground ml-2">({snapshot.items.length} items)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Monthly Expenses Dialog */}
       <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
