@@ -133,8 +133,8 @@ export const useAdmin = () => {
       );
 
       // Only count revenue from paid orders
-      const paidPurchases = purchasesWithProfiles.filter(p => p.payment_status === "PAID");
-      const todayPaidPurchases = todayPurchases.filter(p => p.payment_status === "PAID");
+      const paidPurchases = purchasesWithProfiles.filter(p => p.payment_status?.toLowerCase() === "paid");
+      const todayPaidPurchases = todayPurchases.filter(p => p.payment_status?.toLowerCase() === "paid");
 
       setStats({
         totalOrders: purchasesWithProfiles.length,
