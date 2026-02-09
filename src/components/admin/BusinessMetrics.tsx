@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
   Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
-  Plus, Trash2, Settings2, Save, X, CalendarDays, History, Target, Landmark
+  Plus, Trash2, Settings2, Save, X, CalendarDays, History, Target, Landmark, Copy, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,10 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const [savingExpenses, setSavingExpenses] = useState(false);
   const [initialInvestment, setInitialInvestment] = useState<number>(0);
   const [editInvestment, setEditInvestment] = useState<number>(0);
+  const [editMonth, setEditMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // Load expenses from app_settings
   const loadExpenses = useCallback(async () => {
@@ -150,17 +154,46 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
 
   const totalMonthlyExpenses = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
 
+  // Get expenses for a specific month (falls back to current template)
+  const getExpensesForMonth = useCallback((month: string): MonthlyExpense[] => {
+    const snapshot = expenseHistory.find(h => h.month === month);
+    if (snapshot) return snapshot.items.map(i => ({ ...i, id: crypto.randomUUID() }));
+    return expenses.map(e => ({ ...e, id: crypto.randomUUID() }));
+  }, [expenseHistory, expenses]);
+
+  const openExpenseDialog = useCallback((month?: string) => {
+    const targetMonth = month || (() => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    })();
+    setEditMonth(targetMonth);
+    const monthExpenses = getExpensesForMonth(targetMonth);
+    setEditExpenses(monthExpenses.length > 0 ? monthExpenses : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
+    setEditInvestment(initialInvestment);
+    setShowExpenseDialog(true);
+  }, [getExpensesForMonth, initialInvestment]);
+
+  const navigateEditMonth = (delta: number) => {
+    const [y, m] = editMonth.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    const newMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    setEditMonth(newMonth);
+    const monthExpenses = getExpensesForMonth(newMonth);
+    setEditExpenses(monthExpenses.length > 0 ? monthExpenses : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
+  };
+
+  const copyFromTemplate = () => {
+    setEditExpenses(expenses.map(e => ({ ...e, id: crypto.randomUUID() })));
+  };
+
   const saveExpenses = async () => {
     setSavingExpenses(true);
     const cleanedExpenses = editExpenses.filter(e => e.name.trim() && e.amount > 0);
     const currentTotal = cleanedExpenses.reduce((s, e) => s + e.amount, 0);
 
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
     const updatedHistory = [...expenseHistory];
-    const existingIdx = updatedHistory.findIndex(h => h.month === currentMonth);
-    const snapshot: ExpenseSnapshot = { month: currentMonth, total: currentTotal, items: cleanedExpenses };
+    const existingIdx = updatedHistory.findIndex(h => h.month === editMonth);
+    const snapshot: ExpenseSnapshot = { month: editMonth, total: currentTotal, items: cleanedExpenses };
     if (existingIdx >= 0) {
       updatedHistory[existingIdx] = snapshot;
     } else {
@@ -169,7 +202,14 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     updatedHistory.sort((a, b) => a.month.localeCompare(b.month));
     const trimmedHistory = updatedHistory.slice(-24);
 
-    const expenseData: ExpenseData = { current: cleanedExpenses, history: trimmedHistory };
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const isCurrentMonth = editMonth === currentMonth;
+
+    const expenseData: ExpenseData = {
+      current: isCurrentMonth ? cleanedExpenses : expenses,
+      history: trimmedHistory,
+    };
     const value = JSON.stringify(expenseData);
 
     const [expErr, invErr] = await Promise.all([
@@ -181,8 +221,8 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     if (expErr.error || invErr.error) {
       toast({ variant: "destructive", title: "Error", description: (expErr.error || invErr.error)?.message });
     } else {
-      toast({ title: "Expenses & investment saved" });
-      setExpenses(cleanedExpenses);
+      toast({ title: "Saved" });
+      if (isCurrentMonth) setExpenses(cleanedExpenses);
       setExpenseHistory(trimmedHistory);
       setInitialInvestment(editInvestment);
       setShowExpenseDialog(false);
@@ -508,11 +548,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => {
-                    setEditExpenses(expenses.length > 0 ? [...expenses] : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
-                    setEditInvestment(initialInvestment);
-                    setShowExpenseDialog(true);
-                  }}
+                  onClick={() => openExpenseDialog()}
                 >
                   <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
@@ -574,11 +610,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => {
-                    setEditExpenses(expenses.length > 0 ? [...expenses] : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
-                    setEditInvestment(initialInvestment);
-                    setShowExpenseDialog(true);
-                  }}
+                  onClick={() => openExpenseDialog()}
                 >
                   <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
@@ -843,13 +875,18 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   const date = new Date(Number(y), Number(m) - 1);
                   const monthLabel = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
                   return (
-                    <div key={snapshot.month} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-muted/20">
+                    <button
+                      key={snapshot.month}
+                      onClick={() => openExpenseDialog(snapshot.month)}
+                      className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                    >
                       <span className="text-sm capitalize">{monthLabel}</span>
-                      <div className="text-right">
+                      <div className="text-right flex items-center gap-2">
                         <span className="text-sm font-medium">IDR {snapshot.total.toLocaleString("id-ID")}</span>
-                        <span className="text-xs text-muted-foreground ml-2">({snapshot.items.length} items)</span>
+                        <span className="text-xs text-muted-foreground">({snapshot.items.length} items)</span>
+                        <Settings2 className="w-3 h-3 text-muted-foreground" />
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -879,8 +916,37 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
             />
           </div>
 
-          <label className="text-sm font-medium">Monthly Recurring Expenses</label>
-          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+          {/* Month Selector */}
+          <div className="flex items-center justify-between pb-3 border-b border-border/30">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateEditMonth(-1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-center">
+              <p className="text-sm font-medium capitalize">
+                {(() => {
+                  const [y, m] = editMonth.split("-");
+                  return new Date(Number(y), Number(m) - 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+                })()}
+              </p>
+              {expenseHistory.find(h => h.month === editMonth) && (
+                <p className="text-xs text-muted-foreground">Has saved data</p>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateEditMonth(1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Expenses for this month</label>
+            {expenses.length > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs gap-1 h-7" onClick={copyFromTemplate}>
+                <Copy className="w-3 h-3" />
+                Copy template
+              </Button>
+            )}
+          </div>
+          <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
             {editExpenses.map((expense, idx) => (
               <div key={expense.id} className="flex items-center gap-2">
                 <Input
@@ -924,7 +990,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           </Button>
           {editExpenses.length > 0 && (
             <div className="text-sm text-muted-foreground text-right">
-              Total: IDR {editExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString("id-ID")}/month
+              Total: IDR {editExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString("id-ID")}
             </div>
           )}
           <DialogFooter>
