@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save } from "lucide-react";
+import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, X, Loader2 } from "lucide-react";
 import { menuItems, MenuItem } from "@/data/menuItems";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -100,6 +100,8 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [notes, setNotes] = useState("");
+  const [customerPhotoUrl, setCustomerPhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("pending");
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
   const [submitting, setSubmitting] = useState(false);
@@ -199,8 +201,36 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     setNotes("");
     setCustomerName("");
     setSelectedCustomer(null);
+    setCustomerPhotoUrl(null);
     setPaymentStatus("pending");
     setDeliveryStatus("pending");
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("customer-photos")
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from("customer-photos")
+        .getPublicUrl(fileName);
+      setCustomerPhotoUrl(urlData.publicUrl);
+    } catch (err: any) {
+      console.error("Photo upload error:", err);
+      toast.error(err.message || "Upload error");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const removePhoto = () => {
+    setCustomerPhotoUrl(null);
   };
 
   const handleSubmit = async () => {
@@ -228,6 +258,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       notes: fullNotes,
       payment_status: paymentStatus,
       delivery_status: deliveryStatus,
+      customer_photo_url: customerPhotoUrl,
     };
 
     if (selectedCustomer) {
@@ -527,6 +558,45 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
             />
+          </div>
+
+          {/* Customer Photo */}
+          <div className="space-y-2">
+            <Label className="text-xs">{t("shishaMaster.form.customerPhoto")}</Label>
+            {customerPhotoUrl ? (
+              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border">
+                <img src={customerPhotoUrl} alt="Customer" className="w-full h-full object-cover" />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-1 right-1 h-6 w-6"
+                  onClick={removePhoto}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Button variant="outline" size="sm" asChild disabled={uploadingPhoto}>
+                  <span>
+                    {uploadingPhoto ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4 mr-2" />
+                    )}
+                    {t("shishaMaster.form.uploadPhoto")}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                />
+              </label>
+            )}
           </div>
         </CardContent>
       </Card>
