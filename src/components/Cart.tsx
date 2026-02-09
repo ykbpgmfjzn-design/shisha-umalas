@@ -16,6 +16,7 @@ const Cart = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [autoSubmitTriggered, setAutoSubmitTriggered] = useState(false);
@@ -42,28 +43,29 @@ const Cart = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
       if (session?.user) {
-        fetchRoomNumber(session.user.id);
+        fetchProfileData(session.user.id);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user || null);
       if (session?.user) {
-        fetchRoomNumber(session.user.id);
+        fetchProfileData(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchRoomNumber = async (userId: string) => {
+  const fetchProfileData = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("room_number")
+      .select("room_number, phone")
       .eq("id", userId)
       .single();
     
     setRoomNumber(data?.room_number || null);
+    setPhone(data?.phone || null);
   };
 
   const handleSubmitOrder = useCallback(async (): Promise<boolean> => {
@@ -93,6 +95,14 @@ const Cart = () => {
     if (!roomNumber) {
       toast.error(t("cart.roomRequired"));
       navigate("/profile?focus=room&returnToCart=true");
+      setIsOpen(false);
+      return false;
+    }
+
+    // Check if phone number is set
+    if (!phone) {
+      toast.error(t("cart.phoneRequired"));
+      navigate("/profile?focus=phone&returnToCart=true");
       setIsOpen(false);
       return false;
     }

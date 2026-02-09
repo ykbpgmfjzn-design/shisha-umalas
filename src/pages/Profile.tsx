@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Crown, Gift, Coffee, Cookie, Star, 
-  Building2, Users, Sparkles, X, LogOut, Calendar, Hash
+  Building2, Users, Sparkles, X, LogOut, Calendar, Hash, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,8 @@ const Profile = () => {
     profile, 
     loyaltyLevels,
     loading,
-    updateRoomNumber, 
+    updateRoomNumber,
+    updatePhone,
     getCurrentLevelInfo,
     getNextLevelInfo,
     getHookahsToNextLevel 
@@ -36,8 +37,11 @@ const Profile = () => {
   
   const [roomInput, setRoomInput] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [saving, setSaving] = useState(false);
   const roomInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   const shouldReturnToCart = searchParams.get('returnToCart') === 'true';
 
@@ -46,6 +50,9 @@ const Profile = () => {
     if (searchParams.get('focus') === 'room' && !loading && profile) {
       setIsEditing(true);
     }
+    if (searchParams.get('focus') === 'phone' && !loading && profile) {
+      setIsEditingPhone(true);
+    }
   }, [searchParams, loading, profile]);
 
   // Auto-focus room input when editing starts
@@ -53,7 +60,10 @@ const Profile = () => {
     if (isEditing && roomInputRef.current) {
       roomInputRef.current.focus();
     }
-  }, [isEditing]);
+    if (isEditingPhone && phoneInputRef.current) {
+      phoneInputRef.current.focus();
+    }
+  }, [isEditing, isEditingPhone]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -64,6 +74,9 @@ const Profile = () => {
   useEffect(() => {
     if (profile?.room_number) {
       setRoomInput(profile.room_number);
+    }
+    if (profile?.phone) {
+      setPhoneInput(profile.phone);
     }
   }, [profile]);
 
@@ -117,6 +130,29 @@ const Profile = () => {
         title: t("profile.statusChanged"),
         description: t("profile.nowRegularGuest"),
       });
+    }
+  };
+
+  const handleSavePhone = async () => {
+    setSaving(true);
+    const { error } = await updatePhone(phoneInput.trim() || null);
+    setSaving(false);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: t("profile.error"),
+        description: t("profile.saveError"),
+      });
+    } else {
+      toast({
+        title: t("profile.phoneUpdated"),
+      });
+      setIsEditingPhone(false);
+      
+      if (shouldReturnToCart && phoneInput.trim()) {
+        navigate('/?openCart=true');
+      }
     }
   };
 
@@ -289,6 +325,53 @@ const Profile = () => {
               {profile.guest_type === "special" 
                 ? t("profile.specialBenefits") 
                 : t("profile.specifyForBenefits")}
+            </p>
+          </div>
+
+          {/* WhatsApp Phone Editor */}
+          <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-green-500" />
+              <label className="text-sm text-muted-foreground font-medium">{t("profile.whatsappPhone")}</label>
+            </div>
+            {isEditingPhone ? (
+              <div className="flex gap-2">
+                <Input
+                  ref={phoneInputRef}
+                  placeholder={t("profile.phonePlaceholder")}
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  className="bg-background/50"
+                  type="tel"
+                />
+                <Button
+                  onClick={handleSavePhone}
+                  disabled={saving}
+                  className="bg-golden hover:bg-golden/90"
+                >
+                  {saving ? "..." : t("profile.save")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditingPhone(false);
+                    setPhoneInput(profile.phone || "");
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12"
+                onClick={() => setIsEditingPhone(true)}
+              >
+                {profile.phone || t("profile.specifyPhone")}
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {t("profile.phoneRequired")}
             </p>
           </div>
 
