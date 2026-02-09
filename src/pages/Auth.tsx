@@ -94,7 +94,7 @@ const AuthContent = () => {
         }
 
         // Log successful login
-        logActivity('auth', 'Вход в систему', { email: email.trim() });
+        logActivity('auth', 'User login', { email: email.trim() });
 
         toast({
           title: t("auth.welcome"),
@@ -129,7 +129,7 @@ const AuthContent = () => {
         }
 
         // Log signup
-        logActivity('auth', 'Регистрация', { email: email.trim() });
+        logActivity('auth', 'User signup', { email: email.trim() });
 
         toast({
           title: t("auth.signupSuccess"),

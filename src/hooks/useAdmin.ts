@@ -272,7 +272,7 @@ export const useAdmin = () => {
         delivered: "Order delivered",
         cancelled: "Order cancelled",
       };
-      await logActivity('order', actionMap[status] || `Статус доставки: ${status}`, {
+      await logActivity('order', actionMap[status] || `Delivery status: ${status}`, {
         purchase_id: purchaseId,
         delivery_status: status,
         hookah_count: data.hookah_count,

@@ -91,7 +91,7 @@ const Reservation = () => {
       if (error) throw error;
 
       // Also log activity for backwards compatibility
-      await logActivity('reservation', 'Бронирование создано', {
+      await logActivity('reservation', 'Reservation created', {
         date: format(date, 'yyyy-MM-dd'),
         time,
         party_size: partySize,

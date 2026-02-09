@@ -109,7 +109,7 @@ const Feedback = () => {
     });
     
     if (error) {
-      toast.error("Ошибка при отправке отзыва");
+      toast.error("Error submitting feedback");
       console.error(error);
     } else {
       // Send Telegram notification
@@ -127,7 +127,7 @@ const Feedback = () => {
         console.error('Failed to send Telegram notification:', telegramError);
       }
 
-      await logActivity('feedback', 'Отзыв отправлен', {
+      await logActivity('feedback', 'Feedback submitted', {
         rating,
         has_message: !!feedback,
         has_photo: !!photoUrl,
