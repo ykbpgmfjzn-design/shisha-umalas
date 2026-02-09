@@ -288,16 +288,19 @@ export default function AnalyticsDashboard() {
             <CardHeader>
               <CardTitle className="text-lg font-display">Traffic Sources</CardTitle>
             </CardHeader>
-            <CardContent>
+             <CardContent>
               <div className="space-y-3">
-                {data?.trafficSources.slice(0, 6).map((source, index) => (
+                {data?.trafficSources.slice(0, 8).map((source, index) => (
                   <div key={source.source} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-foreground capitalize">
-                        {source.source === "(direct)" ? "Direct" : 
-                         source.source === "(not set)" ? "Unknown" : 
-                         source.source}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-foreground font-medium">
+                          {source.source}
+                        </span>
+                        {source.source === "DOKU Payment" && (
+                          <span className="text-xs text-muted-foreground">(payment redirect)</span>
+                        )}
+                      </div>
                       <span className="text-muted-foreground">
                         {source.visits} ({source.percentage}%)
                       </span>
