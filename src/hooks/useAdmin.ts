@@ -26,6 +26,7 @@ export interface PurchaseWithProfile {
   delivery_status: string;
   paid_at: string | null;
   xendit_invoice_url: string | null;
+  customer_name: string | null;
   // Joined profile data
   profile?: {
     email: string | null;

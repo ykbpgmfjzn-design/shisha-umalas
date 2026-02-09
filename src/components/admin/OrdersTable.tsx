@@ -286,21 +286,34 @@ const OrdersTable = ({
                     )}
                   </div>
                   
-                  {order.profile && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      {order.profile.guest_type === "special" ? (
-                        <Building2 className="w-3 h-3 text-primary" />
-                      ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    {order.profile ? (
+                      <>
+                        {order.profile.guest_type === "special" ? (
+                          <Building2 className="w-3 h-3 text-primary" />
+                        ) : (
+                          <User className="w-3 h-3" />
+                        )}
+                        <span>{order.profile.full_name || order.profile.email || "No email"}</span>
+                        {order.profile.room_number && (
+                          <Badge variant="outline" className="text-xs">
+                            Room {order.profile.room_number}
+                          </Badge>
+                        )}
+                      </>
+                    ) : order.customer_name ? (
+                      <>
                         <User className="w-3 h-3" />
-                      )}
-                      <span>{order.profile.email || "No email"}</span>
-                      {order.profile.room_number && (
-                        <Badge variant="outline" className="text-xs">
-                          Room {order.profile.room_number}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                        <span>{order.customer_name}</span>
+                        <Badge variant="outline" className="text-xs">Walk-in</Badge>
+                      </>
+                    ) : (
+                      <>
+                        <User className="w-3 h-3 text-muted-foreground" />
+                        <span className="italic">Guest</span>
+                      </>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                     <div className="flex items-center gap-1">
