@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
   Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
-  Plus, Trash2, Settings2, Save, X, CalendarDays, History
+  Plus, Trash2, Settings2, Save, X, CalendarDays, History, Target, Landmark
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,18 +120,18 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [editExpenses, setEditExpenses] = useState<MonthlyExpense[]>([]);
   const [savingExpenses, setSavingExpenses] = useState(false);
+  const [initialInvestment, setInitialInvestment] = useState<number>(0);
+  const [editInvestment, setEditInvestment] = useState<number>(0);
 
   // Load expenses from app_settings
   const loadExpenses = useCallback(async () => {
-    const { data } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "monthly_expenses")
-      .maybeSingle();
-    if (data?.value) {
+    const [expRes, invRes] = await Promise.all([
+      supabase.from("app_settings").select("value").eq("key", "monthly_expenses").maybeSingle(),
+      supabase.from("app_settings").select("value").eq("key", "initial_investment").maybeSingle(),
+    ]);
+    if (expRes.data?.value) {
       try {
-        const parsed = JSON.parse(data.value);
-        // Support both old format (array) and new format (object with current/history)
+        const parsed = JSON.parse(expRes.data.value);
         if (Array.isArray(parsed)) {
           setExpenses(parsed);
           setExpenseHistory([]);
@@ -140,6 +140,9 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           setExpenseHistory(parsed.history || []);
         }
       } catch { /* ignore */ }
+    }
+    if (invRes.data?.value) {
+      try { setInitialInvestment(Number(invRes.data.value) || 0); } catch { /* ignore */ }
     }
   }, []);
 
@@ -152,11 +155,9 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     const cleanedExpenses = editExpenses.filter(e => e.name.trim() && e.amount > 0);
     const currentTotal = cleanedExpenses.reduce((s, e) => s + e.amount, 0);
 
-    // Create a snapshot for the current month
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-    // Update or add snapshot for current month
     const updatedHistory = [...expenseHistory];
     const existingIdx = updatedHistory.findIndex(h => h.month === currentMonth);
     const snapshot: ExpenseSnapshot = { month: currentMonth, total: currentTotal, items: cleanedExpenses };
@@ -165,23 +166,25 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     } else {
       updatedHistory.push(snapshot);
     }
-    // Keep sorted and limit to 24 months
     updatedHistory.sort((a, b) => a.month.localeCompare(b.month));
     const trimmedHistory = updatedHistory.slice(-24);
 
     const expenseData: ExpenseData = { current: cleanedExpenses, history: trimmedHistory };
     const value = JSON.stringify(expenseData);
 
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert({ key: "monthly_expenses", value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    const [expErr, invErr] = await Promise.all([
+      supabase.from("app_settings").upsert({ key: "monthly_expenses", value, updated_at: new Date().toISOString() }, { onConflict: "key" }),
+      supabase.from("app_settings").upsert({ key: "initial_investment", value: String(editInvestment), updated_at: new Date().toISOString() }, { onConflict: "key" }),
+    ]);
+
     setSavingExpenses(false);
-    if (error) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+    if (expErr.error || invErr.error) {
+      toast({ variant: "destructive", title: "Error", description: (expErr.error || invErr.error)?.message });
     } else {
-      toast({ title: "Expenses saved" });
+      toast({ title: "Expenses & investment saved" });
       setExpenses(cleanedExpenses);
       setExpenseHistory(trimmedHistory);
+      setInitialInvestment(editInvestment);
       setShowExpenseDialog(false);
     }
   };
@@ -507,6 +510,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   className="h-7 w-7"
                   onClick={() => {
                     setEditExpenses(expenses.length > 0 ? [...expenses] : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
+                    setEditInvestment(initialInvestment);
                     setShowExpenseDialog(true);
                   }}
                 >
@@ -548,6 +552,129 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
               </div>
               <p className="text-xl font-bold">{formatIDR(metrics.clv)}</p>
               <p className="text-xs text-muted-foreground mt-1">~{metrics.avgOrdersPerCustomer.toFixed(1)} orders/customer</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Investment & Break-even Row */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Initial Investment */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}>
+          <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-orange-400/10">
+                    <Landmark className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Initial Investment</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    setEditExpenses(expenses.length > 0 ? [...expenses] : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
+                    setEditInvestment(initialInvestment);
+                    setShowExpenseDialog(true);
+                  }}
+                >
+                  <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+              </div>
+              <p className="text-xl font-bold">{formatIDR(initialInvestment)}</p>
+              {(() => {
+                const allPaidTotal = paidOnly(purchases).reduce((s, p) => s + (p.amount || 0), 0);
+                const totalExpensesAllTime = expenseHistory.reduce((s, h) => s + h.total, 0);
+                const totalProfit = allPaidTotal - totalExpensesAllTime;
+                const recovered = initialInvestment > 0 ? Math.min(100, (totalProfit / initialInvestment) * 100) : 0;
+                return (
+                  <div className="mt-2 pt-2 border-t border-border/30 space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Recovered</span>
+                      <span className={recovered >= 100 ? "text-emerald-400 font-medium" : ""}>{recovered.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${recovered >= 100 ? "bg-emerald-400" : "bg-orange-400"}`}
+                        style={{ width: `${Math.max(0, Math.min(100, recovered))}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+              {initialInvestment === 0 && (
+                <p className="text-xs text-orange-400 mt-2">⚠ Set investment amount</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Break-even Point */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.39 }}>
+          <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-2 rounded-lg bg-teal-400/10">
+                  <Target className="w-4 h-4 text-teal-400" />
+                </div>
+                <p className="text-xs text-muted-foreground">Break-even Point</p>
+              </div>
+              {(() => {
+                const monthlyProfit = metrics.grossProfit;
+                const allPaidTotal = paidOnly(purchases).reduce((s, p) => s + (p.amount || 0), 0);
+                const totalExpensesAllTime = expenseHistory.reduce((s, h) => s + h.total, 0);
+                const totalNetProfit = allPaidTotal - totalExpensesAllTime;
+                const alreadyReached = initialInvestment > 0 && totalNetProfit >= initialInvestment;
+
+                if (initialInvestment === 0 || totalMonthlyExpenses === 0) {
+                  return (
+                    <>
+                      <p className="text-xl font-bold text-muted-foreground">—</p>
+                      <p className="text-xs text-orange-400 mt-1">⚠ Set investment & expenses first</p>
+                    </>
+                  );
+                }
+
+                if (alreadyReached) {
+                  return (
+                    <>
+                      <p className="text-xl font-bold text-emerald-400">✓ Reached!</p>
+                      <div className="mt-2 pt-2 border-t border-border/30 space-y-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          Net profit: {formatIDR(totalNetProfit)}
+                        </p>
+                        <p className="text-xs text-emerald-400 font-medium">
+                          Surplus: {formatIDR(totalNetProfit - initialInvestment)}
+                        </p>
+                      </div>
+                    </>
+                  );
+                }
+
+                const remaining = initialInvestment - totalNetProfit;
+                const monthsToBreakeven = monthlyProfit > 0 ? Math.ceil(remaining / monthlyProfit) : null;
+
+                return (
+                  <>
+                    <p className="text-xl font-bold">
+                      {monthsToBreakeven !== null ? `~${monthsToBreakeven} mo` : "∞"}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-border/30 space-y-0.5">
+                      <p className="text-xs text-muted-foreground">
+                        Remaining: {formatIDR(remaining)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Monthly profit: {formatIDR(monthlyProfit)}
+                      </p>
+                      {monthlyProfit <= 0 && (
+                        <p className="text-xs text-destructive">Monthly profit ≤ 0</p>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </motion.div>
@@ -735,8 +862,24 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Monthly Recurring Expenses</DialogTitle>
+            <DialogTitle>Expenses & Investment</DialogTitle>
           </DialogHeader>
+
+          {/* Initial Investment */}
+          <div className="space-y-2 pb-3 border-b border-border/30">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Landmark className="w-4 h-4 text-orange-400" />
+              Initial Investment (IDR)
+            </label>
+            <Input
+              type="number"
+              placeholder="Total initial investment"
+              value={editInvestment || ""}
+              onChange={(e) => setEditInvestment(Number(e.target.value) || 0)}
+            />
+          </div>
+
+          <label className="text-sm font-medium">Monthly Recurring Expenses</label>
           <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
             {editExpenses.map((expense, idx) => (
               <div key={expense.id} className="flex items-center gap-2">
