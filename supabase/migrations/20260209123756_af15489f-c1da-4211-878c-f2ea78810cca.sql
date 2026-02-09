@@ -1,0 +1,1 @@
+DELETE FROM public.purchases WHERE id != 'f757030a-0a99-4756-be1d-6e00be134e67';
