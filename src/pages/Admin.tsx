@@ -23,6 +23,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OrderNotifications from "@/components/OrderNotifications";
 import DashboardStats from "@/components/admin/DashboardStats";
+import BusinessMetrics from "@/components/admin/BusinessMetrics";
 import OrdersTable from "@/components/admin/OrdersTable";
 import UsersTable from "@/components/admin/UsersTable";
 import UserDetails from "@/components/admin/UserDetails";
@@ -420,10 +421,10 @@ const AdminContent = () => {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            <DashboardStats 
-              stats={stats} 
-              feedbackCount={feedbackStats.count} 
-              avgRating={feedbackStats.avgRating} 
+            <BusinessMetrics
+              purchases={allPurchases}
+              feedbacks={allFeedbacks}
+              totalUsers={stats.totalUsers}
             />
             
             
