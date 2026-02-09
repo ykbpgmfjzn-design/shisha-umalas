@@ -15,11 +15,11 @@ const Index = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
-      toast.success('Оплата прошла успешно! / Payment successful!');
+      toast.success('Payment successful!');
       searchParams.delete('payment');
       setSearchParams(searchParams, { replace: true });
     } else if (paymentStatus === 'failed') {
-      toast.error('Ошибка оплаты. Попробуйте снова. / Payment failed. Please try again.');
+      toast.error('Payment failed. Please try again.');
       searchParams.delete('payment');
       setSearchParams(searchParams, { replace: true });
     }

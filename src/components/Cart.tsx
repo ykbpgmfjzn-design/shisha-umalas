@@ -129,7 +129,7 @@ const Cart = () => {
       if (error) throw error;
 
       // Log order creation
-      await logActivity('order', 'Новый заказ создан', {
+      await logActivity('order', 'New order created', {
         purchase_id: data.id,
         hookah_count: currentHookahCount,
         amount: currentTotalPrice,
