@@ -186,6 +186,24 @@ serve(async (req) => {
           responseText = `❌ Error: ${updateError.message}`;
         } else {
           console.log(`Order ${orderId}: ${updateField} = ${updateValue}`);
+          
+          // Log activity for status change
+          const activityType = updateField === 'payment_status' ? 'payment' : 'order';
+          const activityAction = updateField === 'payment_status'
+            ? `Payment status changed to ${updateValue} via Telegram`
+            : `Delivery status changed to ${updateValue} via Telegram`;
+          
+          await supabase.rpc('log_activity', {
+            _activity_type: activityType,
+            _action: activityAction,
+            _details: {
+              order_id: orderId,
+              field: updateField,
+              new_value: updateValue,
+              updated_by: callbackQuery.from.first_name,
+              source: 'telegram'
+            }
+          });
         }
       }
 
