@@ -55,13 +55,13 @@ interface ActivityLog {
 }
 
 const ACTIVITY_TYPES = [
-  { value: 'auth', label: 'Вход в систему', icon: LogIn },
-  { value: 'order', label: 'Заказы', icon: ShoppingCart },
-  { value: 'payment', label: 'Платежи', icon: CreditCard },
-  { value: 'profile', label: 'Профили', icon: User },
-  { value: 'admin', label: 'Админ действия', icon: Shield },
-  { value: 'feedback', label: 'Отзывы', icon: MessageSquare },
-  { value: 'reservation', label: 'Бронирования', icon: CalendarIcon },
+  { value: 'auth', label: 'Authentication', icon: LogIn },
+  { value: 'order', label: 'Orders', icon: ShoppingCart },
+  { value: 'payment', label: 'Payments', icon: CreditCard },
+  { value: 'profile', label: 'Profiles', icon: User },
+  { value: 'admin', label: 'Admin Actions', icon: Shield },
+  { value: 'feedback', label: 'Feedback', icon: MessageSquare },
+  { value: 'reservation', label: 'Reservations', icon: CalendarIcon },
 ];
 
 const ITEMS_PER_PAGE = 20;
@@ -201,11 +201,11 @@ function ActivityLogsContent() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Дата', 'Время', 'Пользователь', 'Тип', 'Действие', 'Детали'];
+    const headers = ['Date', 'Time', 'User', 'Type', 'Action', 'Details'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), "dd.MM.yyyy"),
       format(new Date(log.created_at), "HH:mm:ss"),
-      log.profile?.email || log.profile?.full_name || 'Гость',
+      log.profile?.email || log.profile?.full_name || 'Guest',
       log.activity_type,
       log.action,
       getDetailsText(log.details).replace(/•/g, ',')
@@ -245,16 +245,16 @@ function ActivityLogsContent() {
     const parts: string[] = [];
     
     if (obj.email) parts.push(`Email: ${obj.email}`);
-    if (obj.target_user_email) parts.push(`Пользователь: ${obj.target_user_email}`);
-    if (obj.added_role) parts.push(`Роль: ${obj.added_role}`);
-    if (obj.removed_role) parts.push(`Роль: ${obj.removed_role}`);
-    if (obj.hookah_count) parts.push(`Кальянов: ${obj.hookah_count}`);
-    if (obj.amount) parts.push(`Сумма: IDR ${Number(obj.amount).toLocaleString()}`);
-    if (obj.rating) parts.push(`Рейтинг: ${obj.rating}★`);
-    if (obj.party_size) parts.push(`Гостей: ${obj.party_size}`);
-    if (obj.date) parts.push(`Дата: ${obj.date}`);
-    if (obj.time) parts.push(`Время: ${obj.time}`);
-    if (obj.new_status) parts.push(`Статус: ${obj.new_status}`);
+    if (obj.target_user_email) parts.push(`User: ${obj.target_user_email}`);
+    if (obj.added_role) parts.push(`Role: ${obj.added_role}`);
+    if (obj.removed_role) parts.push(`Role: ${obj.removed_role}`);
+    if (obj.hookah_count) parts.push(`Hookahs: ${obj.hookah_count}`);
+    if (obj.amount) parts.push(`Amount: IDR ${Number(obj.amount).toLocaleString()}`);
+    if (obj.rating) parts.push(`Rating: ${obj.rating}★`);
+    if (obj.party_size) parts.push(`Guests: ${obj.party_size}`);
+    if (obj.date) parts.push(`Date: ${obj.date}`);
+    if (obj.time) parts.push(`Time: ${obj.time}`);
+    if (obj.new_status) parts.push(`Status: ${obj.new_status}`);
     
     return parts.join(' • ');
   };
@@ -277,7 +277,7 @@ function ActivityLogsContent() {
             </Button>
             <div className="flex items-center gap-2">
               <Activity className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">Логи активности</h1>
+              <h1 className="text-xl font-bold">Activity Logs</h1>
             </div>
           </div>
           <LanguageSelector />
@@ -295,7 +295,7 @@ function ActivityLogsContent() {
               className="gap-2"
             >
               <Filter className="h-4 w-4" />
-              Фильтр
+              Filter
             </Button>
 
             {/* Date Range */}
@@ -312,7 +312,7 @@ function ActivityLogsContent() {
                       format(dateRange.from, "dd/MM/yyyy")
                     )
                   ) : (
-                    "Период"
+                    "Period"
                   )}
                 </Button>
               </PopoverTrigger>
@@ -337,7 +337,7 @@ function ActivityLogsContent() {
                 onClick={clearFilters}
                 className="text-primary border-primary"
               >
-                Сбросить всё
+                Clear All
               </Button>
             )}
 
@@ -355,7 +355,7 @@ function ActivityLogsContent() {
             )}
 
             <div className="ml-auto text-sm text-muted-foreground">
-              Показано {paginatedLogs.length} из {filteredLogs.length}
+              Showing {paginatedLogs.length} of {filteredLogs.length}
             </div>
           </div>
 
@@ -364,7 +364,7 @@ function ActivityLogsContent() {
             <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* User Filter */}
               <div>
-                <h3 className="text-sm font-medium mb-3">Пользователь</h3>
+                <h3 className="text-sm font-medium mb-3">User</h3>
                 <ScrollArea className="h-48 border rounded-md p-2">
                   {allUsers.map(user => (
                     <div key={user.id} className="flex items-center gap-2 py-1">
@@ -386,7 +386,7 @@ function ActivityLogsContent() {
 
               {/* Activity Type Filter */}
               <div>
-                <h3 className="text-sm font-medium mb-3">Тип активности</h3>
+                <h3 className="text-sm font-medium mb-3">Activity Type</h3>
                 <div className="space-y-2">
                   {ACTIVITY_TYPES.map(type => (
                     <div key={type.value} className="flex items-center gap-2">
@@ -417,17 +417,17 @@ function ActivityLogsContent() {
         ) : filteredLogs.length === 0 ? (
           <div className="bg-card rounded-lg border border-border p-12 text-center text-muted-foreground">
             <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Нет записей активности</p>
+            <p>No activity records</p>
           </div>
         ) : (
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[180px]">Дата и время</TableHead>
-                  <TableHead className="w-[200px]">Пользователь</TableHead>
-                  <TableHead>Действие</TableHead>
-                  <TableHead className="w-[300px]">Детали</TableHead>
+                  <TableHead className="w-[180px]">Date & Time</TableHead>
+                  <TableHead className="w-[200px]">User</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead className="w-[300px]">Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -440,7 +440,7 @@ function ActivityLogsContent() {
                     <TableCell>
                       <div className="text-sm">
                         {log.profile?.email || log.profile?.full_name || 
-                          <span className="text-muted-foreground italic">Гость</span>
+                          <span className="text-muted-foreground italic">Guest</span>
                         }
                       </div>
                     </TableCell>
@@ -464,7 +464,7 @@ function ActivityLogsContent() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                 <div className="text-sm text-muted-foreground">
-                  Показано {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} из {filteredLogs.length}
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

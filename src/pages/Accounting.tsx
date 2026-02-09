@@ -170,7 +170,7 @@ const AccountingContent = () => {
     });
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ru-RU", {
+    return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
