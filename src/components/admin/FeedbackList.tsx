@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -50,7 +49,6 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       return;
     }
 
-    // Fetch user profiles for each feedback
     const feedbacksWithUsers = await Promise.all(
       (data || []).map(async (fb) => {
         if (fb.user_id) {
@@ -72,7 +70,6 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
 
     setFeedbacks(feedbacksWithUsers as Feedback[]);
     
-    // Calculate stats
     const count = feedbacksWithUsers.length;
     const avgRating = count > 0 
       ? feedbacksWithUsers.reduce((sum, fb) => sum + fb.rating, 0) / count 
@@ -87,66 +84,47 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
   }, []);
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from("feedback")
-      .delete()
-      .eq("id", id);
-
+    const { error } = await supabase.from("feedback").delete().eq("id", id);
     if (error) {
-      toast.error("Не удалось удалить отзыв");
+      toast.error("Failed to delete feedback");
     } else {
-      toast.success("Отзыв удалён");
+      toast.success("Feedback deleted");
       fetchFeedbacks();
     }
   };
 
   const handleApprove = async (id: string) => {
-    const { error } = await supabase
-      .from("feedback")
-      .update({ is_approved: true })
-      .eq("id", id);
-
+    const { error } = await supabase.from("feedback").update({ is_approved: true }).eq("id", id);
     if (error) {
-      toast.error("Не удалось одобрить отзыв");
+      toast.error("Failed to approve feedback");
     } else {
-      toast.success("Отзыв одобрен и опубликован");
+      toast.success("Feedback approved and published");
       fetchFeedbacks();
     }
   };
 
   const handleReject = async (id: string) => {
-    const { error } = await supabase
-      .from("feedback")
-      .update({ is_approved: false })
-      .eq("id", id);
-
+    const { error } = await supabase.from("feedback").update({ is_approved: false }).eq("id", id);
     if (error) {
-      toast.error("Не удалось отклонить отзыв");
+      toast.error("Failed to reject feedback");
     } else {
-      toast.success("Отзыв скрыт из публикации");
+      toast.success("Feedback hidden from publication");
       fetchFeedbacks();
     }
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              star <= rating ? "fill-golden text-golden" : "text-muted-foreground"
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  // Filter feedbacks for moderation
-  const pendingReviews = feedbacks.filter(fb => 
-    fb.rating === 5 && fb.message && fb.name && !fb.is_approved
+  const renderStars = (rating: number) => (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-4 h-4 ${star <= rating ? "fill-golden text-golden" : "text-muted-foreground"}`}
+        />
+      ))}
+    </div>
   );
+
+  const pendingReviews = feedbacks.filter(fb => fb.rating === 5 && fb.message && fb.name && !fb.is_approved);
   const approvedReviews = feedbacks.filter(fb => fb.is_approved);
   const allReviews = feedbacks;
 
@@ -164,7 +142,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
           </div>
           <div>
             <p className="font-medium text-sm">
-              {fb.name || fb.user_name || fb.user_email || "Гость"}
+              {fb.name || fb.user_name || fb.user_email || "Guest"}
             </p>
             {fb.user_email && (
               <p className="text-xs text-muted-foreground">{fb.user_email}</p>
@@ -175,20 +153,17 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
           {renderStars(fb.rating)}
           {fb.is_approved && (
             <Badge variant="outline" className="border-green-500/50 text-green-500 text-xs">
-              Опубликован
+              Published
             </Badge>
           )}
         </div>
       </div>
 
       {fb.photo_url && (
-        <div 
-          className="cursor-pointer"
-          onClick={() => setSelectedImage(fb.photo_url)}
-        >
+        <div className="cursor-pointer" onClick={() => setSelectedImage(fb.photo_url)}>
           <img
             src={fb.photo_url}
-            alt="Фото отзыва"
+            alt="Feedback photo"
             className="w-full max-w-xs h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
           />
         </div>
@@ -203,9 +178,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Calendar className="w-3 h-3" />
-          <span>
-            {format(new Date(fb.created_at), "d MMMM yyyy, HH:mm", { locale: ru })}
-          </span>
+          <span>{format(new Date(fb.created_at), "MMM d, yyyy, HH:mm")}</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -219,7 +192,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
                   className="border-green-500/50 text-green-500 hover:bg-green-500/10"
                 >
                   <Check className="w-4 h-4 mr-1" />
-                  Опубликовать
+                  Publish
                 </Button>
               ) : (
                 <Button
@@ -229,7 +202,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
                   className="border-orange-500/50 text-orange-500 hover:bg-orange-500/10"
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Скрыть
+                  Hide
                 </Button>
               )}
             </>
@@ -252,7 +225,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
         <div className="flex items-center gap-2 mb-6">
           <MessageSquare className="w-5 h-5 text-golden" />
-          <h2 className="font-display text-xl">Отзывы</h2>
+          <h2 className="font-display text-xl">Feedback</h2>
         </div>
         <div className="flex items-center justify-center py-8">
           <motion.div
@@ -270,15 +243,15 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-golden" />
-          <h2 className="font-display text-xl">Отзывы и модерация</h2>
+          <h2 className="font-display text-xl">Feedback & Moderation</h2>
         </div>
-        <Badge variant="secondary">{feedbacks.length} отзывов</Badge>
+        <Badge variant="secondary">{feedbacks.length} reviews</Badge>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 bg-muted/50">
           <TabsTrigger value="pending" className="relative">
-            На модерации
+            Pending
             {pendingReviews.length > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-orange-500 text-white text-xs rounded-full">
                 {pendingReviews.length}
@@ -286,18 +259,16 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
             )}
           </TabsTrigger>
           <TabsTrigger value="approved">
-            Опубликованы ({approvedReviews.length})
+            Published ({approvedReviews.length})
           </TabsTrigger>
           <TabsTrigger value="all">
-            Все ({allReviews.length})
+            All ({allReviews.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {pendingReviews.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Нет отзывов на модерации
-            </p>
+            <p className="text-center text-muted-foreground py-8">No pending reviews</p>
           ) : (
             pendingReviews.map((fb) => renderFeedbackItem(fb, true))
           )}
@@ -305,9 +276,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
 
         <TabsContent value="approved" className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {approvedReviews.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Нет опубликованных отзывов
-            </p>
+            <p className="text-center text-muted-foreground py-8">No published reviews</p>
           ) : (
             approvedReviews.map((fb) => renderFeedbackItem(fb, true))
           )}
@@ -315,24 +284,17 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
 
         <TabsContent value="all" className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {allReviews.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Пока нет отзывов
-            </p>
+            <p className="text-center text-muted-foreground py-8">No reviews yet</p>
           ) : (
             allReviews.map((fb) => renderFeedbackItem(fb, true))
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Image Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-3xl p-0 bg-transparent border-none">
           {selectedImage && (
-            <img
-              src={selectedImage}
-              alt="Фото отзыва"
-              className="w-full h-auto rounded-lg"
-            />
+            <img src={selectedImage} alt="Feedback photo" className="w-full h-auto rounded-lg" />
           )}
         </DialogContent>
       </Dialog>

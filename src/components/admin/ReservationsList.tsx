@@ -10,10 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Calendar, Clock, Users, Wind, Phone, User, Check, X, MoreVertical, Loader2, MapPin } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface Reservation {
@@ -35,7 +33,6 @@ interface Reservation {
 }
 
 export default function ReservationsList() {
-  const { t } = useLanguage();
   const { isAdmin } = useUserRoles();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +41,6 @@ export default function ReservationsList() {
   useEffect(() => {
     fetchReservations();
 
-    // Realtime subscription
     const channel = supabase
       .channel('reservations-changes')
       .on(
@@ -67,7 +63,6 @@ export default function ReservationsList() {
       .order("reservation_time", { ascending: true });
 
     if (!error && data) {
-      // Fetch user profiles
       const reservationsWithProfiles = await Promise.all(
         data.map(async (res) => {
           if (res.user_id) {
@@ -77,10 +72,7 @@ export default function ReservationsList() {
               .eq("id", res.user_id)
               .maybeSingle();
             
-            return {
-              ...res,
-              profile: profile || undefined,
-            };
+            return { ...res, profile: profile || undefined };
           }
           return res;
         })
@@ -94,7 +86,6 @@ export default function ReservationsList() {
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
     
-    // Find the reservation to get user details for notification
     const reservation = reservations.find(r => r.id === id);
     
     const { error } = await supabase
@@ -104,12 +95,11 @@ export default function ReservationsList() {
 
     if (error) {
       setUpdating(null);
-      toast.error("Ошибка обновления статуса");
+      toast.error("Failed to update status");
       console.error("Update error:", error);
       return;
     }
 
-    // Send notification
     if (reservation?.profile?.email) {
       try {
         await supabase.functions.invoke("send-reservation-notification", {
@@ -118,24 +108,22 @@ export default function ReservationsList() {
             new_status: status,
             user_email: reservation.profile.email,
             user_name: reservation.profile.full_name || undefined,
-            reservation_date: format(new Date(reservation.reservation_date), "d MMMM yyyy", { locale: ru }),
+            reservation_date: format(new Date(reservation.reservation_date), "MMMM d, yyyy"),
             reservation_time: reservation.reservation_time,
             party_size: reservation.party_size,
             hookah_count: reservation.hookah_count,
           },
         });
-        console.log("Notification sent successfully");
       } catch (notifError) {
         console.error("Notification error:", notifError);
-        // Don't fail the status update if notification fails
       }
     }
 
     setUpdating(null);
     toast.success(
-      status === "confirmed" ? t("admin.reservationConfirmed") :
-      status === "cancelled" ? t("admin.reservationCancelled") :
-      "Статус обновлён"
+      status === "confirmed" ? "Reservation confirmed" :
+      status === "cancelled" ? "Reservation cancelled" :
+      "Status updated"
     );
     fetchReservations();
   };
@@ -163,11 +151,11 @@ export default function ReservationsList() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">{t("admin.confirmed")}</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Confirmed</Badge>;
       case "cancelled":
-        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">{t("admin.cancelled")}</Badge>;
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Cancelled</Badge>;
       default:
-        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">{t("admin.pending")}</Badge>;
+        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Pending</Badge>;
     }
   };
 
@@ -204,7 +192,7 @@ export default function ReservationsList() {
           <div className="flex items-center gap-3 flex-wrap">
             <Badge variant={isToday(res.reservation_date) ? "default" : "secondary"}>
               <Calendar className="h-3 w-3 mr-1" />
-              {format(new Date(res.reservation_date), "d MMMM yyyy", { locale: ru })}
+              {format(new Date(res.reservation_date), "MMMM d, yyyy")}
             </Badge>
             <Badge variant="outline">
               <Clock className="h-3 w-3 mr-1" />
@@ -212,18 +200,18 @@ export default function ReservationsList() {
             </Badge>
             {getStatusBadge(res.status)}
             {isToday(res.reservation_date) && res.status !== "cancelled" && (
-              <Badge className="bg-primary">{t("admin.today")}</Badge>
+              <Badge className="bg-primary">Today</Badge>
             )}
           </div>
           
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{res.party_size} {t("admin.guests")}</span>
+              <span>{res.party_size} guests</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Wind className="h-4 w-4 text-muted-foreground" />
-              <span>{res.hookah_count} {t("admin.hookahs")}</span>
+              <span>{res.hookah_count} hookahs</span>
             </div>
           </div>
 
@@ -248,9 +236,7 @@ export default function ReservationsList() {
           )}
 
           {res.notes && (
-            <p className="text-sm text-muted-foreground italic">
-              {res.notes}
-            </p>
+            <p className="text-sm text-muted-foreground italic">{res.notes}</p>
           )}
         </div>
 
@@ -268,7 +254,7 @@ export default function ReservationsList() {
               ) : (
                 <>
                   <Check className="h-4 w-4 mr-1" />
-                  {t("admin.confirm")}
+                  Confirm
                 </>
               )}
             </Button>
@@ -280,7 +266,7 @@ export default function ReservationsList() {
               disabled={updating === res.id}
             >
               <X className="h-4 w-4 mr-1" />
-              {t("admin.cancel")}
+              Cancel
             </Button>
           </div>
         )}
@@ -295,19 +281,19 @@ export default function ReservationsList() {
             <DropdownMenuContent align="end">
               {res.status !== "pending" && (
                 <DropdownMenuItem onClick={() => updateStatus(res.id, "pending")}>
-                  {t("admin.markPending")}
+                  Mark as Pending
                 </DropdownMenuItem>
               )}
               {res.status !== "confirmed" && (
                 <DropdownMenuItem onClick={() => updateStatus(res.id, "confirmed")}>
                   <Check className="h-4 w-4 mr-2 text-green-500" />
-                  {t("admin.confirm")}
+                  Confirm
                 </DropdownMenuItem>
               )}
               {res.status !== "cancelled" && (
                 <DropdownMenuItem onClick={() => updateStatus(res.id, "cancelled")}>
                   <X className="h-4 w-4 mr-2 text-red-500" />
-                  {t("admin.cancel")}
+                  Cancel
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -322,22 +308,21 @@ export default function ReservationsList() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
-          {t("admin.reservations")}
+          Reservations
         </CardTitle>
       </CardHeader>
       <CardContent>
         {reservations.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{t("admin.noReservations")}</p>
+            <p>No reservations</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Upcoming Reservations */}
             {upcomingReservations.length > 0 && (
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground mb-3 uppercase tracking-wide">
-                  {t("admin.upcomingReservations")} ({upcomingReservations.length})
+                  Upcoming ({upcomingReservations.length})
                 </h3>
                 <div className="space-y-3">
                   {upcomingReservations.map((res) => renderReservation(res))}
@@ -345,11 +330,10 @@ export default function ReservationsList() {
               </div>
             )}
 
-            {/* Past Reservations */}
             {pastReservations.length > 0 && (
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground mb-3 uppercase tracking-wide">
-                  {t("admin.pastReservations")} ({pastReservations.length})
+                  Past ({pastReservations.length})
                 </h3>
                 <div className="space-y-2">
                   {pastReservations.slice(0, 10).map((res) => renderReservation(res, false))}

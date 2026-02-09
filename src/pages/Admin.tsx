@@ -152,8 +152,8 @@ const AdminContent = () => {
     if (!loading && !isAdmin) {
       toast({
         variant: "destructive",
-        title: "Доступ запрещён",
-        description: "У вас нет прав администратора",
+        title: "Access Denied",
+        description: "You don't have admin permissions",
       });
       navigate("/");
     }
@@ -224,13 +224,13 @@ const AdminContent = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось добавить покупку",
+        title: "Error",
+        description: "Failed to add purchase",
       });
     } else {
       toast({
-        title: "Покупка добавлена!",
-        description: `Добавлено ${purchaseForm.hookahCount} кальян(ов)`,
+        title: "Purchase added!",
+        description: `Added ${purchaseForm.hookahCount} hookah(s)`,
       });
       setShowAddPurchase(false);
       setPurchaseForm({ hookahCount: 1, amount: "", notes: "", freeDrink: false, freeSnack: false });
@@ -246,13 +246,13 @@ const AdminContent = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось обновить статус оплаты",
+        title: "Error",
+        description: "Failed to update payment status",
       });
     } else {
       toast({
-        title: "Статус обновлён",
-        description: status === "paid" ? "Заказ отмечен как оплаченный" : "Статус оплаты изменён",
+        title: "Status updated",
+        description: status === "paid" ? "Order marked as paid" : "Payment status changed",
       });
       fetchAllPurchases();
     }
@@ -264,18 +264,18 @@ const AdminContent = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось обновить статус доставки",
+        title: "Error",
+        description: "Failed to update delivery status",
       });
     } else {
       const statusLabels: Record<string, string> = {
-        preparing: "Заказ готовится",
-        delivered: "Заказ доставлен",
-        cancelled: "Заказ отменён",
+        preparing: "Order is being prepared",
+        delivered: "Order delivered",
+        cancelled: "Order cancelled",
       };
       toast({
-        title: "Статус обновлён",
-        description: statusLabels[status] || "Статус доставки изменён",
+        title: "Status updated",
+        description: statusLabels[status] || "Delivery status changed",
       });
       fetchAllPurchases();
     }
@@ -285,30 +285,30 @@ const AdminContent = () => {
     if (isCurrentlyAdmin) {
       const { error } = await removeUserRole(userId, "admin");
       if (error) {
-        toast({
+      toast({
           variant: "destructive",
-          title: "Ошибка",
-          description: "Не удалось убрать роль администратора",
+          title: "Error",
+          description: "Failed to remove admin role",
         });
       } else {
         toast({
-          title: "Роль удалена",
-          description: "Пользователь больше не администратор",
+          title: "Role removed",
+          description: "User is no longer an admin",
         });
         fetchAllUserRoles();
       }
     } else {
       const { error } = await addUserRole(userId, "admin");
       if (error) {
-        toast({
+      toast({
           variant: "destructive",
-          title: "Ошибка",
-          description: "Не удалось добавить роль администратора",
+          title: "Error",
+          description: "Failed to add admin role",
         });
       } else {
         toast({
-          title: "Роль добавлена",
-          description: "Пользователь теперь администратор",
+          title: "Role added",
+          description: "User is now an admin",
         });
         fetchAllUserRoles();
       }
@@ -355,7 +355,7 @@ const AdminContent = () => {
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            На главную
+            Home
           </Button>
           <div className="flex items-center gap-4">
             <OrderNotifications />
@@ -367,12 +367,12 @@ const AdminContent = () => {
                 className="border-golden/30 text-golden hover:bg-golden/10"
               >
                 <Activity className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Логи</span>
+                <span className="hidden sm:inline">Logs</span>
               </Button>
             )}
             <div className="flex items-center gap-2 text-golden">
               <Shield className="w-5 h-5" />
-              <span className="font-medium hidden sm:inline">Админ панель</span>
+              <span className="font-medium hidden sm:inline">Admin Panel</span>
             </div>
             <Button
               variant="ghost"
@@ -381,7 +381,7 @@ const AdminContent = () => {
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Выйти</span>
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>
@@ -391,11 +391,11 @@ const AdminContent = () => {
           <TabsList className="grid w-full max-w-3xl grid-cols-6 bg-card/60 backdrop-blur-xl">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Обзор</span>
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
             <TabsTrigger value="orders" className="gap-2 relative">
               <ClipboardList className="w-4 h-4" />
-              <span className="hidden sm:inline">Заказы</span>
+              <span className="hidden sm:inline">Orders</span>
               {pendingOrders.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs flex items-center justify-center text-white">
                   {pendingOrders.length}
@@ -408,15 +408,15 @@ const AdminContent = () => {
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Пользователи</span>
+              <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
             <TabsTrigger value="feedback" className="gap-2">
               <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Отзывы</span>
+              <span className="hidden sm:inline">Feedback</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Аналитика</span>
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
@@ -441,7 +441,7 @@ const AdminContent = () => {
                 onUpdatePaymentStatus={handleUpdatePaymentStatus}
                 onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
                 showFilters={false}
-                title="Текущие заказы"
+                title="Current Orders"
               />
               
               <div className="space-y-6">
@@ -454,7 +454,7 @@ const AdminContent = () => {
                   onUpdatePaymentStatus={handleUpdatePaymentStatus}
                   onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
                   showFilters={false}
-                  title="Последние заказы"
+                  title="Recent Orders"
                 />
               </div>
             </div>
@@ -466,7 +466,7 @@ const AdminContent = () => {
               orders={allPurchases}
               onUpdatePaymentStatus={handleUpdatePaymentStatus}
               onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
-              title="Все заказы"
+              title="All Orders"
             />
           </TabsContent>
 
@@ -541,13 +541,13 @@ const AdminContent = () => {
         <DialogContent className="bg-card border-border/50">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">
-              Добавить покупку
+              Add Purchase
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Количество кальянов</label>
+              <label className="text-sm text-muted-foreground">Number of hookahs</label>
               <Input
                 type="number"
                 min={1}
@@ -558,10 +558,10 @@ const AdminContent = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Сумма (IDR)</label>
+              <label className="text-sm text-muted-foreground">Amount (IDR)</label>
               <Input
                 type="number"
-                placeholder="Необязательно"
+                placeholder="Optional"
                 value={purchaseForm.amount}
                 onChange={(e) => setPurchaseForm(f => ({ ...f, amount: e.target.value }))}
                 className="bg-background/50"
@@ -569,9 +569,9 @@ const AdminContent = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Заметка</label>
+              <label className="text-sm text-muted-foreground">Notes</label>
               <Input
-                placeholder="Необязательно"
+                placeholder="Optional"
                 value={purchaseForm.notes}
                 onChange={(e) => setPurchaseForm(f => ({ ...f, notes: e.target.value }))}
                 className="bg-background/50"
@@ -587,7 +587,7 @@ const AdminContent = () => {
                   className="rounded"
                 />
                 <Coffee className="w-4 h-4 text-golden" />
-                <span className="text-sm">Бесплатный напиток</span>
+                <span className="text-sm">Free drink</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -598,21 +598,21 @@ const AdminContent = () => {
                   className="rounded"
                 />
                 <Cookie className="w-4 h-4 text-golden" />
-                <span className="text-sm">Бесплатный снек</span>
+                <span className="text-sm">Free snack</span>
               </label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowAddPurchase(false)}>
-              Отмена
+              Cancel
             </Button>
             <Button 
               onClick={handleAddPurchase}
               disabled={saving}
               className="bg-golden hover:bg-golden/90"
             >
-              {saving ? "Сохранение..." : "Добавить"}
+              {saving ? "Saving..." : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>

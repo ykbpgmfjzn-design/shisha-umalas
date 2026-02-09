@@ -33,43 +33,13 @@ interface UsersTableProps {
   t?: (key: string) => string;
 }
 
-const getRoleConfig = (t?: (key: string) => string) => ({
-  owner: { 
-    labelKey: "role.owner",
-    label: t ? t("role.owner") : "Owner", 
-    icon: Crown, 
-    color: "text-golden", 
-    bgColor: "bg-golden/20 border-golden" 
-  },
-  admin: { 
-    labelKey: "role.admin",
-    label: t ? t("role.admin") : "Admin", 
-    icon: Shield, 
-    color: "text-red-400", 
-    bgColor: "bg-red-500/20 border-red-400" 
-  },
-  user: { 
-    labelKey: "role.guest",
-    label: t ? t("role.guest") : "Guest", 
-    icon: UserCircle, 
-    color: "text-green-400", 
-    bgColor: "bg-green-500/20 border-green-400" 
-  },
-  shisha_master: { 
-    labelKey: "role.shishaMaster",
-    label: t ? t("role.shishaMaster") : "Shisha Master", 
-    icon: Wind, 
-    color: "text-purple-400", 
-    bgColor: "bg-purple-500/20 border-purple-400" 
-  },
-  accounting: { 
-    labelKey: "role.accounting",
-    label: t ? t("role.accounting") : "Accounting", 
-    icon: Calculator, 
-    color: "text-blue-400", 
-    bgColor: "bg-blue-500/20 border-blue-400" 
-  },
-});
+const ROLE_CONFIG: Record<AppRole, { label: string; icon: typeof Crown; color: string; bgColor: string }> = {
+  owner: { label: "Owner", icon: Crown, color: "text-golden", bgColor: "bg-golden/20 border-golden" },
+  admin: { label: "Admin", icon: Shield, color: "text-red-400", bgColor: "bg-red-500/20 border-red-400" },
+  user: { label: "Guest", icon: UserCircle, color: "text-green-400", bgColor: "bg-green-500/20 border-green-400" },
+  shisha_master: { label: "Shisha Master", icon: Wind, color: "text-purple-400", bgColor: "bg-purple-500/20 border-purple-400" },
+  accounting: { label: "Accounting", icon: Calculator, color: "text-blue-400", bgColor: "bg-blue-500/20 border-blue-400" },
+};
 
 const UsersTable = ({ 
   profiles, 
@@ -83,8 +53,6 @@ const UsersTable = ({
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
-  
-  const ROLE_CONFIG = getRoleConfig(t);
 
   const getUserRoles = (userId: string): AppRole[] => {
     return userRoles.filter(r => r.user_id === userId).map(r => r.role);
@@ -108,7 +76,6 @@ const UsersTable = ({
     const userProfile = profiles.find(p => p.id === userId);
     const userEmail = userProfile?.email || 'Unknown';
     
-    // Remove all current roles except the new one
     for (const role of currentRoles) {
       if (role !== newRole) {
         if (role === "admin") {
@@ -116,8 +83,7 @@ const UsersTable = ({
         } else {
           await onRemoveRole?.(userId, role);
         }
-        // Log role removal
-        await logActivity('admin', `Роль ${ROLE_CONFIG[role]?.label || role} удалена`, {
+        await logActivity('admin', `Role ${ROLE_CONFIG[role]?.label || role} removed`, {
           target_user_id: userId,
           target_user_email: userEmail,
           removed_role: role,
@@ -125,15 +91,13 @@ const UsersTable = ({
       }
     }
     
-    // Add new role if not already present
     if (!currentRoles.includes(newRole)) {
       if (newRole === "admin") {
         await onToggleAdmin(userId, false);
       } else {
         await onAddRole?.(userId, newRole);
       }
-      // Log role addition
-      await logActivity('admin', `Роль ${ROLE_CONFIG[newRole]?.label || newRole} назначена`, {
+      await logActivity('admin', `Role ${ROLE_CONFIG[newRole]?.label || newRole} assigned`, {
         target_user_id: userId,
         target_user_email: userEmail,
         added_role: newRole,
@@ -145,28 +109,16 @@ const UsersTable = ({
 
   const getMainRoleIcon = (userId: string) => {
     const roles = getUserRoles(userId);
-    if (roles.includes("owner")) {
-      return <Crown className="w-4 h-4 text-golden" />;
-    }
-    if (roles.includes("admin")) {
-      return <Shield className="w-4 h-4 text-red-400" />;
-    }
-    if (roles.includes("shisha_master")) {
-      return <Wind className="w-4 h-4 text-purple-400" />;
-    }
-    if (roles.includes("accounting")) {
-      return <Calculator className="w-4 h-4 text-blue-400" />;
-    }
+    if (roles.includes("owner")) return <Crown className="w-4 h-4 text-golden" />;
+    if (roles.includes("admin")) return <Shield className="w-4 h-4 text-red-400" />;
+    if (roles.includes("shisha_master")) return <Wind className="w-4 h-4 text-purple-400" />;
+    if (roles.includes("accounting")) return <Calculator className="w-4 h-4 text-blue-400" />;
     const profile = profiles.find(p => p.id === userId);
-    if (profile?.guest_type === "special") {
-      return <Building2 className="w-4 h-4 text-golden" />;
-    }
+    if (profile?.guest_type === "special") return <Building2 className="w-4 h-4 text-golden" />;
     return <User className="w-4 h-4 text-muted-foreground" />;
   };
 
-  const isOwner = (userId: string) => {
-    return getUserRoles(userId).includes("owner");
-  };
+  const isOwner = (userId: string) => getUserRoles(userId).includes("owner");
 
   const getMainRoleBg = (userId: string) => {
     const roles = getUserRoles(userId);
@@ -183,24 +135,22 @@ const UsersTable = ({
     <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Users className="w-5 h-5 text-golden" />
-        <h2 className="font-display text-xl">Пользователи</h2>
+        <h2 className="font-display text-xl">Users</h2>
         <span className="ml-auto text-sm text-muted-foreground">
-          {profiles.length} всего
+          {profiles.length} total
         </span>
       </div>
 
-      {/* Search */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Поиск по email, имени или комнате..."
+          placeholder="Search by email, name or room..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10 bg-background/50"
         />
       </div>
 
-      {/* User List */}
       <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
         {filteredProfiles.map((profile, index) => {
           const roles = getUserRoles(profile.id);
@@ -220,7 +170,6 @@ const UsersTable = ({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {/* Role/Type Icon */}
                   <div className={`p-2 rounded-full shrink-0 ${getMainRoleBg(profile.id)}`}>
                     {getMainRoleIcon(profile.id)}
                   </div>
@@ -228,14 +177,13 @@ const UsersTable = ({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm truncate">
-                        {profile.email || "Без email"}
+                        {profile.email || "No email"}
                       </p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {profile.room_number ? `Комната ${profile.room_number}` : "Гость"} • 
-                      {profile.full_name || "Без имени"}
+                      {profile.room_number ? `Room ${profile.room_number}` : "Guest"} • 
+                      {profile.full_name || "No name"}
                     </p>
-                    {/* Role Badges */}
                     {roles.filter(r => r !== "user" && r !== "owner").length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {roles.filter(r => r !== "user" && r !== "owner").map(role => {
@@ -256,27 +204,21 @@ const UsersTable = ({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  {/* Loyalty Level */}
                   <div className="flex items-center gap-1 text-golden">
                     <Crown className="w-4 h-4" />
                     <span className="text-sm font-bold">{profile.loyalty_level}</span>
                   </div>
 
-                  {/* Roles Dropdown - hidden for owners */}
                   {!isOwner(profile.id) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shrink-0 gap-1"
-                        >
+                        <Button size="sm" variant="outline" className="shrink-0 gap-1">
                           <Shield className="w-3 h-3" />
                           <ChevronDown className="w-3 h-3" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>{t ? t("admin.manageRoles") : "Manage Roles"}</DropdownMenuLabel>
+                        <DropdownMenuLabel>Manage Roles</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {(Object.keys(ROLE_CONFIG) as AppRole[]).filter(role => role !== "owner").map(role => {
                           const config = ROLE_CONFIG[role];
@@ -298,9 +240,7 @@ const UsersTable = ({
                                   <span>{config.label}</span>
                                 </div>
                                 {isActive && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    ✓
-                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs">✓</Badge>
                                 )}
                               </div>
                             </DropdownMenuItem>
@@ -321,7 +261,7 @@ const UsersTable = ({
 
         {filteredProfiles.length === 0 && (
           <p className="text-center text-muted-foreground py-8">
-            Пользователи не найдены
+            No users found
           </p>
         )}
       </div>

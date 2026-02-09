@@ -25,7 +25,7 @@ interface GAReport {
 
 const chartConfig = {
   visits: {
-    label: "Посещения",
+    label: "Visits",
     color: "hsl(var(--golden))",
   },
 };
@@ -58,16 +58,16 @@ export default function AnalyticsDashboard() {
       
       if (showToast) {
         toast({
-          title: "Данные обновлены",
-          description: "Статистика Google Analytics загружена",
+          title: "Data refreshed",
+          description: "Google Analytics data loaded",
         });
       }
     } catch (error: any) {
       console.error("Error fetching analytics:", error);
       toast({
         variant: "destructive",
-        title: "Ошибка загрузки",
-        description: error.message || "Не удалось загрузить данные аналитики",
+        title: "Loading error",
+        description: error.message || "Failed to load analytics data",
       });
     } finally {
       setLoading(false);
@@ -77,40 +77,33 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     fetchAnalytics();
-    
-    // Auto-refresh every 5 minutes
     const interval = setInterval(() => fetchAnalytics(), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchAnalytics]);
 
-  // Format date for display
   const formatDate = (dateStr: string) => {
-    const year = dateStr.slice(0, 4);
     const month = dateStr.slice(4, 6);
     const day = dateStr.slice(6, 8);
-    return `${day}.${month}`;
+    return `${month}/${day}`;
   };
 
-  // Get day name
   const getDayName = (dateStr: string) => {
     const year = parseInt(dateStr.slice(0, 4));
     const month = parseInt(dateStr.slice(4, 6)) - 1;
     const day = parseInt(dateStr.slice(6, 8));
     const date = new Date(year, month, day);
-    const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     return days[date.getDay()];
   };
 
-  // Format chart data
   const chartData = data?.dailyVisits.map(d => ({
     ...d,
     dateFormatted: formatDate(d.date),
     dayName: getDayName(d.date),
   })) || [];
 
-  // Calculate trend (compare last 2 days)
   const getTrend = () => {
-    if (!data || data.dailyVisits.length < 2) return { icon: Minus, color: "text-muted-foreground", label: "Нет данных" };
+    if (!data || data.dailyVisits.length < 2) return { icon: Minus, color: "text-muted-foreground", label: "No data" };
     const last = data.dailyVisits[data.dailyVisits.length - 1]?.visits || 0;
     const prev = data.dailyVisits[data.dailyVisits.length - 2]?.visits || 0;
     if (last > prev) return { icon: ArrowUp, color: "text-green-500", label: `+${last - prev}` };
@@ -134,13 +127,12 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display text-foreground">Google Analytics</h2>
           {lastUpdated && (
             <p className="text-sm text-muted-foreground">
-              Обновлено: {lastUpdated.toLocaleTimeString("ru-RU")}
+              Updated: {lastUpdated.toLocaleTimeString("en-US")}
             </p>
           )}
         </div>
@@ -153,19 +145,10 @@ export default function AnalyticsDashboard() {
             className="border-golden/30 text-golden hover:bg-golden/10"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-            Обновить
+            Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="border-border/50"
-          >
-            <a 
-              href="https://analytics.google.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
+          <Button variant="outline" size="sm" asChild className="border-border/50">
+            <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4 mr-2" />
               Google Analytics
             </a>
@@ -173,13 +156,8 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -188,22 +166,18 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{data?.todayVisits || 0}</p>
-                  <p className="text-sm text-muted-foreground">Сегодня</p>
+                  <p className="text-sm text-muted-foreground">Today</p>
                 </div>
               </div>
               <div className={`flex items-center gap-1 mt-2 text-sm ${trend.color}`}>
                 <trend.icon className="w-4 h-4" />
-                <span>{trend.label} vs вчера</span>
+                <span>{trend.label} vs yesterday</span>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -212,21 +186,17 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{data?.weeklyTotal || 0}</p>
-                  <p className="text-sm text-muted-foreground">За неделю</p>
+                  <p className="text-sm text-muted-foreground">This week</p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                ~{Math.round((data?.weeklyTotal || 0) / 7)} в день
+                ~{Math.round((data?.weeklyTotal || 0) / 7)}/day
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -235,21 +205,17 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{data?.monthlyTotal || 0}</p>
-                  <p className="text-sm text-muted-foreground">За месяц</p>
+                  <p className="text-sm text-muted-foreground">This month</p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                ~{Math.round((data?.monthlyTotal || 0) / 30)} в день
+                ~{Math.round((data?.monthlyTotal || 0) / 30)}/day
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -257,33 +223,21 @@ export default function AnalyticsDashboard() {
                   <Globe className="w-5 h-5 text-accent-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {data?.trafficSources.length || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Источников</p>
+                  <p className="text-2xl font-bold text-foreground">{data?.trafficSources.length || 0}</p>
+                  <p className="text-sm text-muted-foreground">Sources</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Каналов трафика
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">Traffic channels</p>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Weekly Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader>
-              <CardTitle className="text-lg font-display">
-                Посещения за неделю
-              </CardTitle>
+              <CardTitle className="text-lg font-display">Weekly Visits</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -329,17 +283,10 @@ export default function AnalyticsDashboard() {
           </Card>
         </motion.div>
 
-        {/* Traffic Sources */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader>
-              <CardTitle className="text-lg font-display">
-                Источники трафика
-              </CardTitle>
+              <CardTitle className="text-lg font-display">Traffic Sources</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -347,8 +294,8 @@ export default function AnalyticsDashboard() {
                   <div key={source.source} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-foreground capitalize">
-                        {source.source === "(direct)" ? "Прямой заход" : 
-                         source.source === "(not set)" ? "Не определён" : 
+                        {source.source === "(direct)" ? "Direct" : 
+                         source.source === "(not set)" ? "Unknown" : 
                          source.source}
                       </span>
                       <span className="text-muted-foreground">
@@ -369,48 +316,36 @@ export default function AnalyticsDashboard() {
               </div>
               
               {(!data?.trafficSources || data.trafficSources.length === 0) && (
-                <p className="text-muted-foreground text-center py-8">
-                  Нет данных об источниках
-                </p>
+                <p className="text-muted-foreground text-center py-8">No source data</p>
               )}
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Daily Breakdown Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
         <Card className="bg-card/60 backdrop-blur-xl border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg font-display">
-              Детализация по дням
-            </CardTitle>
+            <CardTitle className="text-lg font-display">Daily Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/30">
-                    <th className="text-left py-2 text-muted-foreground font-medium">Дата</th>
-                    <th className="text-left py-2 text-muted-foreground font-medium">День</th>
-                    <th className="text-right py-2 text-muted-foreground font-medium">Посещения</th>
-                    <th className="text-right py-2 text-muted-foreground font-medium">% от недели</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Date</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Day</th>
+                    <th className="text-right py-2 text-muted-foreground font-medium">Visits</th>
+                    <th className="text-right py-2 text-muted-foreground font-medium">% of week</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {chartData.map((day, index) => {
+                  {chartData.map((day) => {
                     const percentage = data?.weeklyTotal 
                       ? Math.round((day.visits / data.weeklyTotal) * 100) 
                       : 0;
                     return (
-                      <tr 
-                        key={day.date} 
-                        className="border-b border-border/20 hover:bg-muted/20 transition-colors"
-                      >
+                      <tr key={day.date} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
                         <td className="py-3 text-foreground">{day.dateFormatted}</td>
                         <td className="py-3 text-muted-foreground">{day.dayName}</td>
                         <td className="py-3 text-right font-medium text-foreground">{day.visits}</td>
@@ -423,9 +358,7 @@ export default function AnalyticsDashboard() {
             </div>
             
             {chartData.length === 0 && (
-              <p className="text-muted-foreground text-center py-8">
-                Нет данных за последнюю неделю
-              </p>
+              <p className="text-muted-foreground text-center py-8">No data for the last week</p>
             )}
           </CardContent>
         </Card>
