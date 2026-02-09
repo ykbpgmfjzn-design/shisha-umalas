@@ -288,11 +288,12 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     }
 
     // --- Gross Profit Margin ---
-    // Scale monthly expenses to the period length
-    const periodMonths = periodDays / 30;
-    const scaledExpenses = totalMonthlyExpenses * periodMonths;
-    const grossProfit = periodRev - scaledExpenses;
-    const grossMargin = periodRev > 0 ? (grossProfit / periodRev) * 100 : 0;
+    // Use current month's revenue vs monthly expenses (not scaled by period)
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthPaid = paidOnly(purchases.filter(p => new Date(p.created_at) >= thisMonthStart));
+    const thisMonthRev = thisMonthPaid.reduce((s, p) => s + (p.amount || 0), 0);
+    const grossProfit = thisMonthRev - totalMonthlyExpenses;
+    const grossMargin = thisMonthRev > 0 ? (grossProfit / thisMonthRev) * 100 : 0;
 
     // --- Customer Lifetime Value (all-time) ---
     const allPaid = paidOnly(purchases);
@@ -337,7 +338,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       repeatRate, repeatCustomers, totalCustomers,
       periodOrders, prevOrders, ordersGrowth, avgOrdersPerDay,
       avgRating, prevAvgRating, ratingTrend,
-      grossMargin, grossProfit, periodLabel: range.label,
+      grossMargin, grossProfit, thisMonthRev, periodLabel: range.label,
       clv, avgOrdersPerCustomer,
       revenueTrend,
       totalUsers,
@@ -515,14 +516,19 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
               <p className={`text-xl font-bold ${metrics.grossMargin < 0 ? "text-destructive" : ""}`}>
                 {metrics.grossMargin.toFixed(0)}%
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Profit: {formatIDR(metrics.grossProfit)}
-              </p>
-              {totalMonthlyExpenses > 0 && (
+              <div className="mt-2 pt-2 border-t border-border/30 space-y-0.5">
                 <p className="text-xs text-muted-foreground">
-                  Expenses: {formatIDR(totalMonthlyExpenses)}/mo ({expenses.length} items)
+                  Revenue (this mo): {formatIDR(metrics.thisMonthRev)}
                 </p>
-              )}
+                {totalMonthlyExpenses > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Expenses: {formatIDR(totalMonthlyExpenses)}/mo
+                  </p>
+                )}
+                <p className={`text-xs font-medium ${metrics.grossProfit < 0 ? "text-destructive" : "text-emerald-400"}`}>
+                  Profit: {formatIDR(metrics.grossProfit)}
+                </p>
+              </div>
               {totalMonthlyExpenses === 0 && (
                 <p className="text-xs text-orange-400 mt-1">⚠ Set up expenses</p>
               )}
