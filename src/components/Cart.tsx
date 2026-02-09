@@ -150,6 +150,7 @@ const Cart = () => {
           orderId: data.id,
           roomNumber: roomNumber,
           userEmail: user.email,
+          phone: phone,
           hookahCount: currentHookahCount,
           totalAmount: currentTotalPrice,
           items: itemsArray,
