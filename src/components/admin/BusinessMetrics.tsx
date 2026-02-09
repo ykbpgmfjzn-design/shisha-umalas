@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
   Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
-  Plus, Trash2, Settings2, Save, X
+  Plus, Trash2, Settings2, Save, X, CalendarDays
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -37,10 +38,42 @@ interface MonthlyExpense {
   amount: number;
 }
 
+type Period = "week" | "month" | "quarter" | "year";
+
 interface BusinessMetricsProps {
   purchases: PurchaseWithProfile[];
   feedbacks: FeedbackItem[];
   totalUsers: number;
+}
+
+function getPeriodRange(period: Period): { start: Date; prevStart: Date; prevEnd: Date; label: string } {
+  const now = new Date();
+  const start = new Date(now);
+  const prevStart = new Date(now);
+  const prevEnd = new Date(now);
+
+  switch (period) {
+    case "week":
+      start.setDate(now.getDate() - 7);
+      prevEnd.setTime(start.getTime());
+      prevStart.setDate(start.getDate() - 7);
+      return { start, prevStart, prevEnd, label: "Last 7 days" };
+    case "month":
+      start.setMonth(now.getMonth() - 1);
+      prevEnd.setTime(start.getTime());
+      prevStart.setMonth(start.getMonth() - 1);
+      return { start, prevStart, prevEnd, label: "Last 30 days" };
+    case "quarter":
+      start.setMonth(now.getMonth() - 3);
+      prevEnd.setTime(start.getTime());
+      prevStart.setMonth(start.getMonth() - 3);
+      return { start, prevStart, prevEnd, label: "Last 3 months" };
+    case "year":
+      start.setFullYear(now.getFullYear() - 1);
+      prevEnd.setTime(start.getTime());
+      prevStart.setFullYear(start.getFullYear() - 1);
+      return { start, prevStart, prevEnd, label: "Last 12 months" };
+  }
 }
 
 // Helper: group by period key
@@ -70,6 +103,7 @@ function paidOnly(purchases: PurchaseWithProfile[]) {
 
 export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: BusinessMetricsProps) {
   const { toast } = useToast();
+  const [period, setPeriod] = useState<Period>("month");
   const [expenses, setExpenses] = useState<MonthlyExpense[]>([]);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [editExpenses, setEditExpenses] = useState<MonthlyExpense[]>([]);
@@ -117,165 +151,144 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     setEditExpenses(editExpenses.filter(e => e.id !== id));
   };
   const metrics = useMemo(() => {
-    const paid = paidOnly(purchases);
     const now = new Date();
+    const range = getPeriodRange(period);
+    const { start: periodStart, prevStart, prevEnd } = range;
 
-    // --- Revenue Growth Rate (week-over-week) ---
-    const thisWeekStart = new Date(now);
-    thisWeekStart.setDate(now.getDate() - now.getDay());
-    thisWeekStart.setHours(0, 0, 0, 0);
-    const lastWeekStart = new Date(thisWeekStart);
-    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    // Filter by period
+    const periodPurchases = purchases.filter(p => new Date(p.created_at) >= periodStart);
+    const prevPurchases = purchases.filter(p => {
+      const d = new Date(p.created_at);
+      return d >= prevStart && d < prevEnd;
+    });
+    const periodFeedbacks = feedbacks.filter(f => new Date(f.created_at) >= periodStart);
+    const prevFeedbacks = feedbacks.filter(f => {
+      const d = new Date(f.created_at);
+      return d >= prevStart && d < prevEnd;
+    });
 
-    const thisWeekRev = paid
-      .filter(p => new Date(p.created_at) >= thisWeekStart)
-      .reduce((s, p) => s + (p.amount || 0), 0);
-    const lastWeekRev = paid
-      .filter(p => {
-        const d = new Date(p.created_at);
-        return d >= lastWeekStart && d < thisWeekStart;
-      })
-      .reduce((s, p) => s + (p.amount || 0), 0);
+    const paid = paidOnly(periodPurchases);
+    const prevPaid = paidOnly(prevPurchases);
 
-    const weekGrowth = lastWeekRev > 0
-      ? ((thisWeekRev - lastWeekRev) / lastWeekRev) * 100
-      : thisWeekRev > 0 ? 100 : 0;
-
-    // --- Month-over-month ---
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-    const thisMonthRev = paid
-      .filter(p => new Date(p.created_at) >= thisMonthStart)
-      .reduce((s, p) => s + (p.amount || 0), 0);
-    const lastMonthRev = paid
-      .filter(p => {
-        const d = new Date(p.created_at);
-        return d >= lastMonthStart && d < thisMonthStart;
-      })
-      .reduce((s, p) => s + (p.amount || 0), 0);
-
-    const monthGrowth = lastMonthRev > 0
-      ? ((thisMonthRev - lastMonthRev) / lastMonthRev) * 100
-      : thisMonthRev > 0 ? 100 : 0;
+    // --- Revenue Growth Rate ---
+    const periodRev = paid.reduce((s, p) => s + (p.amount || 0), 0);
+    const prevRev = prevPaid.reduce((s, p) => s + (p.amount || 0), 0);
+    const revenueGrowth = prevRev > 0
+      ? ((periodRev - prevRev) / prevRev) * 100
+      : periodRev > 0 ? 100 : 0;
 
     // --- Average Revenue Per Customer ---
     const uniquePaidCustomers = new Set(paid.map(p => p.user_id)).size;
-    const totalRevenue = paid.reduce((s, p) => s + (p.amount || 0), 0);
-    const avgRevenuePerCustomer = uniquePaidCustomers > 0 ? totalRevenue / uniquePaidCustomers : 0;
+    const avgRevenuePerCustomer = uniquePaidCustomers > 0 ? periodRev / uniquePaidCustomers : 0;
 
     // --- Avg check (per order) ---
-    const avgCheck = paid.length > 0 ? totalRevenue / paid.length : 0;
+    const avgCheck = paid.length > 0 ? periodRev / paid.length : 0;
 
-    // --- Repeat Customer Rate ---
+    // --- Repeat Customer Rate (within period) ---
     const customerOrderCount = new Map<string, number>();
-    for (const p of purchases) {
+    for (const p of periodPurchases) {
       customerOrderCount.set(p.user_id, (customerOrderCount.get(p.user_id) || 0) + 1);
     }
     const totalCustomers = customerOrderCount.size;
     const repeatCustomers = [...customerOrderCount.values()].filter(c => c > 1).length;
     const repeatRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
 
-    // --- Orders per Day/Week/Month ---
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayOrders = purchases.filter(p => new Date(p.created_at) >= today).length;
-    const thisWeekOrders = purchases.filter(p => new Date(p.created_at) >= thisWeekStart).length;
-    const thisMonthOrders = purchases.filter(p => new Date(p.created_at) >= thisMonthStart).length;
+    // --- Orders count ---
+    const periodOrders = periodPurchases.length;
+    const prevOrders = prevPurchases.length;
+    const ordersGrowth = prevOrders > 0
+      ? ((periodOrders - prevOrders) / prevOrders) * 100
+      : periodOrders > 0 ? 100 : 0;
 
-    // --- Customer Satisfaction / Avg Rating trend ---
-    const avgRating = feedbacks.length > 0
-      ? feedbacks.reduce((s, f) => s + f.rating, 0) / feedbacks.length
+    // --- Avg orders per day in period ---
+    const periodDays = Math.max(1, Math.ceil((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)));
+    const avgOrdersPerDay = periodOrders / periodDays;
+
+    // --- Customer Satisfaction / Avg Rating ---
+    const avgRating = periodFeedbacks.length > 0
+      ? periodFeedbacks.reduce((s, f) => s + f.rating, 0) / periodFeedbacks.length
+      : 0;
+    const prevAvgRating = prevFeedbacks.length > 0
+      ? prevFeedbacks.reduce((s, f) => s + f.rating, 0) / prevFeedbacks.length
       : 0;
 
-    // Rating trend (last 4 weeks)
-    const ratingByWeek: { week: string; avg: number; count: number }[] = [];
-    for (let i = 3; i >= 0; i--) {
-      const wStart = new Date(now);
-      wStart.setDate(now.getDate() - now.getDay() - i * 7);
-      wStart.setHours(0, 0, 0, 0);
-      const wEnd = new Date(wStart);
-      wEnd.setDate(wEnd.getDate() + 7);
-      const weekFb = feedbacks.filter(f => {
+    // Rating trend (split period into segments)
+    const segments = period === "week" ? 7 : period === "month" ? 4 : period === "quarter" ? 12 : 12;
+    const segmentMs = (now.getTime() - periodStart.getTime()) / segments;
+    const ratingTrend: { label: string; avg: number; count: number }[] = [];
+    for (let i = 0; i < segments; i++) {
+      const segStart = new Date(periodStart.getTime() + i * segmentMs);
+      const segEnd = new Date(periodStart.getTime() + (i + 1) * segmentMs);
+      const segFb = periodFeedbacks.filter(f => {
         const d = new Date(f.created_at);
-        return d >= wStart && d < wEnd;
+        return d >= segStart && d < segEnd;
       });
-      const avg = weekFb.length > 0 ? weekFb.reduce((s, f) => s + f.rating, 0) / weekFb.length : 0;
-      ratingByWeek.push({
-        week: `W${4 - i}`,
-        avg: Math.round(avg * 10) / 10,
-        count: weekFb.length,
-      });
+      const avg = segFb.length > 0 ? segFb.reduce((s, f) => s + f.rating, 0) / segFb.length : 0;
+      const label = period === "week"
+        ? segStart.toLocaleDateString("en-US", { weekday: "short" })
+        : period === "month"
+          ? `W${i + 1}`
+          : segStart.toLocaleDateString("en-US", { month: "short" });
+      ratingTrend.push({ label, avg: Math.round(avg * 10) / 10, count: segFb.length });
     }
 
-    // --- Gross Profit Margin (based on configured monthly expenses) ---
-    const grossProfit = thisMonthRev - totalMonthlyExpenses;
-    const grossMargin = thisMonthRev > 0 ? (grossProfit / thisMonthRev) * 100 : 0;
+    // --- Gross Profit Margin ---
+    // Scale monthly expenses to the period length
+    const periodMonths = periodDays / 30;
+    const scaledExpenses = totalMonthlyExpenses * periodMonths;
+    const grossProfit = periodRev - scaledExpenses;
+    const grossMargin = periodRev > 0 ? (grossProfit / periodRev) * 100 : 0;
 
-    // --- Customer Lifetime Value ---
-    const avgOrdersPerCustomer = totalCustomers > 0 ? purchases.length / totalCustomers : 0;
-    const clv = avgCheck * avgOrdersPerCustomer;
+    // --- Customer Lifetime Value (all-time) ---
+    const allPaid = paidOnly(purchases);
+    const allCustomerCount = new Map<string, number>();
+    for (const p of purchases) {
+      allCustomerCount.set(p.user_id, (allCustomerCount.get(p.user_id) || 0) + 1);
+    }
+    const allTotalCustomers = allCustomerCount.size;
+    const allAvgCheck = allPaid.length > 0 ? allPaid.reduce((s, p) => s + (p.amount || 0), 0) / allPaid.length : 0;
+    const avgOrdersPerCustomer = allTotalCustomers > 0 ? purchases.length / allTotalCustomers : 0;
+    const clv = allAvgCheck * avgOrdersPerCustomer;
 
-    // --- Revenue trend (last 7 days) ---
-    const revenueTrend: { day: string; revenue: number; orders: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const dEnd = new Date(d);
-      dEnd.setDate(dEnd.getDate() + 1);
-      const dayPaid = paid.filter(p => {
+    // --- Revenue trend (segmented by period) ---
+    const revenueTrend: { label: string; revenue: number; orders: number }[] = [];
+    for (let i = 0; i < segments; i++) {
+      const segStart = new Date(periodStart.getTime() + i * segmentMs);
+      const segEnd = new Date(periodStart.getTime() + (i + 1) * segmentMs);
+      const segPaid = paid.filter(p => {
         const pd = new Date(p.created_at);
-        return pd >= d && pd < dEnd;
+        return pd >= segStart && pd < segEnd;
       });
-      const dayAll = purchases.filter(p => {
+      const segAll = periodPurchases.filter(p => {
         const pd = new Date(p.created_at);
-        return pd >= d && pd < dEnd;
+        return pd >= segStart && pd < segEnd;
       });
+      const label = period === "week"
+        ? segStart.toLocaleDateString("en-US", { weekday: "short" })
+        : period === "month"
+          ? `W${i + 1}`
+          : segStart.toLocaleDateString("en-US", { month: "short" });
       revenueTrend.push({
-        day: d.toLocaleDateString("en-US", { weekday: "short" }),
-        revenue: dayPaid.reduce((s, p) => s + (p.amount || 0), 0),
-        orders: dayAll.length,
-      });
-    }
-
-    // --- Orders trend (last 4 weeks) ---
-    const ordersTrend: { week: string; orders: number; revenue: number }[] = [];
-    for (let i = 3; i >= 0; i--) {
-      const wStart = new Date(now);
-      wStart.setDate(now.getDate() - now.getDay() - i * 7);
-      wStart.setHours(0, 0, 0, 0);
-      const wEnd = new Date(wStart);
-      wEnd.setDate(wEnd.getDate() + 7);
-      const weekPurchases = purchases.filter(p => {
-        const d = new Date(p.created_at);
-        return d >= wStart && d < wEnd;
-      });
-      const weekPaid = paid.filter(p => {
-        const d = new Date(p.created_at);
-        return d >= wStart && d < wEnd;
-      });
-      ordersTrend.push({
-        week: `W${4 - i}`,
-        orders: weekPurchases.length,
-        revenue: weekPaid.reduce((s, p) => s + (p.amount || 0), 0),
+        label,
+        revenue: segPaid.reduce((s, p) => s + (p.amount || 0), 0),
+        orders: segAll.length,
       });
     }
 
     return {
-      weekGrowth, monthGrowth,
-      thisWeekRev, lastWeekRev,
-      thisMonthRev, lastMonthRev,
+      revenueGrowth,
+      periodRev, prevRev,
       avgRevenuePerCustomer, avgCheck,
       repeatRate, repeatCustomers, totalCustomers,
-      todayOrders, thisWeekOrders, thisMonthOrders,
-      avgRating, ratingByWeek,
-      grossMargin, grossProfit, totalRevenue,
+      periodOrders, prevOrders, ordersGrowth, avgOrdersPerDay,
+      avgRating, prevAvgRating, ratingTrend,
+      grossMargin, grossProfit, periodLabel: range.label,
       clv, avgOrdersPerCustomer,
-      revenueTrend, ordersTrend,
+      revenueTrend,
       totalUsers,
+      periodFeedbackCount: periodFeedbacks.length,
     };
-  }, [purchases, feedbacks, totalUsers, totalMonthlyExpenses]);
+  }, [purchases, feedbacks, totalUsers, totalMonthlyExpenses, period]);
 
   const formatIDR = (v: number) => `IDR ${Math.round(v).toLocaleString("id-ID")}`;
 
@@ -301,6 +314,22 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
 
   return (
     <div className="space-y-6">
+      {/* Period Selector */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{metrics.periodLabel}</span>
+        </div>
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+          <TabsList className="bg-card/60 backdrop-blur-xl">
+            <TabsTrigger value="week" className="text-xs px-3">Week</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
+            <TabsTrigger value="quarter" className="text-xs px-3">Quarter</TabsTrigger>
+            <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       {/* Top KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Revenue Growth */}
@@ -313,20 +342,12 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 </div>
                 <p className="text-xs text-muted-foreground">Revenue Growth</p>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Week</span>
-                  <TrendBadge value={metrics.weekGrowth} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Month</span>
-                  <TrendBadge value={metrics.monthGrowth} />
-                </div>
+              <p className="text-xl font-bold">{formatIDR(metrics.periodRev)}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <TrendBadge value={metrics.revenueGrowth} />
+                <span className="text-xs text-muted-foreground">vs prev period</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-border/30">
-                <p className="text-xs text-muted-foreground">This week: {formatIDR(metrics.thisWeekRev)}</p>
-                <p className="text-xs text-muted-foreground">This month: {formatIDR(metrics.thisMonthRev)}</p>
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">Prev: {formatIDR(metrics.prevRev)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -344,7 +365,6 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
               <p className="text-xl font-bold">{formatIDR(metrics.avgRevenuePerCustomer)}</p>
               <div className="mt-2 pt-2 border-t border-border/30">
                 <p className="text-xs text-muted-foreground">Avg check: {formatIDR(metrics.avgCheck)}</p>
-                <p className="text-xs text-muted-foreground">Total: {formatIDR(metrics.totalRevenue)}</p>
               </div>
             </CardContent>
           </Card>
@@ -378,20 +398,12 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 </div>
                 <p className="text-xs text-muted-foreground">Orders</p>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Today</span>
-                  <span className="text-sm font-bold">{metrics.todayOrders}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">This week</span>
-                  <span className="text-sm font-bold">{metrics.thisWeekOrders}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">This month</span>
-                  <span className="text-sm font-bold">{metrics.thisMonthOrders}</span>
-                </div>
+              <p className="text-xl font-bold">{metrics.periodOrders}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <TrendBadge value={metrics.ordersGrowth} />
+                <span className="text-xs text-muted-foreground">vs prev</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">~{metrics.avgOrdersPerDay.toFixed(1)}/day</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -410,7 +422,10 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <p className="text-xs text-muted-foreground">Avg Rating (CSAT)</p>
               </div>
               <p className="text-xl font-bold">{metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)} ★` : "—"}</p>
-              <p className="text-xs text-muted-foreground mt-1">{feedbacks.length} reviews total</p>
+              <p className="text-xs text-muted-foreground mt-1">{metrics.periodFeedbackCount} reviews in period</p>
+              {metrics.prevAvgRating > 0 && (
+                <TrendBadge value={metrics.avgRating - metrics.prevAvgRating} suffix=" pts" />
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -475,11 +490,11 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Revenue Trend (7 days) */}
+        {/* Revenue Trend */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-display">Revenue (Last 7 Days)</CardTitle>
+              <CardTitle className="text-lg font-display">Revenue Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={revenueChartConfig} className="h-[220px] w-full">
@@ -492,7 +507,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                       </linearGradient>
                     </defs>
                     <XAxis
-                      dataKey="day"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
@@ -521,18 +536,18 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           </Card>
         </motion.div>
 
-        {/* Orders Trend (4 weeks) */}
+        {/* Orders Trend */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-display">Orders (Last 4 Weeks)</CardTitle>
+              <CardTitle className="text-lg font-display">Orders Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={revenueChartConfig} className="h-[220px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.ordersTrend}>
+                  <BarChart data={metrics.revenueTrend}>
                     <XAxis
-                      dataKey="week"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
@@ -558,14 +573,14 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-display">Rating Trend (4 Weeks)</CardTitle>
+              <CardTitle className="text-lg font-display">Rating Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={ratingChartConfig} className="h-[220px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={metrics.ratingByWeek}>
+                  <LineChart data={metrics.ratingTrend}>
                     <XAxis
-                      dataKey="week"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
@@ -588,40 +603,6 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                       dot={{ fill: "hsl(var(--golden))", r: 4 }}
                     />
                   </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Weekly Revenue Comparison */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-          <Card className="bg-card/60 backdrop-blur-xl border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-display">Revenue by Week</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={revenueChartConfig} className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.ordersTrend}>
-                    <XAxis
-                      dataKey="week"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <ChartTooltip
-                      content={<ChartTooltipContent />}
-                      labelFormatter={(label) => label}
-                    />
-                    <Bar dataKey="revenue" fill="hsl(var(--sunset))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
             </CardContent>
