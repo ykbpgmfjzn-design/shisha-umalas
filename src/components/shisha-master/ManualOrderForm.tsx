@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +90,7 @@ function parseExtraNotesFromNotes(notes: string | null): string {
 }
 
 export default function ManualOrderForm({ onOrderCreated, editOrder, onEditComplete }: ManualOrderFormProps) {
+  const { t } = useLanguage();
   const isEditing = !!editOrder;
 
   const [customers, setCustomers] = useState<ExistingCustomer[]>([]);
@@ -203,11 +205,11 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
 
   const handleSubmit = async () => {
     if (cart.length === 0) {
-      toast.error("Добавьте позиции в заказ");
+      toast.error(t("shishaMaster.form.addItems"));
       return;
     }
     if (!selectedCustomer && !customerName.trim()) {
-      toast.error("Укажите имя клиента");
+      toast.error(t("shishaMaster.form.specifyName"));
       return;
     }
 
@@ -251,12 +253,12 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
 
     if (error) {
       console.error("Order error:", error);
-      toast.error(isEditing ? "Ошибка обновления заказа" : "Ошибка создания заказа");
+      toast.error(isEditing ? t("shishaMaster.form.errorUpdate") : t("shishaMaster.form.errorCreate"));
       setSubmitting(false);
       return;
     }
 
-    toast.success(isEditing ? "Заказ обновлён!" : "Заказ создан!");
+    toast.success(isEditing ? t("shishaMaster.form.orderUpdated") : t("shishaMaster.form.orderCreated"));
     resetForm();
     setSubmitting(false);
 
@@ -276,7 +278,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
-            Клиент
+            {t("shishaMaster.form.client")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -296,7 +298,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                 size="sm"
                 onClick={() => setSelectedCustomer(null)}
               >
-                Изменить
+                {t("shishaMaster.form.change")}
               </Button>
             </div>
           ) : (
@@ -308,18 +310,18 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     className="w-full justify-start text-muted-foreground"
                   >
                     <Search className="h-4 w-4 mr-2" />
-                    Найти существующего клиента...
+                    {t("shishaMaster.form.findClient")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[320px] p-0" align="start">
                   <Command>
                     <CommandInput
-                      placeholder="Имя, email или телефон..."
+                      placeholder={t("shishaMaster.form.nameEmailPhone")}
                       value={customerSearch}
                       onValueChange={setCustomerSearch}
                     />
                     <CommandList>
-                      <CommandEmpty>Не найдено</CommandEmpty>
+                      <CommandEmpty>{t("shishaMaster.form.notFound")}</CommandEmpty>
                       <CommandGroup>
                         {filteredCustomers.slice(0, 20).map((c) => (
                           <CommandItem
@@ -348,12 +350,12 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
 
               <div className="flex items-center gap-2">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">или новый клиент</span>
+                <span className="text-xs text-muted-foreground">{t("shishaMaster.form.orNewClient")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
               <Input
-                placeholder="Имя нового клиента"
+                placeholder={t("shishaMaster.form.newClientName")}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
@@ -367,7 +369,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Wind className="h-4 w-4 text-primary" />
-            Позиции
+            {t("shishaMaster.form.items")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -434,9 +436,9 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-primary" />
-                  Корзина
+                  {t("shishaMaster.form.cart")}
                   <Badge variant="secondary" className="ml-auto">
-                    {cart.reduce((s, e) => s + e.quantity, 0)} позиций
+                    {cart.reduce((s, e) => s + e.quantity, 0)} {t("shishaMaster.form.itemsCount")}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -474,7 +476,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   </div>
                 ))}
                 <div className="pt-2 border-t border-border flex items-center justify-between font-semibold">
-                  <span>Итого</span>
+                  <span>{t("shishaMaster.form.total")}</span>
                   <span>Rp {totalAmount.toLocaleString("id-ID")}</span>
                 </div>
               </CardContent>
@@ -486,41 +488,41 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       {/* Status & Notes */}
       <Card className="bg-card/60 backdrop-blur-xl border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Статусы и заметки</CardTitle>
+          <CardTitle className="text-base">{t("shishaMaster.form.statusAndNotes")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs">Оплата</Label>
+              <Label className="text-xs">{t("shishaMaster.form.payment")}</Label>
               <Select value={paymentStatus} onValueChange={setPaymentStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">⏳ Не оплачено</SelectItem>
-                  <SelectItem value="paid">✅ Оплачено</SelectItem>
+                  <SelectItem value="pending">⏳ {t("shishaMaster.form.unpaid")}</SelectItem>
+                  <SelectItem value="paid">✅ {t("shishaMaster.form.paid")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Доставка</Label>
+              <Label className="text-xs">{t("shishaMaster.form.delivery")}</Label>
               <Select value={deliveryStatus} onValueChange={setDeliveryStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">⏳ Ожидание</SelectItem>
-                  <SelectItem value="preparing">🔥 Готовится</SelectItem>
-                  <SelectItem value="delivered">✅ Доставлено</SelectItem>
+                  <SelectItem value="pending">⏳ {t("shishaMaster.form.waiting")}</SelectItem>
+                  <SelectItem value="preparing">🔥 {t("shishaMaster.form.preparing")}</SelectItem>
+                  <SelectItem value="delivered">✅ {t("shishaMaster.form.delivered")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs">Заметки</Label>
+            <Label className="text-xs">{t("shishaMaster.form.notes")}</Label>
             <Textarea
-              placeholder="Дополнительные заметки к заказу..."
+              placeholder={t("shishaMaster.form.notesPlaceholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
@@ -541,7 +543,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
             className="flex-1 h-12"
             size="lg"
           >
-            Отмена
+            {t("shishaMaster.form.cancel")}
           </Button>
         )}
         <Button
@@ -555,12 +557,12 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
           ) : isEditing ? (
             <>
               <Save className="h-5 w-5 mr-2" />
-              Сохранить • Rp {totalAmount.toLocaleString("id-ID")}
+              {t("shishaMaster.form.save")} • Rp {totalAmount.toLocaleString("id-ID")}
             </>
           ) : (
             <>
               <Check className="h-5 w-5 mr-2" />
-              Создать заказ • Rp {totalAmount.toLocaleString("id-ID")}
+              {t("shishaMaster.form.createOrder")} • Rp {totalAmount.toLocaleString("id-ID")}
             </>
           )}
         </Button>

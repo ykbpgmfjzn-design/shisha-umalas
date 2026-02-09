@@ -629,7 +629,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Редактировать заказ</SheetTitle>
+            <SheetTitle>{t("shishaMaster.form.editOrder") || "Edit Order"}</SheetTitle>
           </SheetHeader>
           <div className="mt-4">
             <ManualOrderForm

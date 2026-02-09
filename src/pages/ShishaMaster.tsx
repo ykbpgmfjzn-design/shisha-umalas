@@ -87,7 +87,7 @@ function ShishaMasterContent() {
             </TabsTrigger>
             <TabsTrigger value="new-order" className="gap-2">
               <PlusCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Новый</span>
+              <span className="hidden sm:inline">{t("shishaMaster.newOrder") || "New"}</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <History className="h-4 w-4" />
