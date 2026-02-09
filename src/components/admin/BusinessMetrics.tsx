@@ -1,22 +1,40 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
-  Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus
+  Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
+  Plus, Trash2, Settings2, Save, X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, BarChart, Bar, LineChart, Line } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
 interface FeedbackItem {
   id: string;
   rating: number;
   created_at: string;
+}
+
+interface MonthlyExpense {
+  id: string;
+  name: string;
+  amount: number;
 }
 
 interface BusinessMetricsProps {
@@ -51,6 +69,53 @@ function paidOnly(purchases: PurchaseWithProfile[]) {
 }
 
 export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: BusinessMetricsProps) {
+  const { toast } = useToast();
+  const [expenses, setExpenses] = useState<MonthlyExpense[]>([]);
+  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [editExpenses, setEditExpenses] = useState<MonthlyExpense[]>([]);
+  const [savingExpenses, setSavingExpenses] = useState(false);
+
+  // Load expenses from app_settings
+  const loadExpenses = useCallback(async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "monthly_expenses")
+      .maybeSingle();
+    if (data?.value) {
+      try {
+        setExpenses(JSON.parse(data.value));
+      } catch { /* ignore */ }
+    }
+  }, []);
+
+  useEffect(() => { loadExpenses(); }, [loadExpenses]);
+
+  const totalMonthlyExpenses = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
+
+  const saveExpenses = async () => {
+    setSavingExpenses(true);
+    const value = JSON.stringify(editExpenses.filter(e => e.name.trim() && e.amount > 0));
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "monthly_expenses", value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    setSavingExpenses(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } else {
+      toast({ title: "Expenses saved" });
+      setExpenses(JSON.parse(value));
+      setShowExpenseDialog(false);
+    }
+  };
+
+  const addExpenseRow = () => {
+    setEditExpenses([...editExpenses, { id: crypto.randomUUID(), name: "", amount: 0 }]);
+  };
+
+  const removeExpenseRow = (id: string) => {
+    setEditExpenses(editExpenses.filter(e => e.id !== id));
+  };
   const metrics = useMemo(() => {
     const paid = paidOnly(purchases);
     const now = new Date();
@@ -143,10 +208,9 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       });
     }
 
-    // --- Gross Profit Margin (estimated at 70% for hookah business) ---
-    const estimatedCOGS = totalRevenue * 0.3;
-    const grossProfit = totalRevenue - estimatedCOGS;
-    const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    // --- Gross Profit Margin (based on configured monthly expenses) ---
+    const grossProfit = thisMonthRev - totalMonthlyExpenses;
+    const grossMargin = thisMonthRev > 0 ? (grossProfit / thisMonthRev) * 100 : 0;
 
     // --- Customer Lifetime Value ---
     const avgOrdersPerCustomer = totalCustomers > 0 ? purchases.length / totalCustomers : 0;
@@ -211,7 +275,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       revenueTrend, ordersTrend,
       totalUsers,
     };
-  }, [purchases, feedbacks, totalUsers]);
+  }, [purchases, feedbacks, totalUsers, totalMonthlyExpenses]);
 
   const formatIDR = (v: number) => `IDR ${Math.round(v).toLocaleString("id-ID")}`;
 
@@ -355,14 +419,39 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-lg bg-cyan-400/10">
-                  <Percent className="w-4 h-4 text-cyan-400" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-cyan-400/10">
+                    <Percent className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Gross Margin</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Gross Margin</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    setEditExpenses(expenses.length > 0 ? [...expenses] : [{ id: crypto.randomUUID(), name: "", amount: 0 }]);
+                    setShowExpenseDialog(true);
+                  }}
+                >
+                  <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
               </div>
-              <p className="text-xl font-bold">{metrics.grossMargin.toFixed(0)}%</p>
-              <p className="text-xs text-muted-foreground mt-1">Profit: {formatIDR(metrics.grossProfit)}</p>
+              <p className={`text-xl font-bold ${metrics.grossMargin < 0 ? "text-destructive" : ""}`}>
+                {metrics.grossMargin.toFixed(0)}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Profit: {formatIDR(metrics.grossProfit)}
+              </p>
+              {totalMonthlyExpenses > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Expenses: {formatIDR(totalMonthlyExpenses)}/mo ({expenses.length} items)
+                </p>
+              )}
+              {totalMonthlyExpenses === 0 && (
+                <p className="text-xs text-orange-400 mt-1">⚠ Set up expenses</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -539,6 +628,69 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           </Card>
         </motion.div>
       </div>
+
+      {/* Monthly Expenses Dialog */}
+      <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Monthly Recurring Expenses</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+            {editExpenses.map((expense, idx) => (
+              <div key={expense.id} className="flex items-center gap-2">
+                <Input
+                  placeholder="Expense name"
+                  value={expense.name}
+                  onChange={(e) => {
+                    const updated = [...editExpenses];
+                    updated[idx] = { ...updated[idx], name: e.target.value };
+                    setEditExpenses(updated);
+                  }}
+                  className="flex-1"
+                />
+                <Input
+                  type="number"
+                  placeholder="Amount"
+                  value={expense.amount || ""}
+                  onChange={(e) => {
+                    const updated = [...editExpenses];
+                    updated[idx] = { ...updated[idx], amount: Number(e.target.value) || 0 };
+                    setEditExpenses(updated);
+                  }}
+                  className="w-32"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => removeExpenseRow(expense.id)}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+            {editExpenses.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No expenses added yet</p>
+            )}
+          </div>
+          <Button variant="outline" size="sm" onClick={addExpenseRow} className="w-full gap-2">
+            <Plus className="w-4 h-4" />
+            Add Expense
+          </Button>
+          {editExpenses.length > 0 && (
+            <div className="text-sm text-muted-foreground text-right">
+              Total: IDR {editExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString("id-ID")}/month
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowExpenseDialog(false)}>Cancel</Button>
+            <Button onClick={saveExpenses} disabled={savingExpenses} className="gap-2">
+              <Save className="w-4 h-4" />
+              {savingExpenses ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
