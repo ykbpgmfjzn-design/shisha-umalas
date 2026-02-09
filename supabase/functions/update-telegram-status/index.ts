@@ -31,6 +31,23 @@ serve(async (req) => {
     
     console.log('Broadcasting status update for order:', data.orderId, 'type:', data.statusType, 'status:', data.newStatus);
 
+    // Log activity for status change from web admin
+    const activityType = data.statusType === 'payment' ? 'payment' : 'order';
+    const activityAction = data.statusType === 'payment'
+      ? `Payment status changed to ${data.newStatus} via web admin`
+      : `Delivery status changed to ${data.newStatus} via web admin`;
+
+    await supabase.rpc('log_activity', {
+      _activity_type: activityType,
+      _action: activityAction,
+      _details: {
+        order_id: data.orderId,
+        field: data.statusType === 'payment' ? 'payment_status' : 'delivery_status',
+        new_value: data.newStatus,
+        source: 'web_admin'
+      }
+    });
+
     // Fetch the order details
     const { data: order, error: orderError } = await supabase
       .from('purchases')
