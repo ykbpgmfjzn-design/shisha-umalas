@@ -35,7 +35,7 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import type { PurchaseWithProfile, DashboardStats } from "@/hooks/useAdmin";
 
-type StatusFilter = "all" | "pending" | "PAID" | "cancelled";
+type StatusFilter = "all" | "pending" | "paid" | "cancelled";
 
 const AccountingContent = () => {
   const navigate = useNavigate();
@@ -65,8 +65,8 @@ const AccountingContent = () => {
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     orderId: string;
-    action: "PAID" | "cancelled";
-  }>({ open: false, orderId: "", action: "PAID" });
+    action: "paid" | "cancelled";
+  }>({ open: false, orderId: "", action: "paid" });
 
   // Check access for accounting role
   const checkAccess = useCallback(async () => {
@@ -120,13 +120,13 @@ const AccountingContent = () => {
       setStats({
         totalOrders: purchasesWithProfiles.length,
         pendingOrders: purchasesWithProfiles.filter(p => p.payment_status === "pending").length,
-        completedOrders: purchasesWithProfiles.filter(p => p.payment_status === "PAID").length,
+        completedOrders: purchasesWithProfiles.filter(p => p.payment_status?.toLowerCase() === "paid").length,
         todayOrders: todayPurchases.length,
         totalRevenue: purchasesWithProfiles
-          .filter(p => p.payment_status === "PAID")
+          .filter(p => p.payment_status?.toLowerCase() === "paid")
           .reduce((sum, p) => sum + (p.amount || 0), 0),
         todayRevenue: todayPurchases
-          .filter(p => p.payment_status === "PAID")
+          .filter(p => p.payment_status?.toLowerCase() === "paid")
           .reduce((sum, p) => sum + (p.amount || 0), 0),
         totalHookahs: purchasesWithProfiles.reduce((sum, p) => sum + p.hookah_count, 0),
         totalUsers: profilesData?.length || 0,
@@ -180,8 +180,8 @@ const AccountingContent = () => {
   };
 
   const getStatusBadge = (status: string | null) => {
-    switch (status) {
-      case "PAID":
+    switch (status?.toLowerCase()) {
+      case "paid":
         return (
           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
             <CheckCircle className="w-3 h-3 mr-1" />
@@ -214,7 +214,7 @@ const AccountingContent = () => {
       .from("purchases")
       .update({
         payment_status: action,
-        paid_at: action === "PAID" ? new Date().toISOString() : null,
+        paid_at: action === "paid" ? new Date().toISOString() : null,
       })
       .eq("id", orderId);
 
@@ -229,7 +229,7 @@ const AccountingContent = () => {
     } else {
       toast({
         title: t("admin.statusUpdated"),
-        description: action === "PAID" ? t("admin.orderPaid") : t("admin.orderCancelled"),
+        description: action === "paid" ? t("admin.orderPaid") : t("admin.orderCancelled"),
       });
       fetchOrders();
     }
@@ -397,7 +397,7 @@ const AccountingContent = () => {
                   <SelectContent>
                     <SelectItem value="all">{t("admin.filterAll")}</SelectItem>
                     <SelectItem value="pending">{t("admin.filterPending")}</SelectItem>
-                    <SelectItem value="PAID">{t("admin.filterPaid")}</SelectItem>
+                    <SelectItem value="paid">{t("admin.filterPaid")}</SelectItem>
                     <SelectItem value="cancelled">{t("admin.filterCancelled")}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -498,13 +498,13 @@ const AccountingContent = () => {
                       {getStatusBadge(order.payment_status)}
                       
                       <div className="flex gap-2">
-                        {order.payment_status !== "PAID" && (
+                        {order.payment_status?.toLowerCase() !== "paid" && (
                           <Button
                             size="sm"
                             variant="outline"
                             className="text-green-400 border-green-400/30 hover:bg-green-400/10"
                             disabled={updating === order.id}
-                            onClick={() => setConfirmDialog({ open: true, orderId: order.id, action: "PAID" })}
+                            onClick={() => setConfirmDialog({ open: true, orderId: order.id, action: "paid" })}
                           >
                             <CheckCircle className="w-3 h-3 mr-1" />
                             {t("admin.markAsPaid")}
@@ -555,7 +555,7 @@ const AccountingContent = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("admin.confirmAction")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmDialog.action === "PAID" 
+              {confirmDialog.action === "paid" 
                 ? t("admin.confirmPaidMessage")
                 : t("admin.confirmCancelMessage")
               }
@@ -565,7 +565,7 @@ const AccountingContent = () => {
             <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleStatusChange}
-              className={confirmDialog.action === "PAID" 
+              className={confirmDialog.action === "paid" 
                 ? "bg-green-500 hover:bg-green-600" 
                 : "bg-red-500 hover:bg-red-600"
               }
