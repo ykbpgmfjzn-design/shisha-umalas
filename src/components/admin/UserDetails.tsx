@@ -17,7 +17,7 @@ interface UserDetailsProps {
 
 const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsProps) => {
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ru-RU", {
+    return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -30,7 +30,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
     return (
       <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6 flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
         <Users className="w-12 h-12 mb-4 opacity-50" />
-        <p>Выберите пользователя</p>
+        <p>Select a user</p>
       </div>
     );
   }
@@ -41,7 +41,6 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
       animate={{ opacity: 1, x: 0 }}
       className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
     >
-      {/* User Info */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -49,52 +48,47 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
             {isAdmin && (
               <Badge variant="outline" className="border-red-400 text-red-400">
                 <Shield className="w-3 h-3 mr-1" />
-                Админ
+                Admin
               </Badge>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            {user.full_name || "Без имени"} • 
+            {user.full_name || "No name"} • 
             {user.guest_type === "special" 
-              ? ` Комната ${user.room_number}` 
-              : " Гость"}
+              ? ` Room ${user.room_number}` 
+              : " Guest"}
           </p>
         </div>
         <div className="text-right">
           <div className="flex items-center gap-2 text-golden">
             <Crown className="w-5 h-5" />
-            <span className="text-2xl font-bold">Ур. {user.loyalty_level}</span>
+            <span className="text-2xl font-bold">Lvl {user.loyalty_level}</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {user.total_hookahs_ordered} кальянов
+            {user.total_hookahs_ordered} hookahs
           </p>
         </div>
       </div>
 
-      {/* Add Purchase Button */}
       <Button
         onClick={onAddPurchase}
         className="w-full mb-6 bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden"
       >
         <Plus className="w-4 h-4 mr-2" />
-        Добавить покупку
+        Add Purchase
       </Button>
 
-      {/* Purchases List */}
       <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
         <h3 className="font-medium text-sm text-muted-foreground mb-3">
-          История заказов ({purchases.length})
+          Order History ({purchases.length})
         </h3>
         
         {purchases.map((purchase) => (
-          <div
-            key={purchase.id}
-            className="p-4 rounded-xl bg-muted/30"
-          >
+          <div key={purchase.id} className="p-4 rounded-xl bg-muted/30">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">{purchase.hookah_count} кальян(ов)</span>
+                <span className="font-medium">{purchase.hookah_count} hookah(s)</span>
               </div>
               {purchase.amount && (
                 <span className="text-golden font-medium">
@@ -110,13 +104,13 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
               {purchase.free_drink_used && (
                 <div className="flex items-center gap-1 text-golden">
                   <Coffee className="w-3 h-3" />
-                  Напиток
+                  Drink
                 </div>
               )}
               {purchase.free_snack_used && (
                 <div className="flex items-center gap-1 text-golden">
                   <Cookie className="w-3 h-3" />
-                  Снек
+                  Snack
                 </div>
               )}
             </div>
@@ -130,7 +124,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
 
         {purchases.length === 0 && (
           <p className="text-center text-muted-foreground py-8">
-            Нет заказов
+            No orders
           </p>
         )}
       </div>

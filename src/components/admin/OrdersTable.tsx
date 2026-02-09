@@ -21,7 +21,7 @@ interface OrdersTableProps {
   orders: PurchaseWithProfile[];
   onUpdatePaymentStatus?: (id: string, status: string) => Promise<void>;
   onUpdateDeliveryStatus?: (id: string, status: string) => Promise<void>;
-  onUpdateStatus?: (id: string, status: string) => Promise<void>; // Legacy support
+  onUpdateStatus?: (id: string, status: string) => Promise<void>;
   showFilters?: boolean;
   title?: string;
 }
@@ -35,7 +35,7 @@ const OrdersTable = ({
   onUpdateDeliveryStatus,
   onUpdateStatus,
   showFilters = true, 
-  title = "Заказы" 
+  title = "Orders" 
 }: OrdersTableProps) => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
@@ -44,7 +44,6 @@ const OrdersTable = ({
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
 
-  // Track order changes for highlight effect
   useEffect(() => {
     const newUpdated = new Set<string>();
     
@@ -58,21 +57,19 @@ const OrdersTable = ({
     if (newUpdated.size > 0) {
       setRecentlyUpdated(prev => new Set([...prev, ...newUpdated]));
       
-      // Show toast notification for updated orders
       newUpdated.forEach(id => {
         const order = orders.find(o => o.id === id);
         if (order) {
           const prev = prevOrdersRef.current.get(id);
           const statusChange = prev?.delivery_status !== order.delivery_status 
-            ? `Доставка: ${order.delivery_status}`
-            : `Оплата: ${order.payment_status}`;
-          toast.info(`Заказ обновлён`, {
-            description: `#${order.hookah_count} кальян • ${statusChange}`,
+            ? `Delivery: ${order.delivery_status}`
+            : `Payment: ${order.payment_status}`;
+          toast.info(`Order updated`, {
+            description: `#${order.hookah_count} hookah(s) • ${statusChange}`,
           });
         }
       });
       
-      // Clear highlight after 3 seconds
       setTimeout(() => {
         setRecentlyUpdated(prev => {
           const updated = new Set(prev);
@@ -82,7 +79,6 @@ const OrdersTable = ({
       }, 3000);
     }
 
-    // Update ref with current order states
     const newMap = new Map<string, { payment_status: string | null; delivery_status: string }>();
     orders.forEach(order => {
       newMap.set(order.id, { payment_status: order.payment_status, delivery_status: order.delivery_status });
@@ -112,7 +108,7 @@ const OrdersTable = ({
     });
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ru-RU", {
+    return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -127,14 +123,14 @@ const OrdersTable = ({
       return (
         <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
           <CreditCard className="w-3 h-3 mr-1" />
-          Оплачено
+          Paid
         </Badge>
       );
     }
     return (
       <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
         <Clock className="w-3 h-3 mr-1" />
-        Не оплачено
+        Unpaid
       </Badge>
     );
   };
@@ -145,28 +141,28 @@ const OrdersTable = ({
         return (
           <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
             <ChefHat className="w-3 h-3 mr-1" />
-            Готовится
+            Preparing
           </Badge>
         );
       case "delivered":
         return (
           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
             <CheckCircle className="w-3 h-3 mr-1" />
-            Доставлено
+            Delivered
           </Badge>
         );
       case "cancelled":
         return (
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
             <XCircle className="w-3 h-3 mr-1" />
-            Отменён
+            Cancelled
           </Badge>
         );
       default:
         return (
           <Badge className="bg-muted text-muted-foreground border-border">
             <Truck className="w-3 h-3 mr-1" />
-            Ожидает
+            Pending
           </Badge>
         );
     }
@@ -204,10 +200,10 @@ const OrdersTable = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все</SelectItem>
-                  <SelectItem value="paid">Оплачены</SelectItem>
-                  <SelectItem value="unpaid">Не оплачены</SelectItem>
-                  <SelectItem value="unpaid_delivered">⚠️ Долг</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="unpaid_delivered">⚠️ Debt</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -219,11 +215,11 @@ const OrdersTable = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все</SelectItem>
-                  <SelectItem value="pending">Ожидают</SelectItem>
-                  <SelectItem value="preparing">Готовятся</SelectItem>
-                  <SelectItem value="delivered">Доставлены</SelectItem>
-                  <SelectItem value="cancelled">Отменены</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="preparing">Preparing</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -237,12 +233,12 @@ const OrdersTable = ({
               {sortOrder === "desc" ? (
                 <>
                   <ChevronDown className="w-4 h-4" />
-                  Новые
+                  Newest
                 </>
               ) : (
                 <>
                   <ChevronUp className="w-4 h-4" />
-                  Старые
+                  Oldest
                 </>
               )}
             </Button>
@@ -254,7 +250,7 @@ const OrdersTable = ({
         {filteredOrders.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Нет заказов</p>
+            <p>No orders</p>
           </div>
         ) : (
           filteredOrders.map((order, index) => {
@@ -279,11 +275,10 @@ const OrdersTable = ({
               }`}
             >
               <div className="flex items-start justify-between gap-4 flex-wrap">
-                {/* Order Info */}
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 mb-2">
                     <Hash className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{order.hookah_count} кальян(ов)</span>
+                    <span className="font-medium">{order.hookah_count} hookah(s)</span>
                     {order.amount && (
                       <span className="text-primary font-medium">
                         IDR {order.amount.toLocaleString('id-ID')}
@@ -291,7 +286,6 @@ const OrdersTable = ({
                     )}
                   </div>
                   
-                  {/* User Info */}
                   {order.profile && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       {order.profile.guest_type === "special" ? (
@@ -299,10 +293,10 @@ const OrdersTable = ({
                       ) : (
                         <User className="w-3 h-3" />
                       )}
-                      <span>{order.profile.email || "Без email"}</span>
+                      <span>{order.profile.email || "No email"}</span>
                       {order.profile.room_number && (
                         <Badge variant="outline" className="text-xs">
-                          Комната {order.profile.room_number}
+                          Room {order.profile.room_number}
                         </Badge>
                       )}
                     </div>
@@ -316,13 +310,13 @@ const OrdersTable = ({
                     {order.free_drink_used && (
                       <div className="flex items-center gap-1 text-primary">
                         <Coffee className="w-3 h-3" />
-                        Напиток
+                        Drink
                       </div>
                     )}
                     {order.free_snack_used && (
                       <div className="flex items-center gap-1 text-primary">
                         <Cookie className="w-3 h-3" />
-                        Снек
+                        Snack
                       </div>
                     )}
                   </div>
@@ -334,17 +328,13 @@ const OrdersTable = ({
                   )}
                 </div>
 
-                {/* Status & Actions */}
                 <div className="flex flex-col items-end gap-2">
-                  {/* Status Badges */}
                   <div className="flex gap-2">
                     {getPaymentBadge(order.payment_status)}
                     {getDeliveryBadge(order.delivery_status)}
                   </div>
                   
-                  {/* Action Buttons */}
                   <div className="flex gap-2 flex-wrap justify-end">
-                    {/* Payment Actions */}
                     {order.payment_status?.toLowerCase() !== "paid" && (
                       <Button
                         size="sm"
@@ -354,11 +344,10 @@ const OrdersTable = ({
                         onClick={() => handlePaymentChange(order.id, "paid")}
                       >
                         <CreditCard className="w-3 h-3 mr-1" />
-                        Оплачено
+                        Paid
                       </Button>
                     )}
                     
-                    {/* Delivery Actions */}
                     {order.delivery_status === "pending" && onUpdateDeliveryStatus && (
                       <Button
                         size="sm"
@@ -368,7 +357,7 @@ const OrdersTable = ({
                         onClick={() => handleDeliveryChange(order.id, "preparing")}
                       >
                         <ChefHat className="w-3 h-3 mr-1" />
-                        Готовить
+                        Prepare
                       </Button>
                     )}
                     
@@ -381,7 +370,7 @@ const OrdersTable = ({
                         onClick={() => handleDeliveryChange(order.id, "delivered")}
                       >
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        Доставлено
+                        Delivered
                       </Button>
                     )}
                     
@@ -394,7 +383,7 @@ const OrdersTable = ({
                         onClick={() => handleDeliveryChange(order.id, "cancelled")}
                       >
                         <XCircle className="w-3 h-3 mr-1" />
-                        Отмена
+                        Cancel
                       </Button>
                     )}
                     

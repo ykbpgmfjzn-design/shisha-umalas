@@ -229,7 +229,7 @@ export const useAdmin = () => {
       .single();
 
     if (!error && data) {
-      const action = status === "paid" ? "Заказ оплачен" : "Статус оплаты изменён";
+      const action = status === "paid" ? "Order paid" : "Payment status changed";
       await logActivity('order', action, {
         purchase_id: purchaseId,
         new_status: status,
@@ -268,9 +268,9 @@ export const useAdmin = () => {
 
     if (!error && data) {
       const actionMap: Record<string, string> = {
-        preparing: "Заказ готовится",
-        delivered: "Заказ доставлен",
-        cancelled: "Заказ отменён",
+        preparing: "Order preparing",
+        delivered: "Order delivered",
+        cancelled: "Order cancelled",
       };
       await logActivity('order', actionMap[status] || `Статус доставки: ${status}`, {
         purchase_id: purchaseId,
