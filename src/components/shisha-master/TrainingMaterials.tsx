@@ -80,7 +80,7 @@ export default function TrainingMaterials() {
 
   const handleUpload = async () => {
     if (!form.title || !form.file) {
-      toast.error("Заполните название и выберите файл");
+      toast.error("Please fill in the title and select a file");
       return;
     }
 
@@ -114,13 +114,13 @@ export default function TrainingMaterials() {
 
       if (dbError) throw dbError;
 
-      toast.success("Материал добавлен");
+      toast.success("Material added");
       setUploadDialogOpen(false);
       setForm({ title: "", description: "", file: null });
       fetchMaterials();
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error(error.message || "Ошибка загрузки");
+      toast.error(error.message || "Upload error");
     } finally {
       setUploading(false);
     }
@@ -147,13 +147,13 @@ export default function TrainingMaterials() {
 
       if (error) throw error;
 
-      toast.success("Материал удалён");
+      toast.success("Material deleted");
       setDeleteDialogOpen(false);
       setSelectedMaterial(null);
       fetchMaterials();
     } catch (error: any) {
       console.error("Delete error:", error);
-      toast.error("Ошибка удаления");
+      toast.error("Delete error");
     }
   };
 
@@ -303,7 +303,7 @@ export default function TrainingMaterials() {
               <Input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Название материала"
+                placeholder="Material title"
               />
             </div>
             <div className="space-y-2">
@@ -311,7 +311,7 @@ export default function TrainingMaterials() {
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Описание (опционально)"
+                placeholder="Description (optional)"
                 rows={3}
               />
             </div>
