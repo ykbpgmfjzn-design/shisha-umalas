@@ -14,11 +14,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import ManualOrderForm, { type EditOrderData } from "./ManualOrderForm";
 
 interface OrderWithProfile {
   id: string;
@@ -30,6 +37,7 @@ interface OrderWithProfile {
   created_at: string;
   paid_at: string | null;
   user_id: string;
+  customer_name: string | null;
   profile: {
     full_name: string | null;
     email: string | null;
@@ -53,6 +61,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [now, setNow] = useState(new Date());
   const [deliveryTimeMinutes, setDeliveryTimeMinutes] = useState(15);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
 
   // Track order changes for highlight effect
@@ -315,6 +325,20 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     setCancelDialogOpen(true);
   };
 
+  const openEditSheet = (order: OrderWithProfile) => {
+    setEditingOrder({
+      id: order.id,
+      user_id: order.user_id,
+      customer_name: order.customer_name,
+      hookah_count: order.hookah_count,
+      amount: order.amount,
+      notes: order.notes,
+      payment_status: order.payment_status,
+      delivery_status: order.delivery_status,
+    });
+    setEditSheetOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -366,23 +390,33 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         {order.amount && <span className="text-muted-foreground ml-2">• Rp {order.amount.toLocaleString()}</span>}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {order.profile?.full_name || order.profile?.email || (t("admin.guest") || "Guest")}
+                        {order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}
                         {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex gap-1.5 justify-end mb-1">
-                      <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
-                        {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
-                      </Badge>
-                      <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
-                        {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
-                      </Badge>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div className="flex gap-1.5 justify-end mb-1">
+                        <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
+                          {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
+                        </Badge>
+                        <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
+                          {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
-                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => openEditSheet(order)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -488,7 +522,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     {/* Customer info */}
                     <div className="flex items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.profile?.full_name || order.profile?.email || (t("admin.guest") || "Guest")}</span>
+                      <span>{order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}</span>
                     </div>
                     
                     {/* Room - highlighted */}
@@ -544,6 +578,15 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         variant="outline" 
                         size="icon"
                         className="h-9 w-9 shrink-0"
+                        onClick={() => openEditSheet(order)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
                         onClick={() => openCancelDialog(order.id)}
                       >
                         <XCircle className="h-4 w-4" />
@@ -581,6 +624,25 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Order Sheet */}
+      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Редактировать заказ</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <ManualOrderForm
+              editOrder={editingOrder}
+              onEditComplete={() => {
+                setEditSheetOpen(false);
+                setEditingOrder(null);
+                fetchOrders();
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
