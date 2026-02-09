@@ -180,6 +180,7 @@ export type Database = {
         Row: {
           amount: number | null
           created_at: string
+          customer_name: string | null
           delivery_status: string
           discount_applied: number | null
           free_drink_used: boolean | null
@@ -191,13 +192,14 @@ export type Database = {
           payment_status: string | null
           telegram_chat_id: number | null
           telegram_message_id: number | null
-          user_id: string
+          user_id: string | null
           xendit_invoice_id: string | null
           xendit_invoice_url: string | null
         }
         Insert: {
           amount?: number | null
           created_at?: string
+          customer_name?: string | null
           delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
@@ -209,13 +211,14 @@ export type Database = {
           payment_status?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
-          user_id: string
+          user_id?: string | null
           xendit_invoice_id?: string | null
           xendit_invoice_url?: string | null
         }
         Update: {
           amount?: number | null
           created_at?: string
+          customer_name?: string | null
           delivery_status?: string
           discount_applied?: number | null
           free_drink_used?: boolean | null
@@ -227,7 +230,7 @@ export type Database = {
           payment_status?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
-          user_id?: string
+          user_id?: string | null
           xendit_invoice_id?: string | null
           xendit_invoice_url?: string | null
         }

@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Wind, BookOpen, History } from "lucide-react";
+import { ArrowLeft, Wind, BookOpen, History, PlusCircle } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/OrdersList";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
+import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ function ShishaMasterContent() {
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3 mx-auto">
+          <TabsList className="grid w-full max-w-lg grid-cols-4 mx-auto">
             <TabsTrigger value="active" className="gap-2">
               <Wind className="h-4 w-4" />
               <span className="hidden sm:inline">{t("shishaMaster.orders.active") || "Active"}</span>
@@ -83,6 +84,10 @@ function ShishaMasterContent() {
                   {activeOrdersCount}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="new-order" className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Новый</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <History className="h-4 w-4" />
@@ -96,6 +101,10 @@ function ShishaMasterContent() {
 
           <TabsContent value="active">
             <OrdersList showHistory={false} />
+          </TabsContent>
+
+          <TabsContent value="new-order">
+            <ManualOrderForm />
           </TabsContent>
 
           <TabsContent value="history">
