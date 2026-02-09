@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Minus, User, Search, ShoppingCart, Check, Wind } from "lucide-react";
+import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save } from "lucide-react";
 import { menuItems, MenuItem } from "@/data/menuItems";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,7 +45,52 @@ interface CartEntry {
   quantity: number;
 }
 
-export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: () => void }) {
+export interface EditOrderData {
+  id: string;
+  user_id: string | null;
+  customer_name: string | null;
+  hookah_count: number;
+  amount: number | null;
+  notes: string | null;
+  payment_status: string | null;
+  delivery_status: string;
+}
+
+interface ManualOrderFormProps {
+  onOrderCreated?: () => void;
+  editOrder?: EditOrderData | null;
+  onEditComplete?: () => void;
+}
+
+function parseCartFromNotes(notes: string | null): CartEntry[] {
+  if (!notes) return [];
+  // Notes format: "1x Whiteline Vanilla, 2x Berry Kiss\n---\nextra notes"
+  const itemsPart = notes.split("\n---\n")[0];
+  const entries: CartEntry[] = [];
+  const parts = itemsPart.split(", ");
+  for (const part of parts) {
+    const match = part.match(/^(\d+)x\s+(.+)$/);
+    if (match) {
+      const qty = parseInt(match[1], 10);
+      const name = match[2].trim();
+      const menuItem = menuItems.find((m) => m.name === name);
+      if (menuItem) {
+        entries.push({ item: menuItem, quantity: qty });
+      }
+    }
+  }
+  return entries;
+}
+
+function parseExtraNotesFromNotes(notes: string | null): string {
+  if (!notes) return "";
+  const parts = notes.split("\n---\n");
+  return parts.length > 1 ? parts.slice(1).join("\n---\n") : "";
+}
+
+export default function ManualOrderForm({ onOrderCreated, editOrder, onEditComplete }: ManualOrderFormProps) {
+  const isEditing = !!editOrder;
+
   const [customers, setCustomers] = useState<ExistingCustomer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<ExistingCustomer | null>(null);
   const [customerName, setCustomerName] = useState("");
@@ -70,6 +115,28 @@ export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: (
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editOrder) {
+      setCart(parseCartFromNotes(editOrder.notes));
+      setNotes(parseExtraNotesFromNotes(editOrder.notes));
+      setPaymentStatus(editOrder.payment_status || "pending");
+      setDeliveryStatus(editOrder.delivery_status || "pending");
+      setCustomerName(editOrder.customer_name || "");
+      // selectedCustomer will be set after customers load
+    } else {
+      resetForm();
+    }
+  }, [editOrder]);
+
+  // Set selectedCustomer after customers are loaded for edit mode
+  useEffect(() => {
+    if (editOrder?.user_id && customers.length > 0) {
+      const found = customers.find((c) => c.id === editOrder.user_id);
+      if (found) setSelectedCustomer(found);
+    }
+  }, [editOrder, customers]);
 
   const fetchCustomers = async () => {
     const { data } = await supabase
@@ -125,6 +192,15 @@ export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: (
     [cart]
   );
 
+  const resetForm = () => {
+    setCart([]);
+    setNotes("");
+    setCustomerName("");
+    setSelectedCustomer(null);
+    setPaymentStatus("pending");
+    setDeliveryStatus("pending");
+  };
+
   const handleSubmit = async () => {
     if (cart.length === 0) {
       toast.error("Добавьте позиции в заказ");
@@ -144,7 +220,7 @@ export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: (
       ? `${orderNotes}\n---\n${notes}`
       : orderNotes;
 
-    const insertData: Record<string, unknown> = {
+    const orderData: Record<string, unknown> = {
       hookah_count: hookahCount || 1,
       amount: totalAmount,
       notes: fullNotes,
@@ -153,31 +229,42 @@ export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: (
     };
 
     if (selectedCustomer) {
-      insertData.user_id = selectedCustomer.id;
-      insertData.customer_name = selectedCustomer.full_name || selectedCustomer.email;
+      orderData.user_id = selectedCustomer.id;
+      orderData.customer_name = selectedCustomer.full_name || selectedCustomer.email;
     } else {
-      insertData.customer_name = customerName.trim();
+      orderData.user_id = null;
+      orderData.customer_name = customerName.trim();
     }
 
-    const { error } = await supabase.from("purchases").insert(insertData);
+    let error;
+
+    if (isEditing && editOrder) {
+      const res = await supabase
+        .from("purchases")
+        .update(orderData)
+        .eq("id", editOrder.id);
+      error = res.error;
+    } else {
+      const res = await supabase.from("purchases").insert(orderData);
+      error = res.error;
+    }
 
     if (error) {
-      console.error("Insert error:", error);
-      toast.error("Ошибка создания заказа");
+      console.error("Order error:", error);
+      toast.error(isEditing ? "Ошибка обновления заказа" : "Ошибка создания заказа");
       setSubmitting(false);
       return;
     }
 
-    toast.success("Заказ создан!");
-    // Reset form
-    setCart([]);
-    setNotes("");
-    setCustomerName("");
-    setSelectedCustomer(null);
-    setPaymentStatus("pending");
-    setDeliveryStatus("pending");
+    toast.success(isEditing ? "Заказ обновлён!" : "Заказ создан!");
+    resetForm();
     setSubmitting(false);
-    onOrderCreated?.();
+
+    if (isEditing) {
+      onEditComplete?.();
+    } else {
+      onOrderCreated?.();
+    }
   };
 
   const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra"];
@@ -443,21 +530,41 @@ export default function ManualOrderForm({ onOrderCreated }: { onOrderCreated?: (
       </Card>
 
       {/* Submit */}
-      <Button
-        onClick={handleSubmit}
-        disabled={submitting || cart.length === 0}
-        className="w-full h-12 text-base"
-        size="lg"
-      >
-        {submitting ? (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground" />
-        ) : (
-          <>
-            <Check className="h-5 w-5 mr-2" />
-            Создать заказ • Rp {totalAmount.toLocaleString("id-ID")}
-          </>
+      <div className="flex gap-3">
+        {isEditing && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              resetForm();
+              onEditComplete?.();
+            }}
+            className="flex-1 h-12"
+            size="lg"
+          >
+            Отмена
+          </Button>
         )}
-      </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting || cart.length === 0}
+          className="flex-1 h-12 text-base"
+          size="lg"
+        >
+          {submitting ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground" />
+          ) : isEditing ? (
+            <>
+              <Save className="h-5 w-5 mr-2" />
+              Сохранить • Rp {totalAmount.toLocaleString("id-ID")}
+            </>
+          ) : (
+            <>
+              <Check className="h-5 w-5 mr-2" />
+              Создать заказ • Rp {totalAmount.toLocaleString("id-ID")}
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
