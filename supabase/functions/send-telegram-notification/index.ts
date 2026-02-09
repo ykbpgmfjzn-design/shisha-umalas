@@ -120,7 +120,7 @@ ${data.notes ? `📝 *Notes:* ${data.notes}` : ''}
 📋 *Order ID:* \`${data.orderId?.slice(0, 8)}\`
 ${data.roomNumber ? `🏨 *Room Number:* ${data.roomNumber}` : ''}
 ${data.userEmail ? `📧 *Email:* ${data.userEmail}` : ''}
-${data.phone ? `📱 *WhatsApp:* ${data.phone}` : ''}
+${data.phone ? `📱 *WhatsApp:* [${data.phone}](https://wa.me/${data.phone.replace(/[^0-9]/g, '')})` : ''}
 
 🚬 *Hookahs:* ${data.hookahCount}
 
