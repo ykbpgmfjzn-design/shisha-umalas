@@ -8,6 +8,7 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   room_number: string | null;
+  phone: string | null;
   guest_type: "guest" | "special";
   total_hookahs_ordered: number;
   loyalty_level: number;
@@ -123,6 +124,21 @@ export const useProfile = () => {
     return { error };
   }, [user, fetchProfile]);
 
+  const updatePhone = useCallback(async (phone: string | null) => {
+    if (!user) return { error: new Error("Not authenticated") };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ phone })
+      .eq("id", user.id);
+
+    if (!error) {
+      await fetchProfile(user.id);
+    }
+
+    return { error };
+  }, [user, fetchProfile]);
+
   const getCurrentLevelInfo = useCallback((): LoyaltyLevel | null => {
     if (!profile || loyaltyLevels.length === 0) return null;
     return loyaltyLevels.find(l => l.level === profile.loyalty_level) || null;
@@ -145,6 +161,7 @@ export const useProfile = () => {
     loyaltyLevels,
     loading,
     updateRoomNumber,
+    updatePhone,
     getCurrentLevelInfo,
     getNextLevelInfo,
     getHookahsToNextLevel,
