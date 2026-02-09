@@ -230,21 +230,53 @@ serve(async (req) => {
       : 0;
 
     // Traffic sources with percentages
-    const totalSourceVisits = (sourcesReport.rows || []).reduce(
-      (sum: number, row: any) => sum + parseInt(row.metricValues[0].value, 10),
-      0
-    );
+    // Normalize source names for cleaner display
+    const SOURCE_NORMALIZE: Record<string, string> = {
+      "(direct)": "Direct",
+      "(not set)": "Unknown",
+      "l.instagram.com": "Instagram",
+      "ig": "Instagram",
+      "lm.instagram.com": "Instagram",
+      "instagram.com": "Instagram",
+      "l.facebook.com": "Facebook",
+      "m.facebook.com": "Facebook",
+      "facebook.com": "Facebook",
+      "fb": "Facebook",
+      "checkout.doku.com": "DOKU Payment",
+      "sandbox.doku.com": "DOKU Payment",
+      "t.co": "Twitter/X",
+      "twitter.com": "Twitter/X",
+      "x.com": "Twitter/X",
+      "wa.me": "WhatsApp",
+      "web.whatsapp.com": "WhatsApp",
+      "api.whatsapp.com": "WhatsApp",
+      "com.google.android.gm": "Gmail",
+      "mail.google.com": "Gmail",
+    };
 
-    const trafficSources = (sourcesReport.rows || [])
-      .map((row: any) => {
-        const visits = parseInt(row.metricValues[0].value, 10);
-        return {
-          source: row.dimensionValues[0].value || "Direct",
-          visits,
-          percentage: totalSourceVisits > 0 ? Math.round((visits / totalSourceVisits) * 100) : 0,
-        };
-      })
-      .sort((a: any, b: any) => b.visits - a.visits)
+    const normalizeSource = (raw: string): string => {
+      const lower = raw.toLowerCase().trim();
+      return SOURCE_NORMALIZE[lower] || raw.charAt(0).toUpperCase() + raw.slice(1);
+    };
+
+    // Aggregate by normalized source name
+    const sourceMap = new Map<string, number>();
+    for (const row of (sourcesReport.rows || [])) {
+      const rawSource = row.dimensionValues[0].value || "(direct)";
+      const normalized = normalizeSource(rawSource);
+      const visits = parseInt(row.metricValues[0].value, 10);
+      sourceMap.set(normalized, (sourceMap.get(normalized) || 0) + visits);
+    }
+
+    const totalSourceVisits = Array.from(sourceMap.values()).reduce((a, b) => a + b, 0);
+
+    const trafficSources = Array.from(sourceMap.entries())
+      .map(([source, visits]) => ({
+        source,
+        visits,
+        percentage: totalSourceVisits > 0 ? Math.round((visits / totalSourceVisits) * 100) : 0,
+      }))
+      .sort((a, b) => b.visits - a.visits)
       .slice(0, 10);
 
     const report: GAReport = {
