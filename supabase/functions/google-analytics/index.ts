@@ -10,6 +10,7 @@ interface GAReport {
   weeklyTotal: number;
   monthlyTotal: number;
   trafficSources: { source: string; visits: number; percentage: number }[];
+  todayTrafficSources: { source: string; visits: number; percentage: number }[];
   todayVisits: number;
 }
 
@@ -210,6 +211,16 @@ serve(async (req) => {
       ["sessions"]
     );
 
+    // Get today's traffic sources
+    const todaySourcesReport = await runReport(
+      accessToken,
+      propertyId,
+      "today",
+      "today",
+      ["sessionSource"],
+      ["sessions"]
+    );
+
     // Parse daily visits
     const dailyVisits = (dailyReport.rows || []).map((row: any) => ({
       date: row.dimensionValues[0].value,
@@ -279,11 +290,32 @@ serve(async (req) => {
       .sort((a, b) => b.visits - a.visits)
       .slice(0, 10);
 
+    // Today's traffic sources (same normalization)
+    const todaySourceMap = new Map<string, number>();
+    for (const row of (todaySourcesReport.rows || [])) {
+      const rawSource = row.dimensionValues[0].value || "(direct)";
+      const normalized = normalizeSource(rawSource);
+      const visits = parseInt(row.metricValues[0].value, 10);
+      todaySourceMap.set(normalized, (todaySourceMap.get(normalized) || 0) + visits);
+    }
+
+    const totalTodaySourceVisits = Array.from(todaySourceMap.values()).reduce((a, b) => a + b, 0);
+
+    const todayTrafficSources = Array.from(todaySourceMap.entries())
+      .map(([source, visits]) => ({
+        source,
+        visits,
+        percentage: totalTodaySourceVisits > 0 ? Math.round((visits / totalTodaySourceVisits) * 100) : 0,
+      }))
+      .sort((a, b) => b.visits - a.visits)
+      .slice(0, 10);
+
     const report: GAReport = {
       dailyVisits,
       weeklyTotal,
       monthlyTotal,
       trafficSources,
+      todayTrafficSources,
       todayVisits,
     };
 
