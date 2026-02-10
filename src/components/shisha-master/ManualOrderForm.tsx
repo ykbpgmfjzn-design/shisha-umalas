@@ -598,13 +598,13 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               <CalendarIcon className="h-3.5 w-3.5" />
               Order Date
             </Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal overflow-hidden",
+                      "w-full justify-start text-left font-normal",
                       !orderDate && "text-muted-foreground"
                     )}
                   >
@@ -664,7 +664,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground shrink-0"
+                  className="text-xs text-muted-foreground self-start"
                   onClick={() => setOrderDate("")}
                 >
                   <X className="h-3 w-3 mr-1" />
