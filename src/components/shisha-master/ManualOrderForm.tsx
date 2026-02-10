@@ -604,12 +604,14 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal",
+                      "flex-1 justify-start text-left font-normal overflow-hidden",
                       !orderDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {orderDate ? format(new Date(orderDate), "dd MMM yyyy HH:mm") : "Current time"}
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {orderDate ? format(new Date(orderDate), "dd.MM.yy HH:mm") : "Current time"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
