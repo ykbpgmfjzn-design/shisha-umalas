@@ -38,6 +38,7 @@ interface OrderWithProfile {
   paid_at: string | null;
   user_id: string;
   customer_name: string | null;
+  customer_photo_url: string | null;
   profile: {
     full_name: string | null;
     email: string | null;
@@ -378,7 +379,9 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
-                      {isDelivered ? (
+                      {order.customer_photo_url ? (
+                        <img src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                      ) : isDelivered ? (
                         <CheckCircle className="h-5 w-5 text-primary" />
                       ) : (
                         <XCircle className="h-5 w-5 text-destructive" />
@@ -521,7 +524,11 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
 
                     {/* Customer info */}
                     <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                      {order.customer_photo_url ? (
+                        <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0" />
+                      ) : (
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      )}
                       <span>{order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}</span>
                     </div>
                     
