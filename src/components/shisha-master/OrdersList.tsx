@@ -70,7 +70,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
-  const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(new Date());
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(new Date());
   const [deletePhotoOrderId, setDeletePhotoOrderId] = useState<string | null>(null);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const photoInputRef = React.useRef<HTMLInputElement>(null);
@@ -396,16 +397,21 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   };
 
   const filteredHistoryOrders = useMemo(() => {
-    if (!filterDate) return historyOrders;
+    if (!filterDateFrom && !filterDateTo) return historyOrders;
     return historyOrders.filter((order) => {
       const orderDay = new Date(order.created_at);
-      return (
-        orderDay.getFullYear() === filterDate.getFullYear() &&
-        orderDay.getMonth() === filterDate.getMonth() &&
-        orderDay.getDate() === filterDate.getDate()
-      );
+      const orderDateOnly = new Date(orderDay.getFullYear(), orderDay.getMonth(), orderDay.getDate());
+      if (filterDateFrom) {
+        const from = new Date(filterDateFrom.getFullYear(), filterDateFrom.getMonth(), filterDateFrom.getDate());
+        if (orderDateOnly < from) return false;
+      }
+      if (filterDateTo) {
+        const to = new Date(filterDateTo.getFullYear(), filterDateTo.getMonth(), filterDateTo.getDate());
+        if (orderDateOnly > to) return false;
+      }
+      return true;
     });
-  }, [historyOrders, filterDate]);
+  }, [historyOrders, filterDateFrom, filterDateTo]);
 
   if (loading) {
     return (
@@ -431,41 +437,63 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   if (showHistory) {
     return (
       <div className="space-y-3">
-        {/* Date filter */}
+        {/* Date range filter */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("gap-2", filterDate && "border-primary text-primary")}>
+                <Button variant="outline" size="sm" className={cn("gap-2", filterDateFrom && "border-primary text-primary")}>
                   <CalendarIcon className="h-4 w-4" />
-                  {filterDate ? format(filterDate, "dd.MM.yyyy") : t("shishaMaster.orders.filterByDate")}
+                  {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : "От"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
                 <Calendar
                   mode="single"
-                  selected={filterDate}
+                  selected={filterDateFrom}
                   onSelect={(date) => {
-                    setFilterDate(date);
+                    setFilterDateFrom(date);
+                    if (date && filterDateTo && date > filterDateTo) {
+                      setFilterDateTo(date);
+                    }
                   }}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
-            {filterDate && (
-              <Button variant="ghost" size="sm" onClick={() => setFilterDate(undefined)} className="gap-1 text-muted-foreground">
+            <span className="text-muted-foreground text-sm">—</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-2", filterDateTo && "border-primary text-primary")}>
+                  <CalendarIcon className="h-4 w-4" />
+                  {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : "До"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
+                <Calendar
+                  mode="single"
+                  selected={filterDateTo}
+                  onSelect={(date) => {
+                    setFilterDateTo(date);
+                    if (date && filterDateFrom && date < filterDateFrom) {
+                      setFilterDateFrom(date);
+                    }
+                  }}
+                  disabled={(date) => filterDateFrom ? date < filterDateFrom : false}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {(filterDateFrom || filterDateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setFilterDateFrom(undefined); setFilterDateTo(undefined); }} className="gap-1 text-muted-foreground">
                 <X className="h-3.5 w-3.5" />
                 Reset
               </Button>
             )}
           </div>
           <div className="flex items-center justify-between gap-2">
-            {filterDate && (
-              <span className="text-sm font-medium text-primary">
-                📅 {format(filterDate, "EEEE, d MMMM yyyy")}
-              </span>
-            )}
             <span className="text-xs text-muted-foreground ml-auto">
               {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount")}
             </span>
