@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import ManualOrderForm, { type EditOrderData } from "./ManualOrderForm";
+import PhotoLightbox from "@/components/PhotoLightbox";
 
 interface OrderWithProfile {
   id: string;
@@ -64,6 +65,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
 
   // Track order changes for highlight effect
@@ -380,7 +382,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
                       {order.customer_photo_url ? (
-                        <img src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                        <img src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                       ) : isDelivered ? (
                         <CheckCircle className="h-5 w-5 text-primary" />
                       ) : (
@@ -525,7 +527,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     {/* Customer info */}
                     <div className="flex items-center gap-2 text-sm">
                       {order.customer_photo_url ? (
-                        <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0" />
+                        <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                       ) : (
                         <User className="h-4 w-4 text-muted-foreground" />
                       )}
@@ -650,6 +652,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
           </div>
         </SheetContent>
       </Sheet>
+
+      <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
     </>
   );
 }

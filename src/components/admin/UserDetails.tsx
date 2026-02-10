@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Crown, Building2, Users, Plus, Hash, Calendar,
   Coffee, Cookie, Shield
 } from "lucide-react";
+import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Profile } from "@/hooks/useProfile";
@@ -16,6 +18,7 @@ interface UserDetailsProps {
 }
 
 const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsProps) => {
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
@@ -36,6 +39,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
   }
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -88,7 +92,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {purchase.customer_photo_url ? (
-                  <img src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0" />
+                  <img src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(purchase.customer_photo_url)} />
                 ) : (
                   <Hash className="w-4 h-4 text-muted-foreground" />
                 )}
@@ -133,6 +137,8 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
         )}
       </div>
     </motion.div>
+    <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+    </>
   );
 };
 
