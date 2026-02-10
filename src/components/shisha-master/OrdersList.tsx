@@ -444,7 +444,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-2", filterDateFrom && "border-primary text-primary")}>
                   <CalendarIcon className="h-4 w-4" />
-                  {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : "От"}
+                  {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : t("shishaMaster.orders.fromDate") || "From"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
@@ -467,7 +467,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-2", filterDateTo && "border-primary text-primary")}>
                   <CalendarIcon className="h-4 w-4" />
-                  {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : "До"}
+                  {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : t("shishaMaster.orders.toDate") || "To"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
