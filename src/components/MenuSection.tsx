@@ -12,6 +12,9 @@ import { ItemType } from "@/hooks/useCart";
 interface MenuItemProps {
   id: string;
   name: string;
+  nameTranslations?: Record<string, string>;
+  descriptionTranslations?: Record<string, string>;
+  dbDescription?: string;
   price: number;
   priceDisplay: string;
   isSignature?: boolean;
@@ -20,13 +23,19 @@ interface MenuItemProps {
   itemType?: ItemType;
 }
 
-const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, strength, itemType = "hookah" }: MenuItemProps) => {
+const MenuItem = ({ id, name, nameTranslations, descriptionTranslations, dbDescription, price, priceDisplay, isSignature, delay = 0, strength, itemType = "hookah" }: MenuItemProps) => {
   const { t, language } = useLanguage();
   const { addItem } = useCart();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Get localized description
-  const description = getMenuDescription(id, language);
+  // Get localized name: prefer DB translations, then fallback to English
+  const displayName = (language !== "en" && nameTranslations?.[language]) || name;
+  
+  // Get localized description: prefer DB translations, then fallback to menuTranslations.ts, then English DB description
+  const description = (language !== "en" && descriptionTranslations?.[language])
+    || getMenuDescription(id, language)
+    || (language === "en" ? dbDescription : undefined)
+    || dbDescription;
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -84,7 +93,7 @@ const MenuItem = ({ id, name, price, priceDisplay, isSignature, delay = 0, stren
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className={`font-display text-lg md:text-xl ${isSignature ? 'text-golden' : 'text-foreground'} group-hover:text-golden transition-colors duration-300`}>
-                {name}
+                {displayName}
               </h4>
               {isSignature && (
                 <span className="text-[9px] uppercase tracking-widest text-sunset border border-sunset/40 px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
@@ -246,12 +255,15 @@ const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra"]
 interface DbMenuItem {
   id: string;
   name: string;
+  description: string;
   price: number;
   price_display: string;
   strength: string;
   is_signature: boolean;
   item_type: string;
   sort_order: number;
+  name_translations: Record<string, string> | any;
+  description_translations: Record<string, string> | any;
 }
 
 const MenuSection = () => {
@@ -276,7 +288,7 @@ const MenuSection = () => {
     const fetchMenu = async () => {
       const { data, error } = await supabase
         .from("menu_items")
-        .select("id, name, price, price_display, strength, is_signature, item_type, sort_order")
+        .select("id, name, description, price, price_display, strength, is_signature, item_type, sort_order, name_translations, description_translations")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
 
@@ -363,6 +375,9 @@ const MenuSection = () => {
                             key={item.id}
                             id={item.id}
                             name={item.name}
+                            nameTranslations={item.name_translations}
+                            descriptionTranslations={item.description_translations}
+                            dbDescription={item.description}
                             price={item.price}
                             priceDisplay={item.price_display}
                             strength={item.strength}
@@ -380,6 +395,9 @@ const MenuSection = () => {
                             key={item.id}
                             id={item.id}
                             name={item.name}
+                            nameTranslations={item.name_translations}
+                            descriptionTranslations={item.description_translations}
+                            dbDescription={item.description}
                             price={item.price}
                             priceDisplay={item.price_display}
                             strength={item.strength}
@@ -396,6 +414,9 @@ const MenuSection = () => {
                           key={item.id}
                           id={item.id}
                           name={item.name}
+                          nameTranslations={item.name_translations}
+                          descriptionTranslations={item.description_translations}
+                          dbDescription={item.description}
                           price={item.price}
                           priceDisplay={item.price_display}
                           strength={item.strength}

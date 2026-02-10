@@ -134,12 +134,15 @@ export type Database = {
       menu_items: {
         Row: {
           created_at: string
+          description: string
+          description_translations: Json
           id: string
           is_active: boolean
           is_signature: boolean
           item_type: string
           keywords: string[]
           name: string
+          name_translations: Json
           price: number
           price_display: string
           sort_order: number
@@ -148,12 +151,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string
+          description_translations?: Json
           id: string
           is_active?: boolean
           is_signature?: boolean
           item_type?: string
           keywords?: string[]
           name: string
+          name_translations?: Json
           price?: number
           price_display?: string
           sort_order?: number
@@ -162,12 +168,15 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string
+          description_translations?: Json
           id?: string
           is_active?: boolean
           is_signature?: boolean
           item_type?: string
           keywords?: string[]
           name?: string
+          name_translations?: Json
           price?: number
           price_display?: string
           sort_order?: number
