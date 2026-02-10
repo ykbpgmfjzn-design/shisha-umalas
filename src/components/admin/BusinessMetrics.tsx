@@ -873,7 +873,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 {[...expenseHistory].reverse().map((snapshot) => {
                   const [y, m] = snapshot.month.split("-");
                   const date = new Date(Number(y), Number(m) - 1);
-                  const monthLabel = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+                  const monthLabel = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
                   return (
                     <button
                       key={snapshot.month}
@@ -925,7 +925,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
               <p className="text-sm font-medium capitalize">
                 {(() => {
                   const [y, m] = editMonth.split("-");
-                  return new Date(Number(y), Number(m) - 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+                  return new Date(Number(y), Number(m) - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
                 })()}
               </p>
               {expenseHistory.find(h => h.month === editMonth) && (
