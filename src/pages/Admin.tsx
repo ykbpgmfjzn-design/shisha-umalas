@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, Shield, Plus, LogOut,
+  ArrowLeft, Shield, Plus, LogOut, PlusCircle,
   LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
@@ -387,7 +388,7 @@ const AdminContent = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-6 bg-card/60 backdrop-blur-xl">
+          <TabsList className="grid w-full max-w-3xl grid-cols-7 bg-card/60 backdrop-blur-xl">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -400,6 +401,10 @@ const AdminContent = () => {
                   {pendingOrders.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="new-order" className="gap-2">
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">New</span>
             </TabsTrigger>
             <TabsTrigger value="reservations" className="gap-2">
               <Calendar className="w-4 h-4" />
@@ -462,6 +467,16 @@ const AdminContent = () => {
               onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
               title="All Orders"
             />
+          </TabsContent>
+
+          {/* New Order Tab */}
+          <TabsContent value="new-order">
+            <div className="max-w-2xl mx-auto">
+              <ManualOrderForm onOrderCreated={() => {
+                fetchAllPurchases();
+                setActiveTab("orders");
+              }} />
+            </div>
           </TabsContent>
 
           {/* Reservations Tab */}
