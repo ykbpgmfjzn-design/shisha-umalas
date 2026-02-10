@@ -2596,6 +2596,19 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/** Provider that forces English for admin interfaces */
+export const AdminLanguageProvider = ({ children }: { children: ReactNode }) => {
+  const adminT = (key: string): string => {
+    return translations["en"][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language: "en", setLanguage: () => {}, t: adminT }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
 // Default fallback for when hook is used outside provider (e.g., during hot-reload)
 const defaultT = (key: string): string => {
   return translations["en"][key] || key;

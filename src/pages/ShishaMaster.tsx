@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Wind, BookOpen, History, PlusCircle } from "lucide-react";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import LanguageSelector from "@/components/LanguageSelector";
+import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/OrdersList";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
@@ -65,10 +64,9 @@ function ShishaMasterContent() {
             </Button>
             <div className="flex items-center gap-2">
               <Wind className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-semibold">{t("shishaMaster.title") || "Shisha Master"}</h1>
+              <h1 className="text-lg font-semibold">Shisha Master</h1>
             </div>
           </div>
-          <LanguageSelector />
         </div>
       </header>
 
@@ -122,8 +120,8 @@ function ShishaMasterContent() {
 
 export default function ShishaMaster() {
   return (
-    <LanguageProvider>
+    <AdminLanguageProvider>
       <ShishaMasterContent />
-    </LanguageProvider>
+    </AdminLanguageProvider>
   );
 }
