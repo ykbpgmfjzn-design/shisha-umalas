@@ -381,6 +381,7 @@ export type Database = {
       }
       training_materials: {
         Row: {
+          category: string
           created_at: string
           description: string | null
           file_type: string
@@ -392,6 +393,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          category?: string
           created_at?: string
           description?: string | null
           file_type: string
@@ -403,6 +405,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string | null
           file_type?: string
