@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, ImagePlus, X, Loader2 } from "lucide-react";
+import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, ImagePlus, X, Loader2, CalendarIcon } from "lucide-react";
 import { menuItems, MenuItem } from "@/data/menuItems";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,6 +55,7 @@ export interface EditOrderData {
   notes: string | null;
   payment_status: string | null;
   delivery_status: string;
+  created_at?: string;
 }
 
 interface ManualOrderFormProps {
@@ -104,6 +105,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("pending");
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
+  const [orderDate, setOrderDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Group menu items by strength
@@ -128,7 +130,14 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       setPaymentStatus(editOrder.payment_status || "pending");
       setDeliveryStatus(editOrder.delivery_status || "pending");
       setCustomerName(editOrder.customer_name || "");
-      // selectedCustomer will be set after customers load
+      // Format created_at for datetime-local input
+      if (editOrder.created_at) {
+        const d = new Date(editOrder.created_at);
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        setOrderDate(local);
+      } else {
+        setOrderDate("");
+      }
     } else {
       resetForm();
     }
@@ -204,6 +213,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     setCustomerPhotoUrl(null);
     setPaymentStatus("pending");
     setDeliveryStatus("pending");
+    setOrderDate("");
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,6 +276,11 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       delivery_status: deliveryStatus,
       customer_photo_url: customerPhotoUrl,
     };
+
+    // Set custom order date if provided
+    if (orderDate) {
+      orderData.created_at = new Date(orderDate).toISOString();
+    }
 
     if (selectedCustomer) {
       orderData.user_id = selectedCustomer.id;
@@ -540,7 +555,26 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   <SelectItem value="paid">✅ {t("shishaMaster.form.paid")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+          </div>
+
+          {/* Order Date */}
+          <div className="space-y-2">
+            <Label className="text-xs flex items-center gap-1.5">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {t("shishaMaster.form.orderDate") || "Order date"}
+            </Label>
+            <Input
+              type="datetime-local"
+              value={orderDate}
+              onChange={(e) => setOrderDate(e.target.value)}
+              className="w-full"
+            />
+            {!orderDate && (
+              <p className="text-xs text-muted-foreground">
+                {t("shishaMaster.form.orderDateHint") || "Leave empty for current time"}
+              </p>
+            )}
+          </div>
             <div className="space-y-2">
               <Label className="text-xs">{t("shishaMaster.form.delivery")}</Label>
               <Select value={deliveryStatus} onValueChange={setDeliveryStatus}>
