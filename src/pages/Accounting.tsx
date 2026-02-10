@@ -317,7 +317,7 @@ const AccountingContent = () => {
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
@@ -347,22 +347,22 @@ const AccountingContent = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
           {statCards.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-card/60 backdrop-blur-xl rounded-xl border border-border/50 p-4"
+              className="bg-card/60 backdrop-blur-xl rounded-xl border border-border/50 p-3 sm:p-4"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                   <stat.icon className={`w-4 h-4 ${stat.color}`} />
                 </div>
               </div>
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-lg sm:text-2xl font-bold truncate">{stat.value}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{stat.label}</p>
             </motion.div>
           ))}
         </div>
@@ -382,8 +382,8 @@ const AccountingContent = () => {
 
           <TabsContent value="orders">
             {/* Orders Table */}
-            <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
                 <h2 className="font-display text-xl">{t("admin.allOrders")}</h2>
             
                 <div className="flex items-center gap-3 flex-wrap">
@@ -450,7 +450,7 @@ const AccountingContent = () => {
                 >
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     {/* Order Info */}
-                    <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <Hash className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">{order.hookah_count} {t("admin.hookahs")}</span>
@@ -493,10 +493,10 @@ const AccountingContent = () => {
                     </div>
 
                     {/* Status & Actions */}
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
                       {getStatusBadge(order.payment_status)}
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {order.payment_status?.toLowerCase() !== "paid" && (
                           <Button
                             size="sm"

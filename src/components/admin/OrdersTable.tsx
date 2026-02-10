@@ -215,8 +215,8 @@ const OrdersTable = ({
   };
 
   return (
-    <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+    <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
         <h2 className="font-display text-xl">{title}</h2>
         
         {showFilters && (
@@ -224,8 +224,8 @@ const OrdersTable = ({
             <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-muted-foreground" />
               <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
-                <SelectTrigger className="w-[160px] bg-background/50">
-                  <SelectValue />
+              <SelectTrigger className="w-[130px] sm:w-[160px] bg-background/50">
+                <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
@@ -239,8 +239,8 @@ const OrdersTable = ({
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-muted-foreground" />
               <Select value={deliveryFilter} onValueChange={(v) => setDeliveryFilter(v as DeliveryFilter)}>
-                <SelectTrigger className="w-[130px] bg-background/50">
-                  <SelectValue />
+              <SelectTrigger className="w-[110px] sm:w-[130px] bg-background/50">
+                <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
@@ -303,7 +303,7 @@ const OrdersTable = ({
               }`}
             >
               <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <Hash className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">{order.hookah_count} hookah(s)</span>
@@ -374,13 +374,13 @@ const OrdersTable = ({
                   )}
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex gap-2">
+                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                  <div className="flex gap-2 flex-wrap">
                     {getPaymentBadge(order.payment_status)}
                     {getDeliveryBadge(order.delivery_status)}
                   </div>
                   
-                  <div className="flex gap-2 flex-wrap justify-end">
+                  <div className="flex gap-2 flex-wrap">
                     {order.payment_status?.toLowerCase() !== "paid" && (
                       <Button
                         size="sm"

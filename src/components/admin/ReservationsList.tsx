@@ -187,7 +187,7 @@ export default function ReservationsList() {
           : "bg-muted/30 border-border/50"
       }`}
     >
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="space-y-2 flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <Badge variant={isToday(res.reservation_date) ? "default" : "secondary"}>
@@ -241,7 +241,7 @@ export default function ReservationsList() {
         </div>
 
         {showActions && isAdmin && res.status === "pending" && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               size="sm"
               variant="outline"
