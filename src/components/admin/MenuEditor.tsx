@@ -20,12 +20,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, GripVertical, Star, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Star, Eye, EyeOff, Languages, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DbMenuItem {
   id: string;
   name: string;
+  description: string;
   price: number;
   price_display: string;
   strength: string;
@@ -34,14 +36,17 @@ interface DbMenuItem {
   keywords: string[];
   sort_order: number;
   is_active: boolean;
+  name_translations: Record<string, string> | any;
+  description_translations: Record<string, string> | any;
 }
 
 const STRENGTHS = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra"];
 const ITEM_TYPES = ["hookah", "snack", "drink", "extra"];
 
-const emptyForm: Omit<DbMenuItem, "sort_order"> = {
+const emptyForm: Omit<DbMenuItem, "sort_order" | "name_translations" | "description_translations"> = {
   id: "",
   name: "",
+  description: "",
   price: 0,
   price_display: "",
   strength: "Light",
@@ -59,6 +64,7 @@ export default function MenuEditor() {
   const [form, setForm] = useState(emptyForm);
   const [keywordsText, setKeywordsText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const dragItemRef = useRef<number | null>(null);
   const dragOverRef = useRef<number | null>(null);
@@ -95,6 +101,7 @@ export default function MenuEditor() {
     setForm({
       id: item.id,
       name: item.name,
+      description: item.description || "",
       price: item.price,
       price_display: item.price_display,
       strength: item.strength,
@@ -125,11 +132,14 @@ export default function MenuEditor() {
       .map((k) => k.trim())
       .filter(Boolean);
 
+    let savedId = form.id;
+
     if (editing) {
       const { error } = await supabase
         .from("menu_items")
         .update({
           name: form.name,
+          description: form.description,
           price: form.price,
           price_display: form.price_display,
           strength: form.strength,
@@ -143,14 +153,17 @@ export default function MenuEditor() {
       if (error) {
         toast.error("Failed to update item");
         console.error(error);
-      } else {
-        toast.success("Item updated");
+        setSaving(false);
+        return;
       }
+      savedId = editing.id;
+      toast.success("Item updated");
     } else {
       const maxOrder = items.length > 0 ? Math.max(...items.map((i) => i.sort_order)) : 0;
       const { error } = await supabase.from("menu_items").insert({
         id: form.id,
         name: form.name,
+        description: form.description,
         price: form.price,
         price_display: form.price_display,
         strength: form.strength,
@@ -164,14 +177,38 @@ export default function MenuEditor() {
       if (error) {
         toast.error("Failed to add item");
         console.error(error);
-      } else {
-        toast.success("Item added");
+        setSaving(false);
+        return;
       }
+      toast.success("Item added");
     }
 
     setSaving(false);
     setDialogOpen(false);
     fetchItems();
+
+    // Trigger AI translation in background
+    triggerTranslation(savedId, form.name, form.description);
+  };
+
+  const triggerTranslation = async (itemId: string, name: string, description: string) => {
+    setTranslating(itemId);
+    try {
+      const { error } = await supabase.functions.invoke("translate-menu-item", {
+        body: { itemId, name, description: description || undefined },
+      });
+      if (error) {
+        console.error("Translation error:", error);
+        toast.error("Auto-translation failed");
+      } else {
+        toast.success("Translations generated", { description: "Menu item translated to 6 languages" });
+        fetchItems();
+      }
+    } catch (err) {
+      console.error("Translation error:", err);
+    } finally {
+      setTranslating(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -316,12 +353,32 @@ export default function MenuEditor() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    {item.price_display} • {item.item_type}
+                  <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+                    <span>{item.price_display} • {item.item_type}</span>
+                    {Object.keys(item.name_translations || {}).length > 0 && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                        <Languages className="w-3 h-3" />
+                        {Object.keys(item.name_translations).length}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => triggerTranslation(item.id, item.name, item.description)}
+                    disabled={translating === item.id}
+                    title="Translate"
+                  >
+                    {translating === item.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Languages className="w-4 h-4" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -445,6 +502,16 @@ export default function MenuEditor() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Description (English)</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Creamy vanilla with a silky smooth finish"
+                rows={2}
+              />
             </div>
 
             <div className="space-y-1.5">

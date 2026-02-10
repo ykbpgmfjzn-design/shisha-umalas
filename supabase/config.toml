@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.daily-telegram-summary]
 verify_jwt = false
+
+[functions.translate-menu-item]
+verify_jwt = false
