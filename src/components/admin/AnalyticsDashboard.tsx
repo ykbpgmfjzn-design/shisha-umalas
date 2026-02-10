@@ -20,6 +20,7 @@ interface GAReport {
   weeklyTotal: number;
   monthlyTotal: number;
   trafficSources: { source: string; visits: number; percentage: number }[];
+  todayTrafficSources: { source: string; visits: number; percentage: number }[];
   todayVisits: number;
 }
 
@@ -286,11 +287,11 @@ export default function AnalyticsDashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardHeader>
-              <CardTitle className="text-lg font-display">Traffic Sources</CardTitle>
+              <CardTitle className="text-lg font-display">Traffic Sources — Today</CardTitle>
             </CardHeader>
              <CardContent>
               <div className="space-y-3">
-                {data?.trafficSources.slice(0, 8).map((source, index) => (
+                {(data?.todayTrafficSources || []).slice(0, 8).map((source, index) => (
                   <div key={source.source} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
@@ -318,8 +319,8 @@ export default function AnalyticsDashboard() {
                 ))}
               </div>
               
-              {(!data?.trafficSources || data.trafficSources.length === 0) && (
-                <p className="text-muted-foreground text-center py-8">No source data</p>
+              {(!data?.todayTrafficSources || data.todayTrafficSources.length === 0) && (
+                <p className="text-muted-foreground text-center py-8">No traffic sources today</p>
               )}
             </CardContent>
           </Card>
