@@ -153,11 +153,35 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   }, [editOrder, customers]);
 
   const fetchCustomers = async () => {
-    const { data } = await supabase
+    const { data: profilesData } = await supabase
       .from("profiles")
       .select("id, full_name, email, phone, avatar_url, loyalty_level, total_hookahs_ordered")
       .order("full_name");
-    if (data) setCustomers(data);
+    if (!profilesData) return;
+
+    // For customers without avatar, try to get their latest customer photo
+    const noAvatarIds = profilesData.filter(p => !p.avatar_url).map(p => p.id);
+    let photoMap: Record<string, string> = {};
+    if (noAvatarIds.length > 0) {
+      const { data: photos } = await supabase
+        .from("purchases")
+        .select("user_id, customer_photo_url")
+        .in("user_id", noAvatarIds)
+        .not("customer_photo_url", "is", null)
+        .order("created_at", { ascending: false });
+      if (photos) {
+        for (const p of photos) {
+          if (p.user_id && !photoMap[p.user_id]) {
+            photoMap[p.user_id] = p.customer_photo_url!;
+          }
+        }
+      }
+    }
+
+    setCustomers(profilesData.map(p => ({
+      ...p,
+      avatar_url: p.avatar_url || photoMap[p.id] || null,
+    })));
   };
 
   const filteredCustomers = useMemo(() => {
