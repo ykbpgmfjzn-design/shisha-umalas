@@ -211,16 +211,22 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     if (!file) return;
     setUploadingPhoto(true);
     try {
-      const fileExt = file.name.split(".").pop();
+      const { compressImage } = await import("@/lib/compressImage");
+      const compressed = await compressImage(file);
+      const fileExt = compressed.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from("customer-photos")
-        .upload(fileName, file);
+        .upload(fileName, compressed);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage
         .from("customer-photos")
         .getPublicUrl(fileName);
       setCustomerPhotoUrl(urlData.publicUrl);
+      const saved = Math.round((1 - compressed.size / file.size) * 100);
+      if (saved > 5) {
+        toast.success(`${t("shishaMaster.form.photoCompressed")} (-${saved}%)`);
+      }
     } catch (err: any) {
       console.error("Photo upload error:", err);
       toast.error(err.message || "Upload error");
