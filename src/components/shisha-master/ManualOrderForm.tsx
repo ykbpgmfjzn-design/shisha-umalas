@@ -557,18 +557,35 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               </Select>
           </div>
 
-          {/* Order Date */}
+          {/* Order Date & Time */}
           <div className="space-y-2">
             <Label className="text-xs flex items-center gap-1.5">
               <CalendarIcon className="h-3.5 w-3.5" />
-              {t("shishaMaster.form.orderDate") || "Order date"}
+              {t("shishaMaster.form.orderDate") || "When was the order placed?"}
             </Label>
-            <Input
-              type="datetime-local"
-              value={orderDate}
-              onChange={(e) => setOrderDate(e.target.value)}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="datetime-local"
+                value={orderDate}
+                onChange={(e) => setOrderDate(e.target.value)}
+                className="flex-1"
+              />
+              {orderDate && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground shrink-0"
+                  onClick={() => {
+                    const now = new Date();
+                    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    setOrderDate(local);
+                  }}
+                >
+                  {t("shishaMaster.form.now") || "Now"}
+                </Button>
+              )}
+            </div>
             {!orderDate && (
               <p className="text-xs text-muted-foreground">
                 {t("shishaMaster.form.orderDateHint") || "Leave empty for current time"}
