@@ -287,12 +287,17 @@ const OrdersTable = ({
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    {order.customer_photo_url && (
+                      <img src={order.customer_photo_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border shrink-0" />
+                    )}
                     {order.profile ? (
                       <>
-                        {order.profile.guest_type === "special" ? (
-                          <Building2 className="w-3 h-3 text-primary" />
-                        ) : (
-                          <User className="w-3 h-3" />
+                        {!order.customer_photo_url && (
+                          order.profile.guest_type === "special" ? (
+                            <Building2 className="w-3 h-3 text-primary" />
+                          ) : (
+                            <User className="w-3 h-3" />
+                          )
                         )}
                         <span>{order.profile.full_name || order.profile.email || "No email"}</span>
                         {order.profile.room_number && (
@@ -303,13 +308,13 @@ const OrdersTable = ({
                       </>
                     ) : order.customer_name ? (
                       <>
-                        <User className="w-3 h-3" />
+                        {!order.customer_photo_url && <User className="w-3 h-3" />}
                         <span>{order.customer_name}</span>
                         <Badge variant="outline" className="text-xs">Walk-in</Badge>
                       </>
                     ) : (
                       <>
-                        <User className="w-3 h-3 text-muted-foreground" />
+                        {!order.customer_photo_url && <User className="w-3 h-3 text-muted-foreground" />}
                         <span className="italic">Guest</span>
                       </>
                     )}
