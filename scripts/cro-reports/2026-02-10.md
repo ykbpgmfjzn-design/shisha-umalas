@@ -3,20 +3,7 @@
 
 ## Executive Summary
 Found **10** conversion friction points (3 high, 5 medium, 2 low).
-Applied **11** automatic fixes. Proposed **1** A/B tests.
-
-## Fixes Applied
-- ✅ Added loading="lazy" to images in src/components/FooterSection.tsx
-- ✅ Added loading="lazy" to images in src/components/LanguageSelector.tsx
-- ✅ Added loading="lazy" to images in src/components/PhotoLightbox.tsx
-- ✅ Added loading="lazy" to images in src/components/PublicReviews.tsx
-- ✅ Added loading="lazy" to images in src/components/admin/FeedbackList.tsx
-- ✅ Added loading="lazy" to images in src/components/admin/OrdersTable.tsx
-- ✅ Added loading="lazy" to images in src/components/admin/UserDetails.tsx
-- ✅ Added loading="lazy" to images in src/components/shisha-master/ManualOrderForm.tsx
-- ✅ Added loading="lazy" to images in src/components/shisha-master/OrdersList.tsx
-- ✅ Added loading="lazy" to images in src/components/shisha-master/TrainingMaterials.tsx
-- ✅ Added loading="lazy" to images in src/pages/Feedback.tsx
+Applied **0** automatic fixes. Proposed **1** A/B tests.
 
 ## 🔴 High Impact Findings
 ### Add-to-cart blocked behind authentication — users cannot explore purchasing without logging in first
@@ -51,14 +38,4 @@ Applied **11** automatic fixes. Proposed **1** A/B tests.
 - **Implementation:** Swap <PublicReviews /> and <MenuSection /> in src/pages/Index.tsx
 
 ## Changed Files
-- src/components/FooterSection.tsx
-- src/components/LanguageSelector.tsx
-- src/components/PhotoLightbox.tsx
-- src/components/PublicReviews.tsx
-- src/components/admin/FeedbackList.tsx
-- src/components/admin/OrdersTable.tsx
-- src/components/admin/UserDetails.tsx
-- src/components/shisha-master/ManualOrderForm.tsx
-- src/components/shisha-master/OrdersList.tsx
-- src/components/shisha-master/TrainingMaterials.tsx
-- src/pages/Feedback.tsx
+- No auto-fixes applied
