@@ -432,33 +432,42 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     return (
       <div className="space-y-3">
         {/* Date filter */}
-        <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn("gap-2", filterDate && "border-primary text-primary")}>
-                <CalendarIcon className="h-4 w-4" />
-                {filterDate ? format(filterDate, "dd.MM.yyyy") : (t("shishaMaster.orders.filterByDate") || "Filter by date")}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-2", filterDate && "border-primary text-primary")}>
+                  <CalendarIcon className="h-4 w-4" />
+                  {filterDate ? format(filterDate, "dd.MM.yyyy") : (t("shishaMaster.orders.filterByDate") || "Filter by date")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={(date) => {
+                    setFilterDate(date);
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {filterDate && (
+              <Button variant="ghost" size="sm" onClick={() => setFilterDate(undefined)} className="gap-1 text-muted-foreground">
+                <X className="h-3.5 w-3.5" />
+                Reset
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={filterDate}
-                onSelect={setFilterDate}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount") || "orders"}
+            </span>
+          </div>
           {filterDate && (
-            <Button variant="ghost" size="sm" onClick={() => setFilterDate(undefined)} className="gap-1 text-muted-foreground">
-              <X className="h-3.5 w-3.5" />
-              {t("shishaMaster.orders.clearFilter") || "Clear"}
-            </Button>
+            <div className="text-sm font-medium text-primary">
+              📅 {format(filterDate, "EEEE, d MMMM yyyy")}
+            </div>
           )}
-          <span className="text-xs text-muted-foreground ml-auto">
-            {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount") || "orders"}
-          </span>
         </div>
 
         {filteredHistoryOrders.length === 0 ? (
