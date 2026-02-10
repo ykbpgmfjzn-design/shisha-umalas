@@ -98,6 +98,7 @@ const HeroSection = () => {
               }}
             />
           </motion.div>
+          <h1 className="sr-only">Shisha Cool Bali — Premium Hookah Delivery & Lounge in Umalas, Seminyak, Canggu</h1>
           <p 
             className="font-display text-2xl md:text-3xl text-smoke-light tracking-[0.3em] mb-4"
             style={{

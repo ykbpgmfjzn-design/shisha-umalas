@@ -13,3 +13,8 @@ Allow: /
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /accounting
+Disallow: /shisha-master
+Disallow: /activity-logs
+
+Sitemap: https://www.shisha.cool/sitemap.xml

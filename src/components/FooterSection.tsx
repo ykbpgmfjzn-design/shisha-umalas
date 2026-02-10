@@ -6,7 +6,7 @@ const FooterSection = () => {
   const { t } = useLanguage();
 
   return (
-    <footer className="relative py-24 bg-background overflow-hidden">
+    <footer aria-label="Contact and location information" className="relative py-24 bg-background overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img
