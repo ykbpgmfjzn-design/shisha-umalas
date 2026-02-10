@@ -332,6 +332,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "No completed orders yet",
     "shishaMaster.orders.statusDelivered": "Delivered",
     "shishaMaster.orders.statusCancelled": "Cancelled",
+    "shishaMaster.orders.noOrdersForDate": "No orders for this date",
+    "shishaMaster.orders.ordersCount": "orders",
+    "shishaMaster.orders.filterByDate": "Filter by date",
+    "shishaMaster.orders.photoReplaced": "Photo updated",
+    "shishaMaster.orders.photoDeleted": "Photo removed",
     
     // Manual Order Form
     "shishaMaster.newOrder": "New",
@@ -829,6 +834,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "Нет завершённых заказов",
     "shishaMaster.orders.statusDelivered": "Доставлено",
     "shishaMaster.orders.statusCancelled": "Отменено",
+    "shishaMaster.orders.noOrdersForDate": "Нет заказов за эту дату",
+    "shishaMaster.orders.ordersCount": "заказов",
+    "shishaMaster.orders.filterByDate": "Фильтр по дате",
+    "shishaMaster.orders.photoReplaced": "Фото обновлено",
+    "shishaMaster.orders.photoDeleted": "Фото удалено",
     
     // Manual Order Form
     "shishaMaster.newOrder": "Новый",
@@ -1240,6 +1250,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "Belum ada pesanan selesai",
     "shishaMaster.orders.statusDelivered": "Terkirim",
     "shishaMaster.orders.statusCancelled": "Dibatalkan",
+    "shishaMaster.orders.noOrdersForDate": "Tidak ada pesanan untuk tanggal ini",
+    "shishaMaster.orders.ordersCount": "pesanan",
+    "shishaMaster.orders.filterByDate": "Filter berdasarkan tanggal",
+    "shishaMaster.orders.photoReplaced": "Foto diperbarui",
+    "shishaMaster.orders.photoDeleted": "Foto dihapus",
     
     // Manual Order Form
     "shishaMaster.newOrder": "Baru",
@@ -1562,6 +1577,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "Немає завершених замовлень",
     "shishaMaster.orders.statusDelivered": "Доставлено",
     "shishaMaster.orders.statusCancelled": "Скасовано",
+    "shishaMaster.orders.noOrdersForDate": "Немає замовлень за цю дату",
+    "shishaMaster.orders.ordersCount": "замовлень",
+    "shishaMaster.orders.filterByDate": "Фільтр за датою",
+    "shishaMaster.orders.photoReplaced": "Фото оновлено",
+    "shishaMaster.orders.photoDeleted": "Фото видалено",
     
     // Manual Order Form
     "shishaMaster.newOrder": "Новий",
@@ -1865,6 +1885,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "Aucune commande terminée",
     "shishaMaster.orders.statusDelivered": "Livré",
     "shishaMaster.orders.statusCancelled": "Annulé",
+    "shishaMaster.orders.noOrdersForDate": "Aucune commande pour cette date",
+    "shishaMaster.orders.ordersCount": "commandes",
+    "shishaMaster.orders.filterByDate": "Filtrer par date",
+    "shishaMaster.orders.photoReplaced": "Photo mise à jour",
+    "shishaMaster.orders.photoDeleted": "Photo supprimée",
     
     // Manual Order Form
     "shishaMaster.newOrder": "Nouveau",
@@ -2162,6 +2187,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "कोई पूर्ण ऑर्डर नहीं",
     "shishaMaster.orders.statusDelivered": "डिलीवर किया गया",
     "shishaMaster.orders.statusCancelled": "रद्द किया गया",
+    "shishaMaster.orders.noOrdersForDate": "इस तारीख के लिए कोई ऑर्डर नहीं",
+    "shishaMaster.orders.ordersCount": "ऑर्डर",
+    "shishaMaster.orders.filterByDate": "तारीख के अनुसार फ़िल्टर",
+    "shishaMaster.orders.photoReplaced": "फोटो अपडेट किया गया",
+    "shishaMaster.orders.photoDeleted": "फोटो हटाया गया",
     
     // Manual Order Form
     "shishaMaster.newOrder": "नया",
@@ -2459,6 +2489,11 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noHistory": "暂无已完成订单",
     "shishaMaster.orders.statusDelivered": "已送达",
     "shishaMaster.orders.statusCancelled": "已取消",
+    "shishaMaster.orders.noOrdersForDate": "该日期没有订单",
+    "shishaMaster.orders.ordersCount": "订单",
+    "shishaMaster.orders.filterByDate": "按日期筛选",
+    "shishaMaster.orders.photoReplaced": "照片已更新",
+    "shishaMaster.orders.photoDeleted": "照片已删除",
     
     // Manual Order Form
     "shishaMaster.newOrder": "新建",

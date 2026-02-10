@@ -433,12 +433,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       <div className="space-y-3">
         {/* Date filter */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-2", filterDate && "border-primary text-primary")}>
                   <CalendarIcon className="h-4 w-4" />
-                  {filterDate ? format(filterDate, "dd.MM.yyyy") : (t("shishaMaster.orders.filterByDate") || "Filter by date")}
+                  {filterDate ? format(filterDate, "dd.MM.yyyy") : t("shishaMaster.orders.filterByDate")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
@@ -459,15 +459,17 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                 Reset
               </Button>
             )}
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            {filterDate && (
+              <span className="text-sm font-medium text-primary">
+                📅 {format(filterDate, "EEEE, d MMMM yyyy")}
+              </span>
+            )}
             <span className="text-xs text-muted-foreground ml-auto">
-              {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount") || "orders"}
+              {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount")}
             </span>
           </div>
-          {filterDate && (
-            <div className="text-sm font-medium text-primary">
-              📅 {format(filterDate, "EEEE, d MMMM yyyy")}
-            </div>
-          )}
         </div>
 
         {filteredHistoryOrders.length === 0 ? (
