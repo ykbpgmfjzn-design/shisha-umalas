@@ -270,7 +270,7 @@ const Profile = () => {
             <div className="relative inline-block mb-4">
               {profile.avatar_url ? (
                 <img
-                  src={profile.avatar_url}
+                  loading="lazy" src={profile.avatar_url}
                   alt="Avatar"
                   className="w-20 h-20 rounded-full object-cover border-2 border-golden/30 mx-auto"
                 />

@@ -172,7 +172,7 @@ const UsersTable = ({
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {profile.avatar_url ? (
                     <img
-                      src={profile.avatar_url}
+                      loading="lazy" src={profile.avatar_url}
                       alt=""
                       className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
                     />

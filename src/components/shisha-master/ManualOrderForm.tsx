@@ -414,7 +414,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                           >
                             <div className="flex items-center gap-2">
                               {c.avatar_url ? (
-                                <img src={c.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border border-border shrink-0" />
+                                <img loading="lazy" src={c.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border border-border shrink-0" />
                               ) : (
                                 <User className="w-7 h-7 p-1 rounded-full bg-muted text-muted-foreground shrink-0" />
                               )}
