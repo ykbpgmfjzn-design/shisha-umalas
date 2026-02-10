@@ -642,6 +642,19 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                           setOrderDate(local);
                         }}
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          const now = new Date();
+                          const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                          setOrderDate(local);
+                        }}
+                      >
+                        Now
+                      </Button>
                     </div>
                   )}
                 </PopoverContent>
