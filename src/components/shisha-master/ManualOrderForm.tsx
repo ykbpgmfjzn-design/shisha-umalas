@@ -578,7 +578,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
           <CardTitle className="text-base">{t("shishaMaster.form.statusAndNotes")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">{t("shishaMaster.form.payment")}</Label>
               <Select value={paymentStatus} onValueChange={setPaymentStatus}>
