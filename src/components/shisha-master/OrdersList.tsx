@@ -20,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -66,7 +66,9 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   // Track order changes for highlight effect
   const trackOrderChanges = (orders: OrderWithProfile[]) => {
@@ -328,6 +330,38 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     setCancelDialogOpen(true);
   };
 
+  const handleReplacePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !replacingPhotoOrderId) return;
+    setReplacingPhotoOrderId(prev => prev); // keep loading state
+    try {
+      const { compressImage } = await import("@/lib/compressImage");
+      const compressed = await compressImage(file);
+      const fileExt = compressed.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("customer-photos")
+        .upload(fileName, compressed);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from("customer-photos")
+        .getPublicUrl(fileName);
+      const { error: updateError } = await supabase
+        .from("purchases")
+        .update({ customer_photo_url: urlData.publicUrl })
+        .eq("id", replacingPhotoOrderId);
+      if (updateError) throw updateError;
+      toast.success(t("shishaMaster.orders.photoReplaced") || "Photo updated");
+      fetchOrders();
+    } catch (err: any) {
+      console.error("Photo replace error:", err);
+      toast.error(err.message || "Upload error");
+    } finally {
+      setReplacingPhotoOrderId(null);
+      if (e.target) e.target.value = "";
+    }
+  };
+
   const openEditSheet = (order: OrderWithProfile) => {
     setEditingOrder({
       id: order.id,
@@ -527,9 +561,28 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     {/* Customer info */}
                     <div className="flex items-center gap-2 text-sm">
                       {order.customer_photo_url ? (
-                        <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                        <div className="relative group shrink-0">
+                          <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                          <button
+                            className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              setReplacingPhotoOrderId(order.id);
+                              photoInputRef.current?.click();
+                            }}
+                          >
+                            {replacingPhotoOrderId === order.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                          </button>
+                        </div>
                       ) : (
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <button
+                          className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors"
+                          onClick={() => {
+                            setReplacingPhotoOrderId(order.id);
+                            photoInputRef.current?.click();
+                          }}
+                        >
+                          {replacingPhotoOrderId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
+                        </button>
                       )}
                       <span>{order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}</span>
                     </div>
@@ -654,6 +707,16 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       </Sheet>
 
       <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+
+      {/* Hidden file input for photo replacement */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleReplacePhoto}
+      />
     </>
   );
 }
