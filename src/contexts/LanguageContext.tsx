@@ -335,6 +335,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "No orders for this date",
     "shishaMaster.orders.ordersCount": "orders",
     "shishaMaster.orders.filterByDate": "Filter by date",
+    "shishaMaster.orders.fromDate": "From",
+    "shishaMaster.orders.toDate": "To",
     "shishaMaster.orders.photoReplaced": "Photo updated",
     "shishaMaster.orders.photoDeleted": "Photo removed",
     
@@ -837,6 +839,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "Нет заказов за эту дату",
     "shishaMaster.orders.ordersCount": "заказов",
     "shishaMaster.orders.filterByDate": "Фильтр по дате",
+    "shishaMaster.orders.fromDate": "От",
+    "shishaMaster.orders.toDate": "До",
     "shishaMaster.orders.photoReplaced": "Фото обновлено",
     "shishaMaster.orders.photoDeleted": "Фото удалено",
     
@@ -1253,6 +1257,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "Tidak ada pesanan untuk tanggal ini",
     "shishaMaster.orders.ordersCount": "pesanan",
     "shishaMaster.orders.filterByDate": "Filter berdasarkan tanggal",
+    "shishaMaster.orders.fromDate": "Dari",
+    "shishaMaster.orders.toDate": "Sampai",
     "shishaMaster.orders.photoReplaced": "Foto diperbarui",
     "shishaMaster.orders.photoDeleted": "Foto dihapus",
     
@@ -1580,6 +1586,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "Немає замовлень за цю дату",
     "shishaMaster.orders.ordersCount": "замовлень",
     "shishaMaster.orders.filterByDate": "Фільтр за датою",
+    "shishaMaster.orders.fromDate": "Від",
+    "shishaMaster.orders.toDate": "До",
     "shishaMaster.orders.photoReplaced": "Фото оновлено",
     "shishaMaster.orders.photoDeleted": "Фото видалено",
     
@@ -1888,6 +1896,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "Aucune commande pour cette date",
     "shishaMaster.orders.ordersCount": "commandes",
     "shishaMaster.orders.filterByDate": "Filtrer par date",
+    "shishaMaster.orders.fromDate": "Du",
+    "shishaMaster.orders.toDate": "Au",
     "shishaMaster.orders.photoReplaced": "Photo mise à jour",
     "shishaMaster.orders.photoDeleted": "Photo supprimée",
     
@@ -2190,6 +2200,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "इस तारीख के लिए कोई ऑर्डर नहीं",
     "shishaMaster.orders.ordersCount": "ऑर्डर",
     "shishaMaster.orders.filterByDate": "तारीख के अनुसार फ़िल्टर",
+    "shishaMaster.orders.fromDate": "से",
+    "shishaMaster.orders.toDate": "तक",
     "shishaMaster.orders.photoReplaced": "फोटो अपडेट किया गया",
     "shishaMaster.orders.photoDeleted": "फोटो हटाया गया",
     
@@ -2492,6 +2504,8 @@ const translations: Record<Language, Record<string, string>> = {
     "shishaMaster.orders.noOrdersForDate": "该日期没有订单",
     "shishaMaster.orders.ordersCount": "订单",
     "shishaMaster.orders.filterByDate": "按日期筛选",
+    "shishaMaster.orders.fromDate": "从",
+    "shishaMaster.orders.toDate": "到",
     "shishaMaster.orders.photoReplaced": "照片已更新",
     "shishaMaster.orders.photoDeleted": "照片已删除",
     
