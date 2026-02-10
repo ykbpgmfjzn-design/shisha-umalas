@@ -236,6 +236,9 @@ export default function MenuEditor() {
   };
 
   const canDrag = filter === "all";
+  const touchStartY = useRef<number>(0);
+  const touchCurrentIdx = useRef<number | null>(null);
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const handleDragStart = (index: number) => {
     dragItemRef.current = index;
@@ -253,15 +256,20 @@ export default function MenuEditor() {
     setDraggingIdx(null);
     if (from === null || to === null || from === to) return;
 
+    await reorderItems(from, to);
+
+    dragItemRef.current = null;
+    dragOverRef.current = null;
+  };
+
+  const reorderItems = async (from: number, to: number) => {
     const reordered = [...filteredItems];
     const [moved] = reordered.splice(from, 1);
     reordered.splice(to, 0, moved);
 
-    // Optimistic update
     const updated = reordered.map((item, i) => ({ ...item, sort_order: i }));
     setItems(updated);
 
-    // Persist to DB
     const updates = updated.map((item, i) =>
       supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
     );
@@ -273,9 +281,45 @@ export default function MenuEditor() {
     } else {
       toast.success("Order saved");
     }
+  };
+
+  // Touch drag & drop handlers
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    if (!canDrag) return;
+    dragItemRef.current = index;
+    touchCurrentIdx.current = index;
+    touchStartY.current = e.touches[0].clientY;
+    setDraggingIdx(index);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (dragItemRef.current === null || !canDrag) return;
+    e.preventDefault();
+    const touchY = e.touches[0].clientY;
+
+    // Find which card the finger is over
+    cardRefs.current.forEach((el, idx) => {
+      const rect = el.getBoundingClientRect();
+      if (touchY >= rect.top && touchY <= rect.bottom) {
+        touchCurrentIdx.current = idx;
+        dragOverRef.current = idx;
+      }
+    });
+  };
+
+  const handleTouchEnd = async () => {
+    if (dragItemRef.current === null) return;
+    const from = dragItemRef.current;
+    const to = touchCurrentIdx.current;
+    setDraggingIdx(null);
+
+    if (to !== null && from !== to) {
+      await reorderItems(from, to);
+    }
 
     dragItemRef.current = null;
     dragOverRef.current = null;
+    touchCurrentIdx.current = null;
   };
 
   const filteredItems =
@@ -323,18 +367,22 @@ export default function MenuEditor() {
         {filteredItems.map((item, index) => (
           <Card
             key={item.id}
+            ref={(el) => { if (el) cardRefs.current.set(index, el); }}
             draggable={canDrag}
             onDragStart={() => canDrag && handleDragStart(index)}
             onDragOver={(e) => canDrag && handleDragOver(e, index)}
             onDrop={() => canDrag && handleDrop()}
             onDragEnd={() => setDraggingIdx(null)}
+            onTouchStart={(e) => handleTouchStart(e, index)}
+            onTouchMove={(e) => handleTouchMove(e)}
+            onTouchEnd={() => handleTouchEnd()}
             className={`transition-all ${!item.is_active ? "opacity-50" : ""} ${
               draggingIdx === index ? "opacity-30 scale-95" : ""
-            } ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+            } ${canDrag ? "cursor-grab active:cursor-grabbing" : ""} touch-none`}
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <GripVertical className={`w-4 h-4 text-muted-foreground flex-shrink-0 hidden sm:block ${
+                <GripVertical className={`w-4 h-4 text-muted-foreground flex-shrink-0 ${
                   canDrag ? "" : "opacity-30"
                 }`} />
 
