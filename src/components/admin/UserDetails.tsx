@@ -87,7 +87,11 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
           <div key={purchase.id} className="p-4 rounded-xl bg-muted/30">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-muted-foreground" />
+                {purchase.customer_photo_url ? (
+                  <img src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0" />
+                ) : (
+                  <Hash className="w-4 h-4 text-muted-foreground" />
+                )}
                 <span className="font-medium">{purchase.hookah_count} hookah(s)</span>
               </div>
               {purchase.amount && (
