@@ -131,6 +131,51 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_signature: boolean
+          item_type: string
+          keywords: string[]
+          name: string
+          price: number
+          price_display: string
+          sort_order: number
+          strength: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_active?: boolean
+          is_signature?: boolean
+          item_type?: string
+          keywords?: string[]
+          name: string
+          price?: number
+          price_display?: string
+          sort_order?: number
+          strength?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_signature?: boolean
+          item_type?: string
+          keywords?: string[]
+          name?: string
+          price?: number
+          price_display?: string
+          sort_order?: number
+          strength?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
