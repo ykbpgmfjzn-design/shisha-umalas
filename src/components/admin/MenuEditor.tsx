@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,9 @@ export default function MenuEditor() {
   const [keywordsText, setKeywordsText] = useState("");
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const dragItemRef = useRef<number | null>(null);
+  const dragOverRef = useRef<number | null>(null);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
 
   const fetchItems = async () => {
     const { data, error } = await supabase
@@ -195,6 +198,49 @@ export default function MenuEditor() {
     }
   };
 
+  const canDrag = filter === "all";
+
+  const handleDragStart = (index: number) => {
+    dragItemRef.current = index;
+    setDraggingIdx(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    dragOverRef.current = index;
+  };
+
+  const handleDrop = async () => {
+    const from = dragItemRef.current;
+    const to = dragOverRef.current;
+    setDraggingIdx(null);
+    if (from === null || to === null || from === to) return;
+
+    const reordered = [...filteredItems];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+
+    // Optimistic update
+    const updated = reordered.map((item, i) => ({ ...item, sort_order: i }));
+    setItems(updated);
+
+    // Persist to DB
+    const updates = updated.map((item, i) =>
+      supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
+    );
+    const results = await Promise.all(updates);
+    const hasError = results.some((r) => r.error);
+    if (hasError) {
+      toast.error("Failed to save order");
+      fetchItems();
+    } else {
+      toast.success("Order saved");
+    }
+
+    dragItemRef.current = null;
+    dragOverRef.current = null;
+  };
+
   const filteredItems =
     filter === "all" ? items : items.filter((i) => i.strength === filter);
 
@@ -237,14 +283,23 @@ export default function MenuEditor() {
 
       {/* Items list */}
       <div className="space-y-2">
-        {filteredItems.map((item) => (
+        {filteredItems.map((item, index) => (
           <Card
             key={item.id}
-            className={`transition-opacity ${!item.is_active ? "opacity-50" : ""}`}
+            draggable={canDrag}
+            onDragStart={() => canDrag && handleDragStart(index)}
+            onDragOver={(e) => canDrag && handleDragOver(e, index)}
+            onDrop={() => canDrag && handleDrop()}
+            onDragEnd={() => setDraggingIdx(null)}
+            className={`transition-all ${!item.is_active ? "opacity-50" : ""} ${
+              draggingIdx === index ? "opacity-30 scale-95" : ""
+            } ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
+                <GripVertical className={`w-4 h-4 text-muted-foreground flex-shrink-0 hidden sm:block ${
+                  canDrag ? "" : "opacity-30"
+                }`} />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
