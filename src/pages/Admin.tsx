@@ -439,6 +439,7 @@ const AdminContent = () => {
                 orders={pendingOrders}
                 onUpdatePaymentStatus={handleUpdatePaymentStatus}
                 onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+                onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
                 showFilters={false}
                 title="Current Orders"
               />
@@ -452,6 +453,7 @@ const AdminContent = () => {
                   orders={allPurchases.slice(0, 5)}
                   onUpdatePaymentStatus={handleUpdatePaymentStatus}
                   onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+                  onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
                   showFilters={false}
                   title="Recent Orders"
                 />
@@ -465,6 +467,7 @@ const AdminContent = () => {
               orders={allPurchases}
               onUpdatePaymentStatus={handleUpdatePaymentStatus}
               onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+              onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
               title="All Orders"
             />
           </TabsContent>
