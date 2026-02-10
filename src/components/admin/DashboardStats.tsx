@@ -86,7 +86,7 @@ const DashboardStats = ({ stats, feedbackCount = 0, avgRating = 0 }: DashboardSt
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       {statCards.map((stat, index) => (
         <motion.div
           key={stat.label}
