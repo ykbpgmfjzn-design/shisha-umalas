@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
   Hash, Calendar, Coffee, Cookie, Building2, User,
-  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import ManualOrderForm, { type EditOrderData } from "@/components/shisha-master/ManualOrderForm";
 import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
 interface OrdersTableProps {
@@ -23,6 +30,7 @@ interface OrdersTableProps {
   onUpdatePaymentStatus?: (id: string, status: string) => Promise<void>;
   onUpdateDeliveryStatus?: (id: string, status: string) => Promise<void>;
   onUpdateStatus?: (id: string, status: string) => Promise<void>;
+  onOrderEdited?: () => void;
   showFilters?: boolean;
   title?: string;
 }
@@ -35,6 +43,7 @@ const OrdersTable = ({
   onUpdatePaymentStatus,
   onUpdateDeliveryStatus,
   onUpdateStatus,
+  onOrderEdited,
   showFilters = true, 
   title = "Orders" 
 }: OrdersTableProps) => {
@@ -44,6 +53,8 @@ const OrdersTable = ({
   const [updating, setUpdating] = useState<string | null>(null);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
 
   useEffect(() => {
@@ -186,6 +197,21 @@ const OrdersTable = ({
       await onUpdateDeliveryStatus(orderId, newStatus);
     }
     setUpdating(null);
+  };
+
+  const openEditSheet = (order: PurchaseWithProfile) => {
+    setEditingOrder({
+      id: order.id,
+      user_id: order.user_id,
+      customer_name: order.customer_name,
+      hookah_count: order.hookah_count,
+      amount: order.amount,
+      notes: order.notes,
+      payment_status: order.payment_status,
+      delivery_status: order.delivery_status,
+      created_at: order.created_at,
+    });
+    setEditSheetOpen(true);
   };
 
   return (
@@ -418,6 +444,15 @@ const OrdersTable = ({
                         </a>
                       </Button>
                     )}
+                    
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => openEditSheet(order)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -427,6 +462,24 @@ const OrdersTable = ({
         )}
       </div>
       <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+      
+      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Edit Order</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <ManualOrderForm
+              editOrder={editingOrder}
+              onEditComplete={() => {
+                setEditSheetOpen(false);
+                setEditingOrder(null);
+                onOrderEdited?.();
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
