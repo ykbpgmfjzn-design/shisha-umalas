@@ -71,6 +71,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
   const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
+  const [deletePhotoOrderId, setDeletePhotoOrderId] = useState<string | null>(null);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const photoInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -638,7 +639,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                           </button>
                           <button
                             className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleDeletePhoto(order.id)}
+                            onClick={() => setDeletePhotoOrderId(order.id)}
                           >
                             <X className="h-2.5 w-2.5" />
                           </button>
@@ -757,7 +758,30 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Order Sheet */}
+      {/* Delete Photo Confirmation */}
+      <AlertDialog open={!!deletePhotoOrderId} onOpenChange={(open) => !open && setDeletePhotoOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("shishaMaster.orders.deletePhotoTitle") || "Delete photo?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("shishaMaster.orders.deletePhotoDesc") || "The customer photo will be permanently removed from this order."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (deletePhotoOrderId) handleDeletePhoto(deletePhotoOrderId);
+                setDeletePhotoOrderId(null);
+              }}
+            >
+              {t("shishaMaster.orders.confirmDelete") || "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
