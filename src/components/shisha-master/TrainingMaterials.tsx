@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ interface TrainingMaterial {
   description: string | null;
   file_url: string;
   file_type: string;
+  language: string;
   created_at: string;
 }
 
@@ -53,8 +55,10 @@ export default function TrainingMaterials() {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    language: "en",
     file: null as File | null,
   });
+  const [langTab, setLangTab] = useState("en");
 
   useEffect(() => {
     fetchMaterials();
@@ -110,13 +114,14 @@ export default function TrainingMaterials() {
           description: form.description || null,
           file_url: urlData.publicUrl,
           file_type: getFileType(form.file),
+          language: form.language,
         });
 
       if (dbError) throw dbError;
 
       toast.success("Material added");
       setUploadDialogOpen(false);
-      setForm({ title: "", description: "", file: null });
+      setForm({ title: "", description: "", language: "en", file: null });
       fetchMaterials();
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -181,30 +186,39 @@ export default function TrainingMaterials() {
     );
   }
 
+  const filteredMaterials = materials.filter(m => m.language === langTab);
+
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            {t("shishaMaster.training.title")}
+            Training Materials
           </CardTitle>
           {isAdmin && (
             <Button onClick={() => setUploadDialogOpen(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              {t("shishaMaster.training.addMaterial")}
+              Add Material
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          {materials.length === 0 ? (
+          <Tabs value={langTab} onValueChange={setLangTab} className="mb-4">
+            <TabsList>
+              <TabsTrigger value="en">🇬🇧 English</TabsTrigger>
+              <TabsTrigger value="id">🇮🇩 Indonesian</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {filteredMaterials.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>{t("shishaMaster.training.noMaterials")}</p>
+              <p>No training materials yet</p>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {materials.map((material) => (
+              {filteredMaterials.map((material) => (
                 <Card key={material.id} className="overflow-hidden">
                   {material.file_type === "video" && (
                     <div className="aspect-video bg-muted relative">
@@ -266,7 +280,7 @@ export default function TrainingMaterials() {
                       >
                         <a href={material.file_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          {t("shishaMaster.training.open")}
+                          Open
                         </a>
                       </Button>
                       {isAdmin && (
@@ -295,11 +309,20 @@ export default function TrainingMaterials() {
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("shishaMaster.training.addMaterial")}</DialogTitle>
+            <DialogTitle>Add Material</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("shishaMaster.training.materialTitle")}</label>
+              <label className="text-sm font-medium">Language</label>
+              <Tabs value={form.language} onValueChange={(v) => setForm({ ...form, language: v })}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="en" className="flex-1">🇬🇧 English</TabsTrigger>
+                  <TabsTrigger value="id" className="flex-1">🇮🇩 Indonesian</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
               <Input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -307,7 +330,7 @@ export default function TrainingMaterials() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("shishaMaster.training.description")}</label>
+              <label className="text-sm font-medium">Description</label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -316,7 +339,7 @@ export default function TrainingMaterials() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("shishaMaster.training.file")}</label>
+              <label className="text-sm font-medium">File</label>
               <div className="flex items-center gap-2">
                 <Input
                   type="file"
@@ -332,6 +355,24 @@ export default function TrainingMaterials() {
               )}
             </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} disabled={uploading}>
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
               {t("admin.cancel")}
@@ -357,15 +398,15 @@ export default function TrainingMaterials() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("shishaMaster.training.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>Delete material?</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("shishaMaster.training.deleteConfirmDesc")}
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-              {t("shishaMaster.training.delete")}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -386,6 +386,7 @@ export type Database = {
           file_type: string
           file_url: string
           id: string
+          language: string
           title: string
           updated_at: string
           uploaded_by: string | null
@@ -396,6 +397,7 @@ export type Database = {
           file_type: string
           file_url: string
           id?: string
+          language?: string
           title: string
           updated_at?: string
           uploaded_by?: string | null
@@ -406,6 +408,7 @@ export type Database = {
           file_type?: string
           file_url?: string
           id?: string
+          language?: string
           title?: string
           updated_at?: string
           uploaded_by?: string | null
