@@ -531,6 +531,11 @@ const AdminContent = () => {
                 isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
                 onAddPurchase={() => setShowAddPurchase(true)}
                 onUserUpdated={() => fetchAllProfiles()}
+                onUserDeleted={() => {
+                  setSelectedUser(null);
+                  fetchAllProfiles();
+                  fetchAllUserRoles();
+                }}
               />
             </div>
           </TabsContent>

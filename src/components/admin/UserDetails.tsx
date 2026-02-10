@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Crown, Building2, Users, Plus, Hash, Calendar,
-  Coffee, Cookie, Shield, Pencil, Save, X, Loader2
+  Coffee, Cookie, Shield, Pencil, Save, X, Loader2, Trash2
 } from "lucide-react";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Profile } from "@/hooks/useProfile";
@@ -26,12 +36,15 @@ interface UserDetailsProps {
   isAdmin: boolean;
   onAddPurchase: () => void;
   onUserUpdated?: () => void;
+  onUserDeleted?: () => void;
 }
 
-const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated }: UserDetailsProps) => {
+const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, onUserDeleted }: UserDetailsProps) => {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: "",
     phone: "",
@@ -87,6 +100,26 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated }:
       toast.success("User updated");
       setEditing(false);
       onUserUpdated?.();
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!user) return;
+    setDeleting(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await supabase.functions.invoke("delete-user", {
+      body: { userId: user.id },
+    });
+
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error || res.error?.message || "Failed to delete user");
+    } else {
+      toast.success("User deleted");
+      onUserDeleted?.();
     }
   };
 
@@ -146,6 +179,14 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated }:
                 className="text-muted-foreground hover:text-foreground ml-2"
               >
                 <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
               </Button>
             </>
           ) : (
@@ -301,6 +342,29 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated }:
       </div>
     </motion.div>
     <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+    
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete User</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete <strong>{user?.full_name || user?.email}</strong>? 
+            This will permanently remove their account, profile, and all associated data. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteUser}
+            disabled={deleting}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 };
