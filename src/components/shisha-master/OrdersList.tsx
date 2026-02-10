@@ -20,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2 } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -362,6 +362,19 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     }
   };
 
+  const handleDeletePhoto = async (orderId: string) => {
+    const { error } = await supabase
+      .from("purchases")
+      .update({ customer_photo_url: null })
+      .eq("id", orderId);
+    if (error) {
+      toast.error(t("shishaMaster.orders.error") || "Error");
+      return;
+    }
+    toast.success(t("shishaMaster.orders.photoDeleted") || "Photo removed");
+    fetchOrders();
+  };
+
   const openEditSheet = (order: OrderWithProfile) => {
     setEditingOrder({
       id: order.id,
@@ -572,6 +585,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                             }}
                           >
                             {replacingPhotoOrderId === order.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                          </button>
+                          <button
+                            className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeletePhoto(order.id)}
+                          >
+                            <X className="h-2.5 w-2.5" />
                           </button>
                         </div>
                       ) : (
