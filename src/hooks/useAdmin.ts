@@ -99,7 +99,28 @@ export const useAdmin = () => {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setProfiles(data as Profile[]);
+      // For profiles without avatar, try to get latest customer photo from purchases
+      const noAvatarIds = data.filter(p => !p.avatar_url).map(p => p.id);
+      let photoMap: Record<string, string> = {};
+      if (noAvatarIds.length > 0) {
+        const { data: photos } = await supabase
+          .from("purchases")
+          .select("user_id, customer_photo_url")
+          .in("user_id", noAvatarIds)
+          .not("customer_photo_url", "is", null)
+          .order("created_at", { ascending: false });
+        if (photos) {
+          for (const p of photos) {
+            if (p.user_id && !photoMap[p.user_id]) {
+              photoMap[p.user_id] = p.customer_photo_url!;
+            }
+          }
+        }
+      }
+      setProfiles(data.map(p => ({
+        ...p,
+        avatar_url: p.avatar_url || photoMap[p.id] || null,
+      })) as Profile[]);
     }
     return { data, error };
   }, []);
