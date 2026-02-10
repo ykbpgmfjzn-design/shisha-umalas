@@ -618,8 +618,8 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     selected={orderDate ? new Date(orderDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
-                        const now = new Date();
-                        date.setHours(now.getHours(), now.getMinutes());
+                        const existing = orderDate ? new Date(orderDate) : new Date();
+                        date.setHours(existing.getHours(), existing.getMinutes());
                         const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                         setOrderDate(local);
                       }
@@ -627,6 +627,23 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
+                  {orderDate && (
+                    <div className="flex items-center gap-2 px-3 pb-3 border-t border-border pt-2">
+                      <Label className="text-xs text-muted-foreground">Time:</Label>
+                      <Input
+                        type="time"
+                        className="w-auto h-8 text-sm"
+                        value={orderDate ? `${String(new Date(orderDate).getHours()).padStart(2, '0')}:${String(new Date(orderDate).getMinutes()).padStart(2, '0')}` : ''}
+                        onChange={(e) => {
+                          const [h, m] = e.target.value.split(':').map(Number);
+                          const d = new Date(orderDate);
+                          d.setHours(h, m);
+                          const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                          setOrderDate(local);
+                        }}
+                      />
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
               {orderDate && (
