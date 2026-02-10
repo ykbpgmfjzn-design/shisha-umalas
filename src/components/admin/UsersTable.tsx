@@ -170,9 +170,17 @@ const UsersTable = ({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`p-2 rounded-full shrink-0 ${getMainRoleBg(profile.id)}`}>
-                    {getMainRoleIcon(profile.id)}
-                  </div>
+                  {profile.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt=""
+                      className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
+                    />
+                  ) : (
+                    <div className={`p-2 rounded-full shrink-0 ${getMainRoleBg(profile.id)}`}>
+                      {getMainRoleIcon(profile.id)}
+                    </div>
+                  )}
                   
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
