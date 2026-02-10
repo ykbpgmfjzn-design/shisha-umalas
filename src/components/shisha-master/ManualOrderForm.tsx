@@ -37,6 +37,7 @@ interface ExistingCustomer {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  avatar_url: string | null;
   loyalty_level: number;
   total_hookahs_ordered: number;
 }
@@ -154,7 +155,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const fetchCustomers = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, loyalty_level, total_hookahs_ordered")
+      .select("id, full_name, email, phone, avatar_url, loyalty_level, total_hookahs_ordered")
       .order("full_name");
     if (data) setCustomers(data);
   };
@@ -384,13 +385,20 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                               setCustomerPopoverOpen(false);
                             }}
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {c.full_name || c.email || "—"}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Lvl {c.loyalty_level} • {c.total_hookahs_ordered} hookahs
-                              </span>
+                            <div className="flex items-center gap-2">
+                              {c.avatar_url ? (
+                                <img src={c.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border border-border shrink-0" />
+                              ) : (
+                                <User className="w-7 h-7 p-1 rounded-full bg-muted text-muted-foreground shrink-0" />
+                              )}
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {c.full_name || c.email || "—"}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Lvl {c.loyalty_level} • {c.total_hookahs_ordered} hookahs
+                                </span>
+                              </div>
                             </div>
                           </CommandItem>
                         ))}
