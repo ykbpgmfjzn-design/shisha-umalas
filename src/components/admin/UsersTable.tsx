@@ -132,7 +132,7 @@ const UsersTable = ({
   };
 
   return (
-    <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
+    <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-6">
         <Users className="w-5 h-5 text-golden" />
         <h2 className="font-display text-xl">Users</h2>

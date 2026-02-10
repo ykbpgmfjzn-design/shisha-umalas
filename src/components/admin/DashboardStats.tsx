@@ -86,22 +86,22 @@ const DashboardStats = ({ stats, feedbackCount = 0, avgRating = 0 }: DashboardSt
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
       {statCards.map((stat, index) => (
         <motion.div
           key={stat.label}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
-          className="bg-card/60 backdrop-blur-xl rounded-xl border border-border/50 p-4"
+          className="bg-card/60 backdrop-blur-xl rounded-xl border border-border/50 p-3 sm:p-4"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
               <stat.icon className={`w-4 h-4 ${stat.color}`} />
             </div>
           </div>
-          <p className="text-2xl font-bold">{stat.value}</p>
-          <p className="text-xs text-muted-foreground">{stat.label}</p>
+          <p className="text-lg sm:text-2xl font-bold truncate">{stat.value}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">{stat.label}</p>
         </motion.div>
       ))}
     </div>

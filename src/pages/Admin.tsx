@@ -346,7 +346,7 @@ const AdminContent = () => {
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-sunset/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
@@ -388,45 +388,47 @@ const AdminContent = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-8 bg-card/60 backdrop-blur-xl">
-            <TabsTrigger value="dashboard" className="gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="gap-2 relative">
-              <ClipboardList className="w-4 h-4" />
-              <span className="hidden sm:inline">Orders</span>
-              {pendingOrders.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs flex items-center justify-center text-white">
-                  {pendingOrders.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="new-order" className="gap-2">
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">New</span>
-            </TabsTrigger>
-            <TabsTrigger value="menu" className="gap-2">
-              <UtensilsCrossed className="w-4 h-4" />
-              <span className="hidden sm:inline">Menu</span>
-            </TabsTrigger>
-            <TabsTrigger value="reservations" className="gap-2">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("admin.reservations")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="feedback" className="gap-2">
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Feedback</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+            <TabsList className="inline-flex w-auto min-w-max bg-card/60 backdrop-blur-xl">
+              <TabsTrigger value="dashboard" className="gap-1.5 px-3">
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="gap-1.5 px-3 relative">
+                <ClipboardList className="w-4 h-4" />
+                <span className="hidden sm:inline">Orders</span>
+                {pendingOrders.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs flex items-center justify-center text-white">
+                    {pendingOrders.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="new-order" className="gap-1.5 px-3">
+                <PlusCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">New</span>
+              </TabsTrigger>
+              <TabsTrigger value="menu" className="gap-1.5 px-3">
+                <UtensilsCrossed className="w-4 h-4" />
+                <span className="hidden sm:inline">Menu</span>
+              </TabsTrigger>
+              <TabsTrigger value="reservations" className="gap-1.5 px-3">
+                <Calendar className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("admin.reservations")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="gap-1.5 px-3">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="feedback" className="gap-1.5 px-3">
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Feedback</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-1.5 px-3">
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Analytics</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
@@ -438,7 +440,7 @@ const AdminContent = () => {
             
             
             {/* Current Orders + Settings */}
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <OrdersTable
                 orders={pendingOrders}
                 onUpdatePaymentStatus={handleUpdatePaymentStatus}
@@ -498,7 +500,7 @@ const AdminContent = () => {
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <UsersTable
                 profiles={profiles}
                 userRoles={allUserRoles}
