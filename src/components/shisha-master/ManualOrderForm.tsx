@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, X, Loader2 } from "lucide-react";
+import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, ImagePlus, X, Loader2 } from "lucide-react";
 import { menuItems, MenuItem } from "@/data/menuItems";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -576,26 +576,43 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                 </Button>
               </div>
             ) : (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Button variant="outline" size="sm" asChild disabled={uploadingPhoto}>
-                  <span>
-                    {uploadingPhoto ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Camera className="h-4 w-4 mr-2" />
-                    )}
-                    {t("shishaMaster.form.uploadPhoto")}
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                  disabled={uploadingPhoto}
-                />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="cursor-pointer">
+                  <Button variant="outline" size="sm" asChild disabled={uploadingPhoto}>
+                    <span>
+                      {uploadingPhoto ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4 mr-2" />
+                      )}
+                      {t("shishaMaster.form.takePhoto")}
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+                <label className="cursor-pointer">
+                  <Button variant="ghost" size="sm" asChild disabled={uploadingPhoto}>
+                    <span>
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      {t("shishaMaster.form.fromGallery")}
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+              </div>
             )}
           </div>
         </CardContent>
