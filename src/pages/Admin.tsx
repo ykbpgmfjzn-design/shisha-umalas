@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
+import {
   ArrowLeft, Shield, Plus, LogOut, PlusCircle,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3, UtensilsCrossed
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3, UtensilsCrossed, BookOpen
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
+import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
@@ -423,6 +424,10 @@ const AdminContent = () => {
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Feedback</span>
               </TabsTrigger>
+              <TabsTrigger value="training" className="gap-1.5 px-3">
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Training</span>
+              </TabsTrigger>
               <TabsTrigger value="analytics" className="gap-1.5 px-3">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Analytics</span>
@@ -556,6 +561,11 @@ const AdminContent = () => {
             <FeedbackList 
               onStatsUpdate={(count, avgRating) => setFeedbackStats({ count, avgRating })}
             />
+          </TabsContent>
+
+          {/* Training Tab */}
+          <TabsContent value="training">
+            <TrainingMaterials />
           </TabsContent>
 
           {/* Analytics Tab */}
