@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Crown, Gift, Coffee, Cookie, Star, 
-  Building2, Users, Sparkles, X, LogOut, Calendar, Hash, Phone
+  Building2, Users, Sparkles, X, LogOut, Calendar, Hash, Phone, Camera, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 import { usePurchases } from "@/hooks/usePurchases";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
@@ -40,8 +41,10 @@ const Profile = () => {
   const [phoneInput, setPhoneInput] = useState("");
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const roomInputRef = useRef<HTMLInputElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const shouldReturnToCart = searchParams.get('returnToCart') === 'true';
 
@@ -156,6 +159,36 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAvatar(true);
+    try {
+      const { compressImage } = await import("@/lib/compressImage");
+      const compressed = await compressImage(file);
+      const fileExt = compressed.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, compressed, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("id", user.id);
+      if (updateError) throw updateError;
+      toast({ title: t("profile.avatarUpdated") || "Avatar updated" });
+      // Refresh profile
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Avatar upload error:", err);
+      toast({ variant: "destructive", title: err.message || "Upload failed" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     toast({
@@ -234,7 +267,37 @@ const Profile = () => {
         >
           {/* Title */}
           <div className="text-center mb-8">
-            <Crown className="w-12 h-12 text-golden mx-auto mb-4" />
+            <div className="relative inline-block mb-4">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-golden/30 mx-auto"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-golden/20 flex items-center justify-center mx-auto">
+                  <Crown className="w-10 h-10 text-golden" />
+                </div>
+              )}
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute bottom-0 right-0 p-1.5 rounded-full bg-golden text-background hover:bg-golden/90 transition-colors"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
             <h1 className="font-display text-3xl text-foreground mb-2">{t("nav.profile")}</h1>
             <p className="text-muted-foreground">{profile.email}</p>
           </div>
