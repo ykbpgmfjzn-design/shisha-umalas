@@ -530,6 +530,7 @@ const AdminContent = () => {
                 purchases={userPurchases}
                 isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
                 onAddPurchase={() => setShowAddPurchase(true)}
+                onUserUpdated={() => fetchAllProfiles()}
               />
             </div>
           </TabsContent>

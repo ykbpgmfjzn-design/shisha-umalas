@@ -1,12 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Crown, Building2, Users, Plus, Hash, Calendar,
-  Coffee, Cookie, Shield
+  Coffee, Cookie, Shield, Pencil, Save, X, Loader2
 } from "lucide-react";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { Profile } from "@/hooks/useProfile";
 import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
@@ -15,10 +25,34 @@ interface UserDetailsProps {
   purchases: PurchaseWithProfile[];
   isAdmin: boolean;
   onAddPurchase: () => void;
+  onUserUpdated?: () => void;
 }
 
-const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsProps) => {
+const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated }: UserDetailsProps) => {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone: "",
+    room_number: "",
+    loyalty_level: 1,
+    total_hookahs_ordered: 0,
+  });
+
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        full_name: user.full_name || "",
+        phone: user.phone || "",
+        room_number: user.room_number || "",
+        loyalty_level: user.loyalty_level,
+        total_hookahs_ordered: user.total_hookahs_ordered,
+      });
+      setEditing(false);
+    }
+  }, [user]);
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
@@ -27,6 +61,33 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editForm.full_name || null,
+        phone: editForm.phone || null,
+        room_number: editForm.room_number || null,
+        loyalty_level: editForm.loyalty_level,
+        total_hookahs_ordered: editForm.total_hookahs_ordered,
+      })
+      .eq("id", user.id);
+
+    setSaving(false);
+
+    if (error) {
+      toast.error("Failed to update user");
+      console.error("Update error:", error);
+    } else {
+      toast.success("User updated");
+      setEditing(false);
+      onUserUpdated?.();
+    }
   };
 
   if (!user) {
@@ -46,9 +107,9 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
       className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
     >
       <div className="flex items-center justify-between mb-4">
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-xl">{user.email}</h2>
+            <h2 className="font-display text-xl truncate">{user.email}</h2>
             {isAdmin && (
               <Badge variant="outline" className="border-red-400 text-red-400">
                 <Shield className="w-3 h-3 mr-1" />
@@ -56,23 +117,125 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            {user.full_name || "No name"} • 
-            {user.guest_type === "special" 
-              ? ` Room ${user.room_number}` 
-              : " Guest"}
-          </p>
+          {!editing && (
+            <p className="text-sm text-muted-foreground">
+              {user.full_name || "No name"} • 
+              {user.guest_type === "special" 
+                ? ` Room ${user.room_number}` 
+                : " Guest"}
+              {user.phone && ` • ${user.phone}`}
+            </p>
+          )}
         </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2 text-golden">
-            <Crown className="w-5 h-5" />
-            <span className="text-2xl font-bold">Lvl {user.loyalty_level}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {user.total_hookahs_ordered} hookahs
-          </p>
+        <div className="flex items-center gap-2">
+          {!editing ? (
+            <>
+              <div className="text-right">
+                <div className="flex items-center gap-2 text-golden">
+                  <Crown className="w-5 h-5" />
+                  <span className="text-2xl font-bold">Lvl {user.loyalty_level}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {user.total_hookahs_ordered} hookahs
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(true)}
+                className="text-muted-foreground hover:text-foreground ml-2"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </>
+          ) : (
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setEditForm({
+                    full_name: user.full_name || "",
+                    phone: user.phone || "",
+                    room_number: user.room_number || "",
+                    loyalty_level: user.loyalty_level,
+                    total_hookahs_ordered: user.total_hookahs_ordered,
+                  });
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
+      {editing && (
+        <div className="space-y-3 mb-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Name</label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm(f => ({ ...f, full_name: e.target.value }))}
+                placeholder="Full name"
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Phone</label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                placeholder="+62..."
+                className="bg-background/50"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Room</label>
+              <Input
+                value={editForm.room_number}
+                onChange={(e) => setEditForm(f => ({ ...f, room_number: e.target.value }))}
+                placeholder="Room #"
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Loyalty Lvl</label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={editForm.loyalty_level}
+                onChange={(e) => setEditForm(f => ({ ...f, loyalty_level: parseInt(e.target.value) || 1 }))}
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Total Hookahs</label>
+              <Input
+                type="number"
+                min={0}
+                value={editForm.total_hookahs_ordered}
+                onChange={(e) => setEditForm(f => ({ ...f, total_hookahs_ordered: parseInt(e.target.value) || 0 }))}
+                className="bg-background/50"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <Button
         onClick={onAddPurchase}
