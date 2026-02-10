@@ -609,7 +609,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {orderDate ? format(new Date(orderDate), "PPP HH:mm") : "Current time"}
+                    {orderDate ? format(new Date(orderDate), "dd MMM yyyy HH:mm") : "Current time"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -627,18 +627,17 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
-                  {orderDate && (
-                    <div className="flex items-center gap-2 px-3 pb-3 border-t border-border pt-2">
+                  <div className="flex items-center gap-2 px-3 pb-3 border-t border-border pt-2">
                       <Label className="text-xs text-muted-foreground">Time:</Label>
                       <Input
                         type="time"
                         className="w-auto h-8 text-sm"
-                        value={orderDate ? `${String(new Date(orderDate).getHours()).padStart(2, '0')}:${String(new Date(orderDate).getMinutes()).padStart(2, '0')}` : ''}
+                        value={orderDate ? `${String(new Date(orderDate).getHours()).padStart(2, '0')}:${String(new Date(orderDate).getMinutes()).padStart(2, '0')}` : `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`}
                         onChange={(e) => {
                           const [h, m] = e.target.value.split(':').map(Number);
-                          const d = new Date(orderDate);
-                          d.setHours(h, m);
-                          const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                          const base = orderDate ? new Date(orderDate) : new Date();
+                          base.setHours(h, m);
+                          const local = new Date(base.getTime() - base.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                           setOrderDate(local);
                         }}
                       />
@@ -656,7 +655,6 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                         Now
                       </Button>
                     </div>
-                  )}
                 </PopoverContent>
               </Popover>
               {orderDate && (
