@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, ImagePlus, X, Loader2, CalendarIcon } from "lucide-react";
 import { menuItems, MenuItem } from "@/data/menuItems";
 import { toast } from "sonner";
@@ -589,40 +592,56 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               </Select>
           </div>
 
-          {/* Order Date & Time */}
+          {/* Order Date */}
           <div className="space-y-2">
             <Label className="text-xs flex items-center gap-1.5">
               <CalendarIcon className="h-3.5 w-3.5" />
-              {t("shishaMaster.form.orderDate") || "When was the order placed?"}
+              Order Date
             </Label>
             <div className="flex items-center gap-2">
-              <Input
-                type="datetime-local"
-                value={orderDate}
-                onChange={(e) => setOrderDate(e.target.value)}
-                className="flex-1"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "flex-1 justify-start text-left font-normal",
+                      !orderDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {orderDate ? format(new Date(orderDate), "PPP HH:mm") : "Current time"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker
+                    mode="single"
+                    selected={orderDate ? new Date(orderDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const now = new Date();
+                        date.setHours(now.getHours(), now.getMinutes());
+                        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        setOrderDate(local);
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
               {orderDate && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="text-xs text-muted-foreground shrink-0"
-                  onClick={() => {
-                    const now = new Date();
-                    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                    setOrderDate(local);
-                  }}
+                  onClick={() => setOrderDate("")}
                 >
-                  {t("shishaMaster.form.now") || "Now"}
+                  <X className="h-3 w-3 mr-1" />
+                  Reset
                 </Button>
               )}
             </div>
-            {!orderDate && (
-              <p className="text-xs text-muted-foreground">
-                {t("shishaMaster.form.orderDateHint") || "Leave empty for current time"}
-              </p>
-            )}
           </div>
             <div className="space-y-2">
               <Label className="text-xs">{t("shishaMaster.form.delivery")}</Label>
