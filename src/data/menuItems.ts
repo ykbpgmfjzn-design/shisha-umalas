@@ -1,5 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
 import type { ItemType } from '@/hooks/useCart';
-
 export interface MenuItem {
   id: string;
   name: string;
@@ -42,6 +42,45 @@ export const menuItems: MenuItem[] = [
   // Extra
   { id: 'mixed-nuts', name: 'Mixed Nuts', price: 10000, priceDisplay: 'IDR 10K', strength: 'Extra', itemType: 'snack', keywords: ['mixed nuts', 'nuts', 'орехи', 'орешки', 'kacang', 'snack', 'закуска'] },
 ];
+
+// Cached DB menu items
+let cachedDbItems: MenuItem[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 60000; // 1 minute
+
+export const fetchMenuItemsFromDb = async (): Promise<MenuItem[]> => {
+  const now = Date.now();
+  if (cachedDbItems && now - cacheTimestamp < CACHE_TTL) {
+    return cachedDbItems;
+  }
+
+  const { data, error } = await supabase
+    .from("menu_items")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error || !data) {
+    return menuItems; // fallback to hardcoded
+  }
+
+  cachedDbItems = data.map((d: any) => ({
+    id: d.id,
+    name: d.name,
+    price: d.price,
+    priceDisplay: d.price_display,
+    strength: d.strength,
+    isSignature: d.is_signature,
+    itemType: d.item_type as ItemType,
+    keywords: d.keywords || [],
+  }));
+  cacheTimestamp = now;
+  return cachedDbItems;
+};
+
+export const getMenuItems = (): MenuItem[] => {
+  return cachedDbItems || menuItems;
+};
 
 export const findMenuItemByKeyword = (text: string): MenuItem | undefined => {
   const lowerText = text.toLowerCase();

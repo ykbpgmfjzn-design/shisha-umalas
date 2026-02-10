@@ -233,9 +233,32 @@ const SubCategory = ({ title, children }: SubCategoryProps) => (
   </div>
 );
 
+const strengthToKey: Record<string, "ultra-light" | "light" | "medium" | "bold" | "extra"> = {
+  "Ultra Light": "ultra-light",
+  "Light": "light",
+  "Medium": "medium",
+  "Bold Strong": "bold",
+  "Extra": "extra",
+};
+
+const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra"];
+
+interface DbMenuItem {
+  id: string;
+  name: string;
+  price: number;
+  price_display: string;
+  strength: string;
+  is_signature: boolean;
+  item_type: string;
+  sort_order: number;
+}
+
 const MenuSection = () => {
   const { t } = useLanguage();
   const [user, setUser] = useState<any>(null);
+  const [dbItems, setDbItems] = useState<DbMenuItem[]>([]);
+  const [loadingMenu, setLoadingMenu] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -247,6 +270,22 @@ const MenuSection = () => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      const { data, error } = await supabase
+        .from("menu_items")
+        .select("id, name, price, price_display, strength, is_signature, item_type, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (!error && data) {
+        setDbItems(data);
+      }
+      setLoadingMenu(false);
+    };
+    fetchMenu();
   }, []);
 
   return (
@@ -297,137 +336,77 @@ const MenuSection = () => {
 
         {/* Menu Categories */}
         <div className="space-y-8">
-          {/* Ultra Light */}
-          <MenuCategory title={t("strength.ultraLight")} strength="ultra-light" delay={0}>
-            <SubCategory title={t("menu.singleFlavor")}>
-              <MenuItem id="wl-vanilla" name="Whiteline Vanilla" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.1} />
-              <MenuItem id="wl-oolong" name="Whiteline Oolong Tea" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.15} />
-              <MenuItem id="hl-watermelon" name="Herbaline Watermelon" price={280000} priceDisplay="IDR 280K" strength="Ultra Light" delay={0.2} />
-            </SubCategory>
-            
-            <SubCategory title={t("menu.signatureMixes")}>
-              <MenuItem 
-                id="vanilla-breeze"
-                name="Vanilla Breeze" 
-                price={320000}
-                priceDisplay="IDR 320K" 
-                isSignature 
-                strength="Ultra Light"
-                delay={0.25} 
-              />
-              <MenuItem 
-                id="watermelon-wave"
-                name="Watermelon Wave" 
-                price={320000}
-                priceDisplay="IDR 320K" 
-                isSignature 
-                strength="Ultra Light"
-                delay={0.3} 
-              />
-            </SubCategory>
-          </MenuCategory>
+          {loadingMenu ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : (
+            strengthOrder
+              .filter((strength) => dbItems.some((i) => i.strength === strength))
+              .map((strength, catIdx) => {
+                const key = strengthToKey[strength] || "light";
+                const categoryItems = dbItems.filter((i) => i.strength === strength);
+                const singles = categoryItems.filter((i) => !i.is_signature);
+                const signatures = categoryItems.filter((i) => i.is_signature);
 
-          {/* Light */}
-          <MenuCategory title={t("strength.light")} strength="light" delay={0.1}>
-            <SubCategory title={t("menu.singleFlavor")}>
-              <MenuItem id="wl-mint" name="Whiteline Mint" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.1} />
-              <MenuItem id="af-two-apple" name="Al Fakher Two Apple" price={295000} priceDisplay="IDR 295K" strength="Light" delay={0.15} />
-            </SubCategory>
-            
-            <SubCategory title={t("menu.signatureMixes")}>
-              <MenuItem 
-                id="minty-grapes"
-                name="Minty Grapes" 
-                price={335000}
-                priceDisplay="IDR 335K" 
-                isSignature 
-                strength="Light"
-                delay={0.2} 
-              />
-              <MenuItem 
-                id="minty-gum"
-                name="Minty Gum" 
-                price={335000}
-                priceDisplay="IDR 335K" 
-                isSignature 
-                strength="Light"
-                delay={0.25} 
-              />
-            </SubCategory>
-          </MenuCategory>
-
-          {/* Medium */}
-          <MenuCategory title={t("strength.medium")} strength="medium" delay={0.2}>
-            <SubCategory title={t("menu.singleFlavor")}>
-              <MenuItem id="bl-african" name="Blackline African Queen" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.1} />
-              <MenuItem id="bl-spicy-lime" name="Blackline Spicey Lime" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.15} />
-              <MenuItem id="bl-booster" name="Blackline Booster" price={325000} priceDisplay="IDR 325K" strength="Medium" delay={0.2} />
-            </SubCategory>
-            
-            <SubCategory title={t("menu.signatureMixes")}>
-              <MenuItem 
-                id="tipsy-lime"
-                name="Tipsy Lime" 
-                price={405000}
-                priceDisplay="IDR 405K" 
-                isSignature 
-                strength="Medium"
-                delay={0.25} 
-              />
-              <MenuItem 
-                id="evening-moscow"
-                name="Evening Moscow" 
-                price={405000}
-                priceDisplay="IDR 405K" 
-                isSignature 
-                strength="Medium"
-                delay={0.3} 
-              />
-            </SubCategory>
-          </MenuCategory>
-
-          {/* Bold Strong */}
-          <MenuCategory title={t("strength.boldStrong")} strength="bold" delay={0.3}>
-            <SubCategory title={t("menu.singleFlavor")}>
-              <MenuItem id="tangiers-cooling" name="Tangiers Cooling" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.1} />
-              <MenuItem id="tangiers-schnozz" name="Tangiers Schnozzberry" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.15} />
-              <MenuItem id="darkside-polar" name="Darkside Polar Cream" price={450000} priceDisplay="IDR 450K" strength="Bold Strong" delay={0.2} />
-            </SubCategory>
-            
-            <SubCategory title={t("menu.signatureMixes")}>
-              <MenuItem 
-                id="berry-kiss"
-                name="Berry Kiss" 
-                price={485000}
-                priceDisplay="IDR 485K" 
-                isSignature 
-                strength="Bold Strong"
-                delay={0.25} 
-              />
-              <MenuItem 
-                id="wild-heart"
-                name="Wild Heart" 
-                price={485000}
-                priceDisplay="IDR 485K" 
-                isSignature 
-                strength="Bold Strong"
-                delay={0.3} 
-              />
-            </SubCategory>
-          </MenuCategory>
-
-          {/* Extra - Snacks */}
-          <MenuCategory title={t("menu.extras")} strength="extra" delay={0.4}>
-            <MenuItem 
-              id="mixed-nuts" 
-              name="Mixed Nuts" 
-              price={10000} 
-              priceDisplay="IDR 10K" 
-              strength="Extra" 
-              itemType="snack"
-              delay={0.1} 
-            />
-          </MenuCategory>
+                return (
+                  <MenuCategory
+                    key={strength}
+                    title={t(strengthLabels[key] || key)}
+                    strength={key}
+                    delay={catIdx * 0.1}
+                  >
+                    {singles.length > 0 && strength !== "Extra" && (
+                      <SubCategory title={t("menu.singleFlavor")}>
+                        {singles.map((item, i) => (
+                          <MenuItem
+                            key={item.id}
+                            id={item.id}
+                            name={item.name}
+                            price={item.price}
+                            priceDisplay={item.price_display}
+                            strength={item.strength}
+                            isSignature={false}
+                            itemType={item.item_type as any}
+                            delay={i * 0.05}
+                          />
+                        ))}
+                      </SubCategory>
+                    )}
+                    {signatures.length > 0 && strength !== "Extra" && (
+                      <SubCategory title={t("menu.signatureMixes")}>
+                        {signatures.map((item, i) => (
+                          <MenuItem
+                            key={item.id}
+                            id={item.id}
+                            name={item.name}
+                            price={item.price}
+                            priceDisplay={item.price_display}
+                            strength={item.strength}
+                            isSignature
+                            itemType={item.item_type as any}
+                            delay={i * 0.05}
+                          />
+                        ))}
+                      </SubCategory>
+                    )}
+                    {strength === "Extra" &&
+                      categoryItems.map((item, i) => (
+                        <MenuItem
+                          key={item.id}
+                          id={item.id}
+                          name={item.name}
+                          price={item.price}
+                          priceDisplay={item.price_display}
+                          strength={item.strength}
+                          itemType={item.item_type as any}
+                          delay={i * 0.05}
+                        />
+                      ))}
+                  </MenuCategory>
+                );
+              })
+          )}
         </div>
       </div>
     </section>
