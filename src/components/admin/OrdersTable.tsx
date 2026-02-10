@@ -290,7 +290,7 @@ const OrdersTable = ({
                   
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     {order.customer_photo_url && (
-                      <img src={order.customer_photo_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                      <img loading="lazy" src={order.customer_photo_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                     )}
                     {order.profile ? (
                       <>

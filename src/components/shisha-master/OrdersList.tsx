@@ -479,7 +479,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
                       {order.customer_photo_url ? (
-                        <img src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                        <img loading="lazy" src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                       ) : isDelivered ? (
                         <CheckCircle className="h-5 w-5 text-primary" />
                       ) : (
@@ -627,7 +627,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     <div className="flex items-center gap-2 text-sm">
                       {order.customer_photo_url ? (
                         <div className="relative group shrink-0">
-                          <img src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                          <img loading="lazy" src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                           <button
                             className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => {

@@ -1,4 +1,4 @@
-name: Daily SEO Optimizer
+name: Daily SEO & CRO Optimizer
 
 on:
   schedule:
@@ -34,6 +34,9 @@ jobs:
           GA_PRIVATE_KEY: ${{ secrets.GA_PRIVATE_KEY }}
         run: node scripts/daily-seo.mjs
 
+      - name: Run CRO audit
+        run: node scripts/cro-audit.mjs
+
       - name: Check for changes
         id: changes
         run: |
@@ -52,10 +55,10 @@ jobs:
           git config user.email "seo-bot@shisha.cool"
           git add -A
           DATE=$(date +%Y-%m-%d)
-          git commit -m "chore(seo): daily optimization — $DATE
+          git commit -m "chore(seo+cro): daily optimization — $DATE
 
-          Automated SEO improvements applied by daily-seo pipeline.
-          See scripts/seo-reports/$DATE.md for details."
+          Automated SEO & CRO improvements applied.
+          See scripts/seo-reports/$DATE.md and scripts/cro-reports/$DATE.md"
           git push
 
       - name: No changes

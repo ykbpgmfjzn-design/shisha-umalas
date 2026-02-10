@@ -162,7 +162,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       {fb.photo_url && (
         <div className="cursor-pointer" onClick={() => setSelectedImage(fb.photo_url)}>
           <img
-            src={fb.photo_url}
+            loading="lazy" src={fb.photo_url}
             alt="Feedback photo"
             className="w-full max-w-xs h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
           />
@@ -294,7 +294,7 @@ const FeedbackList = ({ onStatsUpdate }: FeedbackListProps) => {
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-3xl p-0 bg-transparent border-none">
           {selectedImage && (
-            <img src={selectedImage} alt="Feedback photo" className="w-full h-auto rounded-lg" />
+            <img loading="lazy" src={selectedImage} alt="Feedback photo" className="w-full h-auto rounded-lg" />
           )}
         </DialogContent>
       </Dialog>

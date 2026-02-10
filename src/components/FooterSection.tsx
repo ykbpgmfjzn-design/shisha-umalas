@@ -10,7 +10,7 @@ const FooterSection = () => {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img
-          src={shishaImage}
+          loading="lazy" src={shishaImage}
           alt="Shisha atmosphere"
           className="w-full h-full object-cover opacity-20"
         />

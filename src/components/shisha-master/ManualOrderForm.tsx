@@ -622,7 +622,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
             <Label className="text-xs">{t("shishaMaster.form.customerPhoto")}</Label>
             {customerPhotoUrl ? (
               <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border">
-                <img src={customerPhotoUrl} alt="Customer" className="w-full h-full object-cover" />
+                <img loading="lazy" src={customerPhotoUrl} alt="Customer" className="w-full h-full object-cover" />
                 <Button
                   variant="destructive"
                   size="icon"

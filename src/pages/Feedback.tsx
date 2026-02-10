@@ -264,7 +264,7 @@ const Feedback = () => {
             ) : (
               <div className="relative">
                 <img
-                  src={photoPreview}
+                  loading="lazy" src={photoPreview}
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-xl"
                 />

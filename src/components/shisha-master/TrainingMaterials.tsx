@@ -233,7 +233,7 @@ export default function TrainingMaterials() {
                       className="block aspect-video bg-muted"
                     >
                       <img
-                        src={material.file_url}
+                        loading="lazy" src={material.file_url}
                         alt={material.title}
                         className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                       />

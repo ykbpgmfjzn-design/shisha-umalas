@@ -130,7 +130,7 @@ const PublicReviews = () => {
                     onClick={() => setSelectedImage(review.photo_url)}
                   >
                     <img
-                      src={review.photo_url}
+                      loading="lazy" src={review.photo_url}
                       alt="Review photo"
                       className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -183,7 +183,7 @@ const PublicReviews = () => {
         <DialogContent className="max-w-3xl p-0 bg-transparent border-none">
           {selectedImage && (
             <img
-              src={selectedImage}
+              loading="lazy" src={selectedImage}
               alt="Review photo"
               className="w-full h-auto rounded-lg"
             />

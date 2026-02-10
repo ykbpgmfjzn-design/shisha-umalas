@@ -31,7 +31,7 @@ const LanguageSelector = () => {
       {/* Logo */}
       <Link to="/">
         <img 
-          src={logo} 
+          loading="lazy" src={logo} 
           alt="Shisha Cool" 
           className="h-12 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" 
         />

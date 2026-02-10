@@ -92,7 +92,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase }: UserDetailsPro
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {purchase.customer_photo_url ? (
-                  <img src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(purchase.customer_photo_url)} />
+                  <img loading="lazy" src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(purchase.customer_photo_url)} />
                 ) : (
                   <Hash className="w-4 h-4 text-muted-foreground" />
                 )}

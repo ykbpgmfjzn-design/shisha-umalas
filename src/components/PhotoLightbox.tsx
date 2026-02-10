@@ -13,7 +13,7 @@ export default function PhotoLightbox({ src, open, onOpenChange }: PhotoLightbox
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 bg-background/95 backdrop-blur-xl border-border/50">
         <img
-          src={src}
+          loading="lazy" src={src}
           alt=""
           className="w-full h-full max-h-[85vh] object-contain rounded-lg"
         />
