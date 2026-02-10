@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X, CalendarIcon, Filter } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +70,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const photoInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -390,6 +394,18 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     setEditSheetOpen(true);
   };
 
+  const filteredHistoryOrders = useMemo(() => {
+    if (!filterDate) return historyOrders;
+    return historyOrders.filter((order) => {
+      const orderDay = new Date(order.created_at);
+      return (
+        orderDay.getFullYear() === filterDate.getFullYear() &&
+        orderDay.getMonth() === filterDate.getMonth() &&
+        orderDay.getDate() === filterDate.getDate()
+      );
+    });
+  }, [historyOrders, filterDate]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -398,28 +414,60 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     );
   }
 
-  const orders = showHistory ? historyOrders : activeOrders;
+  const orders = showHistory ? filteredHistoryOrders : activeOrders;
 
-  // Empty state
-  if (orders.length === 0) {
+  // Empty state (only for active orders, history handles its own)
+  if (!showHistory && orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <Wind className="h-16 w-16 mb-4 opacity-30" />
-        <p className="text-lg">
-          {showHistory 
-            ? (t("shishaMaster.orders.noHistory") || "No completed orders yet")
-            : (t("shishaMaster.orders.noOrders") || "No active orders")
-          }
-        </p>
+        <p className="text-lg">{t("shishaMaster.orders.noOrders") || "No active orders"}</p>
       </div>
     );
   }
 
-  // History view - simple cards
+  // History view - simple cards with date filter
   if (showHistory) {
     return (
-      <div className="grid gap-3">
-        {historyOrders.map((order) => {
+      <div className="space-y-3">
+        {/* Date filter */}
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-2", filterDate && "border-primary text-primary")}>
+                <CalendarIcon className="h-4 w-4" />
+                {filterDate ? format(filterDate, "dd.MM.yyyy") : (t("shishaMaster.orders.filterByDate") || "Filter by date")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterDate}
+                onSelect={setFilterDate}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          {filterDate && (
+            <Button variant="ghost" size="sm" onClick={() => setFilterDate(undefined)} className="gap-1 text-muted-foreground">
+              <X className="h-3.5 w-3.5" />
+              {t("shishaMaster.orders.clearFilter") || "Clear"}
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount") || "orders"}
+          </span>
+        </div>
+
+        {filteredHistoryOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Wind className="h-12 w-12 mb-3 opacity-30" />
+            <p>{t("shishaMaster.orders.noOrdersForDate") || "No orders for this date"}</p>
+          </div>
+        ) : (
+        <div className="grid gap-3">
+        {filteredHistoryOrders.map((order) => {
           const isDelivered = order.delivery_status === "delivered";
           const isPaid = order.payment_status?.toLowerCase() === "paid";
           
@@ -476,6 +524,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
             </Card>
           );
         })}
+        </div>
+        )}
       </div>
     );
   }
