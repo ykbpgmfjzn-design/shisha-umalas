@@ -31,8 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import LanguageSelector from "@/components/LanguageSelector";
+import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import type { PurchaseWithProfile, DashboardStats } from "@/hooks/useAdmin";
 
 type StatusFilter = "all" | "pending" | "paid" | "cancelled";
@@ -330,7 +329,7 @@ const AccountingContent = () => {
             {t("admin.backToHome")}
           </Button>
           <div className="flex items-center gap-4">
-            <LanguageSelector />
+            
             <div className="flex items-center gap-2 text-blue-400">
               <Calculator className="w-5 h-5" />
               <span className="font-medium hidden sm:inline">{t("admin.accounting")}</span>
@@ -581,9 +580,9 @@ const AccountingContent = () => {
 
 const Accounting = () => {
   return (
-    <LanguageProvider>
+    <AdminLanguageProvider>
       <AccountingContent />
-    </LanguageProvider>
+    </AdminLanguageProvider>
   );
 };
 

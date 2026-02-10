@@ -20,8 +20,7 @@ import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
-import { useLanguage } from "@/contexts/LanguageContext";
-import LanguageSelector from "@/components/LanguageSelector";
+import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import OrderNotifications from "@/components/OrderNotifications";
 import DashboardStats from "@/components/admin/DashboardStats";
 import BusinessMetrics from "@/components/admin/BusinessMetrics";
@@ -650,7 +649,11 @@ const AdminContent = () => {
 };
 
 const Admin = () => {
-  return <AdminContent />;
+  return (
+    <AdminLanguageProvider>
+      <AdminContent />
+    </AdminLanguageProvider>
+  );
 };
 
 export default Admin;
