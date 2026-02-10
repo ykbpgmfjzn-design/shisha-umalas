@@ -434,7 +434,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       </div>
 
       {/* Top KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Revenue Growth */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
@@ -513,7 +513,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       </div>
 
       {/* Second Row: CSAT, Margin, CLV */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Customer Satisfaction */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
@@ -594,7 +594,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       </div>
 
       {/* Investment & Break-even Row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {/* Initial Investment */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50 h-full">
@@ -713,7 +713,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       </div>
 
       {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Trend */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
