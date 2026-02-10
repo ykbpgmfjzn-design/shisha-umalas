@@ -1,0 +1,1 @@
+ALTER TABLE public.training_materials ADD COLUMN category text NOT NULL DEFAULT 'general';

@@ -7,6 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -23,6 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Video, FileText, Plus, Trash2, 
   ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play
@@ -31,6 +44,13 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
+const CATEGORIES = [
+  { value: "preparation", labelEn: "Preparation", labelId: "Persiapan" },
+  { value: "service", labelEn: "Service", labelId: "Pelayanan" },
+  { value: "safety", labelEn: "Safety", labelId: "Keselamatan" },
+  { value: "general", labelEn: "General", labelId: "Umum" },
+];
+
 interface TrainingMaterial {
   id: string;
   title: string;
@@ -38,6 +58,7 @@ interface TrainingMaterial {
   file_url: string;
   file_type: string;
   language: string;
+  category: string;
   created_at: string;
 }
 
@@ -78,6 +99,7 @@ export default function TrainingMaterials() {
     description: "",
     url: "",
     language: "en",
+    category: "general",
   });
 
   useEffect(() => {
@@ -112,13 +134,14 @@ export default function TrainingMaterials() {
           file_url: form.url,
           file_type: detectFileType(form.url),
           language: form.language,
+          category: form.category,
         });
 
       if (error) throw error;
 
       toast.success("Material added");
       setAddDialogOpen(false);
-      setForm({ title: "", description: "", url: "", language: "en" });
+      setForm({ title: "", description: "", url: "", language: "en", category: "general" });
       fetchMaterials();
     } catch (error: any) {
       toast.error(error.message || "Error adding material");
@@ -165,6 +188,78 @@ export default function TrainingMaterials() {
 
   const filteredMaterials = materials.filter(m => m.language === langTab);
 
+  const getCategoryLabel = (value: string) => {
+    const cat = CATEGORIES.find(c => c.value === value);
+    if (!cat) return value;
+    return langTab === "id" ? cat.labelId : cat.labelEn;
+  };
+
+  const groupedMaterials = CATEGORIES.reduce<Record<string, TrainingMaterial[]>>((acc, cat) => {
+    const items = filteredMaterials.filter(m => (m.category || "general") === cat.value);
+    if (items.length > 0) acc[cat.value] = items;
+    return acc;
+  }, {});
+
+  const renderMaterialCard = (material: TrainingMaterial) => {
+    const ytId = getYouTubeId(material.file_url);
+    return (
+      <Card key={material.id} className="overflow-hidden">
+        {ytId && (
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}`}
+              title={material.title}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Badge variant="outline" className="shrink-0 gap-1">
+                {getIcon(material.file_type)}
+                <span className="capitalize text-xs">{material.file_type}</span>
+              </Badge>
+              <h3 className="font-medium text-sm truncate">{material.title}</h3>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {format(new Date(material.created_at), "dd.MM.yy")}
+              </span>
+              {!ytId && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href={material.file_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setSelectedMaterial(material);
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          {material.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {material.description}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <>
       <Card>
@@ -194,68 +289,23 @@ export default function TrainingMaterials() {
               <p>No training materials yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredMaterials.map((material) => {
-                const ytId = getYouTubeId(material.file_url);
-
-                return (
-                  <Card key={material.id} className="overflow-hidden">
-                    {ytId ? (
-                      <div className="aspect-video">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${ytId}`}
-                          title={material.title}
-                          className="w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      </div>
-                    ) : null}
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <Badge variant="outline" className="shrink-0 gap-1">
-                            {getIcon(material.file_type)}
-                            <span className="capitalize text-xs">{material.file_type}</span>
-                          </Badge>
-                          <h3 className="font-medium text-sm truncate">{material.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-xs text-muted-foreground hidden sm:inline">
-                            {format(new Date(material.created_at), "dd.MM.yy")}
-                          </span>
-                          {!ytId && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                              <a href={material.file_url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          )}
-                          {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setSelectedMaterial(material);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {material.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {material.description}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <Accordion type="multiple" defaultValue={Object.keys(groupedMaterials)} className="space-y-2">
+              {Object.entries(groupedMaterials).map(([category, items]) => (
+                <AccordionItem key={category} value={category} className="border rounded-lg px-3">
+                  <AccordionTrigger className="py-3 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{getCategoryLabel(category)}</span>
+                      <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pb-1">
+                      {items.map(renderMaterialCard)}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           )}
         </CardContent>
       </Card>
@@ -274,7 +324,20 @@ export default function TrainingMaterials() {
                   <TabsTrigger value="en" className="flex-1">🇬🇧 English</TabsTrigger>
                   <TabsTrigger value="id" className="flex-1">🇮🇩 Indonesian</TabsTrigger>
                 </TabsList>
-              </Tabs>
+            </Tabs>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.labelEn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
