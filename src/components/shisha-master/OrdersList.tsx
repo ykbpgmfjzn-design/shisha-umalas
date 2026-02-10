@@ -372,6 +372,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       notes: order.notes,
       payment_status: order.payment_status,
       delivery_status: order.delivery_status,
+      created_at: order.created_at,
     });
     setEditSheetOpen(true);
   };
