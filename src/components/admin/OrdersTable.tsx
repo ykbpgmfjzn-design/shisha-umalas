@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
   Hash, Calendar, Coffee, Cookie, Building2, User,
-  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -50,6 +51,8 @@ const OrdersTable = ({
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
@@ -101,6 +104,20 @@ const OrdersTable = ({
 
   const filteredOrders = orders
     .filter(order => {
+      // Date range filter
+      if (dateFrom) {
+        const orderDate = new Date(order.created_at);
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        if (orderDate < fromDate) return false;
+      }
+      if (dateTo) {
+        const orderDate = new Date(order.created_at);
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (orderDate > toDate) return false;
+      }
+
       if (paymentFilter === "unpaid_delivered") {
         const isPaid = order.payment_status?.toLowerCase() === "paid";
         return !isPaid && order.delivery_status === "delivered";
@@ -221,6 +238,25 @@ const OrdersTable = ({
         
         {showFilters && (
           <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-[130px] bg-background/50 text-xs"
+                placeholder="From"
+              />
+              <span className="text-muted-foreground text-xs">—</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-[130px] bg-background/50 text-xs"
+                placeholder="To"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-muted-foreground" />
               <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
