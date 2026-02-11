@@ -234,6 +234,7 @@ export type Database = {
         Row: {
           amount: number | null
           created_at: string
+          created_by: string | null
           customer_name: string | null
           customer_photo_url: string | null
           delivery_status: string
@@ -254,6 +255,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           created_at?: string
+          created_by?: string | null
           customer_name?: string | null
           customer_photo_url?: string | null
           delivery_status?: string
@@ -274,6 +276,7 @@ export type Database = {
         Update: {
           amount?: number | null
           created_at?: string
+          created_by?: string | null
           customer_name?: string | null
           customer_photo_url?: string | null
           delivery_status?: string

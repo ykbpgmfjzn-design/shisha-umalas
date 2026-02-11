@@ -320,6 +320,9 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       ? `${orderNotes}\n---\n${notes}`
       : orderNotes;
 
+    // Get current user for created_by tracking
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
     const orderData: Record<string, unknown> = {
       hookah_count: hookahCount || 1,
       amount: totalAmount,
@@ -327,6 +330,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       payment_status: paymentStatus,
       delivery_status: deliveryStatus,
       customer_photo_url: customerPhotoUrl,
+      created_by: currentUser?.id || null,
     };
 
     // Set custom order date if provided
