@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "./ui/button";
@@ -6,9 +7,11 @@ import { Input } from "./ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const WHATSAPP_NUMBER = "6287750783373";
+const HIDDEN_ROUTES = ["/admin", "/shisha-master", "/accounting"];
 
 const WhatsAppChat = () => {
   const { t } = useLanguage();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -16,6 +19,9 @@ const WhatsAppChat = () => {
   useEffect(() => {
     setMessage(t("whatsapp.defaultMessage"));
   }, [t]);
+
+  const isHidden = HIDDEN_ROUTES.some(route => location.pathname.startsWith(route));
+  if (isHidden) return null;
 
   const handleSendMessage = () => {
     if (message.trim()) {
