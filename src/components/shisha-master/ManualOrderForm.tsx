@@ -199,7 +199,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     } else {
       resetForm();
     }
-  }, [editOrder]);
+  }, [editOrder, dbMenuItems]);
 
   // Set selectedCustomer after customers are loaded for edit mode
   useEffect(() => {
