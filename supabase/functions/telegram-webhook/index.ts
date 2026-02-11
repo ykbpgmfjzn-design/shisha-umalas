@@ -28,6 +28,19 @@ serve(async (req) => {
   }
 
   try {
+    // Verify Telegram secret token
+    const telegramWebhookSecret = Deno.env.get('TELEGRAM_WEBHOOK_SECRET');
+    if (telegramWebhookSecret) {
+      const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+      if (secretToken !== telegramWebhookSecret) {
+        console.error('Invalid Telegram webhook secret token');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const telegramToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!telegramToken) {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
