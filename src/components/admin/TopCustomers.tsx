@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { normalizeCustomerName } from "@/lib/utils";
 import { Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,7 +16,7 @@ const TopCustomers = ({ purchases }: TopCustomersProps) => {
     for (const p of purchases) {
       if (p.payment_status?.toLowerCase() !== "paid") continue;
       const name = p.profile?.full_name || p.customer_name || "Unknown";
-      const key = name.toLowerCase().replace(/^(mr\.?|mrs\.?|miss)\s*/i, "").trim();
+      const key = normalizeCustomerName(name);
       const existing = map.get(key) || { name, orders: 0, total: 0 };
       existing.orders += 1;
       existing.total += Number(p.amount) || 0;

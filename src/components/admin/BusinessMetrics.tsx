@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { normalizeCustomerName } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart,
@@ -282,12 +283,10 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       : periodRev > 0 ? 100 : 0;
 
     // --- Average Revenue Per Customer ---
-    // Normalize name same way as TopCustomers: strip Mr./Mrs./Miss prefix, lowercase, trim
-    const normalizeName = (name: string) => name.toLowerCase().replace(/^(mr\.?|mrs\.?|miss)\s*/i, "").trim();
     const getCustomerKey = (p: PurchaseWithProfile) => {
       if (p.user_id) return p.user_id;
       const name = p.profile?.full_name || p.customer_name;
-      return name ? normalizeName(name) : `anon_${p.id}`;
+      return name ? normalizeCustomerName(name) : `anon_${p.id}`;
     };
     const uniquePaidCustomers = new Set(paid.map(getCustomerKey)).size;
     const avgRevenuePerCustomer = uniquePaidCustomers > 0 ? periodRev / uniquePaidCustomers : 0;
