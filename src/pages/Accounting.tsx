@@ -521,13 +521,13 @@ const AccountingContent = () => {
                             {t("admin.cancel")}
                           </Button>
                         )}
-                        {order.xendit_invoice_url && (
+                        {(order as any).xendit_invoice_url && (
                           <Button
                             size="sm"
                             variant="ghost"
                             asChild
                           >
-                            <a href={order.xendit_invoice_url} target="_blank" rel="noopener noreferrer">
+                            <a href={(order as any).xendit_invoice_url} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           </Button>

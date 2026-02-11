@@ -409,7 +409,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       free_drink_used: null,
       free_snack_used: null,
       created_by: null,
-      xendit_invoice_url: null,
+      doku_invoice_url: null,
       profile: order.profile ? {
         email: order.profile.email,
         full_name: order.profile.full_name,

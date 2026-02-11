@@ -472,7 +472,7 @@ const OrdersTable = ({
                   {(order as any).xendit_invoice_id && (order as any).payment_method === "doku" && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 font-mono opacity-60">
                       <CreditCard className="w-3 h-3" />
-                      <span>{(order as any).xendit_invoice_id}</span>
+                      <span>DOKU: {(order as any).xendit_invoice_id}</span>
                     </div>
                   )}
                 </div>
@@ -548,13 +548,13 @@ const OrdersTable = ({
                       </Button>
                     )}
                     
-                    {order.xendit_invoice_url && (
+                    {(order as any).xendit_invoice_url && (
                       <Button
                         size="sm"
                         variant="ghost"
                         asChild
                       >
-                        <a href={order.xendit_invoice_url} target="_blank" rel="noopener noreferrer">
+                        <a href={(order as any).xendit_invoice_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       </Button>
