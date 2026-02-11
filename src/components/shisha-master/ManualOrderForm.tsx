@@ -68,7 +68,7 @@ interface ManualOrderFormProps {
   onEditComplete?: () => void;
 }
 
-function parseCartFromNotes(notes: string | null): CartEntry[] {
+function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[] {
   if (!notes) return [];
   // Notes format: "1x Whiteline Vanilla, 2x Berry Kiss\n---\nextra notes"
   const itemsPart = notes.split("\n---\n")[0];
@@ -79,7 +79,7 @@ function parseCartFromNotes(notes: string | null): CartEntry[] {
     if (match) {
       const qty = parseInt(match[1], 10);
       const name = match[2].trim();
-      const menuItem = menuItems.find((m) => m.name === name);
+      const menuItem = items.find((m) => m.name === name);
       if (menuItem) {
         entries.push({ item: menuItem, quantity: qty });
       }
@@ -135,7 +135,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   // Pre-fill form when editing
   useEffect(() => {
     if (editOrder) {
-      setCart(parseCartFromNotes(editOrder.notes));
+      setCart(parseCartFromNotes(editOrder.notes, dbMenuItems));
       setNotes(parseExtraNotesFromNotes(editOrder.notes));
       setPaymentStatus(editOrder.payment_status || "pending");
       setDeliveryStatus(editOrder.delivery_status || "pending");
