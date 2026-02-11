@@ -49,11 +49,11 @@ serve(async (req) => {
       paymentStatus = "failed";
     }
 
-    // Find and update purchase by invoice number in notes or xendit_invoice_id
+    // Find and update purchase by invoice number
     const { data: purchases, error: findError } = await supabase
       .from("purchases")
       .select("id")
-      .or(`xendit_invoice_id.eq.${invoiceNumber},notes.ilike.%${invoiceNumber}%`)
+      .or(`doku_invoice_id.eq.${invoiceNumber},notes.ilike.%${invoiceNumber}%`)
       .limit(1);
 
     if (findError) {

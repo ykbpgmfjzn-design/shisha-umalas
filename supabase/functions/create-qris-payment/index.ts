@@ -179,7 +179,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from("purchases")
       .update({
-        xendit_invoice_id: invoiceNumber,
+        doku_invoice_id: invoiceNumber,
         notes: updatedNotes,
         payment_status: "pending"
       })
