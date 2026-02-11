@@ -85,6 +85,7 @@ interface ManualOrderFormProps {
 function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[] {
   if (!notes) return [];
   // Notes format: "1x Whiteline Vanilla, 2x Berry Kiss\n---\nextra notes"
+  // May also contain suffixes like "DOKU Invoice: INV-xxx" appended to the last item
   const itemsPart = notes.split("\n---\n")[0];
   const entries: CartEntry[] = [];
   const parts = itemsPart.split(", ");
@@ -92,7 +93,9 @@ function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[
     const match = part.match(/^(\d+)x\s+(.+)$/);
     if (match) {
       const qty = parseInt(match[1], 10);
-      const name = match[2].trim();
+      let name = match[2].trim();
+      // Strip known suffixes (e.g. "DOKU Invoice: INV-...")
+      name = name.replace(/\s*DOKU Invoice:.*$/i, "").trim();
       const menuItem = items.find((m) => m.name === name);
       if (menuItem) {
         entries.push({ item: menuItem, quantity: qty });
