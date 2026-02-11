@@ -468,6 +468,13 @@ const OrdersTable = ({
                       {order.notes}
                     </p>
                   )}
+
+                  {(order as any).xendit_invoice_id && (order as any).payment_method === "doku" && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 font-mono opacity-60">
+                      <CreditCard className="w-3 h-3" />
+                      <span>{(order as any).xendit_invoice_id}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
