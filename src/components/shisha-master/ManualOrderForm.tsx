@@ -235,10 +235,40 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       }
     }
 
-    setCustomers(profilesData.map(p => ({
+    const registeredCustomers: ExistingCustomer[] = profilesData.map(p => ({
       ...p,
       avatar_url: p.avatar_url || photoMap[p.id] || null,
-    })));
+    }));
+
+    // Fetch walk-in customers (no user_id, just customer_name) from purchases
+    const { data: walkInData } = await supabase
+      .from("purchases")
+      .select("customer_name, customer_photo_url")
+      .is("user_id", null)
+      .not("customer_name", "is", null)
+      .order("created_at", { ascending: false });
+
+    const walkInNames = new Map<string, string | null>();
+    if (walkInData) {
+      for (const p of walkInData) {
+        const name = p.customer_name?.trim();
+        if (name && !walkInNames.has(name)) {
+          walkInNames.set(name, p.customer_photo_url);
+        }
+      }
+    }
+
+    const walkInCustomers: ExistingCustomer[] = Array.from(walkInNames.entries()).map(([name, photo], i) => ({
+      id: `walkin_${i}_${name}`,
+      full_name: name,
+      email: null,
+      phone: null,
+      avatar_url: photo || null,
+      loyalty_level: 0,
+      total_hookahs_ordered: 0,
+    }));
+
+    setCustomers([...registeredCustomers, ...walkInCustomers]);
   };
 
   const filteredCustomers = useMemo(() => {
@@ -379,8 +409,13 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     }
 
     if (selectedCustomer) {
-      orderData.user_id = selectedCustomer.id;
-      orderData.customer_name = selectedCustomer.full_name || selectedCustomer.email;
+      if (selectedCustomer.id.startsWith("walkin_")) {
+        orderData.user_id = null;
+        orderData.customer_name = selectedCustomer.full_name;
+      } else {
+        orderData.user_id = selectedCustomer.id;
+        orderData.customer_name = selectedCustomer.full_name || selectedCustomer.email;
+      }
     } else {
       orderData.user_id = null;
       orderData.customer_name = customerName.trim();
@@ -499,7 +534,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                                   {c.full_name || c.email || "—"}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Lvl {c.loyalty_level} • {c.total_hookahs_ordered} hookahs
+                                  {c.id.startsWith("walkin_") ? "Walk-in" : `Lvl ${c.loyalty_level} • ${c.total_hookahs_ordered} hookahs`}
                                 </span>
                               </div>
                             </div>
