@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -109,35 +109,22 @@ function ShishaMasterContent() {
             </TabsList>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <TabsContent value="active" forceMount={activeTab === "active" ? true : undefined} className={activeTab !== "active" ? "hidden" : ""}>
-                <OrdersList showHistory={false} />
-              </TabsContent>
-
-              <TabsContent value="new-order" forceMount={activeTab === "new-order" ? true : undefined} className={activeTab !== "new-order" ? "hidden" : ""}>
-                <ManualOrderForm />
-              </TabsContent>
-
-              <TabsContent value="history" forceMount={activeTab === "history" ? true : undefined} className={activeTab !== "history" ? "hidden" : ""}>
-                <OrdersList showHistory={true} />
-              </TabsContent>
-
-              <TabsContent value="leaderboard" forceMount={activeTab === "leaderboard" ? true : undefined} className={activeTab !== "leaderboard" ? "hidden" : ""}>
-                <Leaderboard />
-              </TabsContent>
-
-              <TabsContent value="training" forceMount={activeTab === "training" ? true : undefined} className={activeTab !== "training" ? "hidden" : ""}>
-                <TrainingMaterials />
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
+          {["active", "new-order", "history", "leaderboard", "training"].map((tab) => (
+            <TabsContent key={tab} value={tab} forceMount>
+              <motion.div
+                initial={false}
+                animate={{ opacity: activeTab === tab ? 1 : 0, y: activeTab === tab ? 0 : 8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className={activeTab !== tab ? "hidden" : ""}
+              >
+                {tab === "active" && <OrdersList showHistory={false} />}
+                {tab === "new-order" && <ManualOrderForm />}
+                {tab === "history" && <OrdersList showHistory={true} />}
+                {tab === "leaderboard" && <Leaderboard />}
+                {tab === "training" && <TrainingMaterials />}
+              </motion.div>
+            </TabsContent>
+          ))}
         </Tabs>
       </main>
     </div>
