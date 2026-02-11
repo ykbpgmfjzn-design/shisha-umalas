@@ -63,6 +63,11 @@ const UsersTable = ({
     return userRoles.filter(r => r.user_id === userId).map(r => r.role);
   };
 
+  const getStaffDisplayName = (userId: string): string | null => {
+    const role = userRoles.find(r => r.user_id === userId && r.display_name);
+    return role?.display_name || null;
+  };
+
   const hasRole = (userId: string, role: AppRole) => {
     return userRoles.some(r => r.user_id === userId && r.role === role);
   };
@@ -258,7 +263,7 @@ const UsersTable = ({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm truncate">
-                        {isWalkin ? profile.full_name || "No name" : profile.email || "No email"}
+                        {isWalkin ? profile.full_name || "No name" : (filterMode === "staff" && getStaffDisplayName(profile.id)) || profile.email || "No email"}
                       </p>
                       {isWalkin && (
                         <Badge variant="outline" className="text-xs bg-muted border-border text-muted-foreground">

@@ -140,10 +140,11 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     const fetchMasters = async () => {
       const { data: roles } = await supabase
         .from("user_roles")
-        .select("user_id")
+        .select("user_id, display_name")
         .eq("role", "shisha_master");
       if (!roles || roles.length === 0) return;
       const ids = roles.map(r => r.user_id);
+      const roleMap = new Map(roles.map(r => [r.user_id, r.display_name]));
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, email")
@@ -151,7 +152,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       if (profiles) {
         setShishaMasters(profiles.map(p => ({
           id: p.id,
-          name: p.full_name || p.email || "Unknown",
+          name: roleMap.get(p.id) || p.full_name || p.email || "Unknown",
         })));
       }
       // Auto-select current user if they are a shisha master
