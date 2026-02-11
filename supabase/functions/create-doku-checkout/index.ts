@@ -201,12 +201,12 @@ serve(async (req) => {
       throw new Error("No payment URL in DOKU response");
     }
 
-    // Update purchase with DOKU info — invoice stored in xendit_invoice_id, notes untouched
+    // Update purchase with DOKU info
     const { error: updateError } = await supabase
       .from("purchases")
       .update({
-        xendit_invoice_id: tokenId || invoiceNumber,
-        xendit_invoice_url: paymentUrl,
+        doku_invoice_id: tokenId || invoiceNumber,
+        doku_invoice_url: paymentUrl,
         payment_method: "doku",
       })
       .eq("id", purchaseId);

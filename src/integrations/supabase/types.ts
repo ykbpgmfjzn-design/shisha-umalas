@@ -239,6 +239,8 @@ export type Database = {
           customer_photo_url: string | null
           delivery_status: string
           discount_applied: number | null
+          doku_invoice_id: string | null
+          doku_invoice_url: string | null
           free_drink_used: boolean | null
           free_snack_used: boolean | null
           hookah_count: number
@@ -251,8 +253,6 @@ export type Database = {
           telegram_chat_id: number | null
           telegram_message_id: number | null
           user_id: string | null
-          xendit_invoice_id: string | null
-          xendit_invoice_url: string | null
         }
         Insert: {
           amount?: number | null
@@ -262,6 +262,8 @@ export type Database = {
           customer_photo_url?: string | null
           delivery_status?: string
           discount_applied?: number | null
+          doku_invoice_id?: string | null
+          doku_invoice_url?: string | null
           free_drink_used?: boolean | null
           free_snack_used?: boolean | null
           hookah_count?: number
@@ -274,8 +276,6 @@ export type Database = {
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
           user_id?: string | null
-          xendit_invoice_id?: string | null
-          xendit_invoice_url?: string | null
         }
         Update: {
           amount?: number | null
@@ -285,6 +285,8 @@ export type Database = {
           customer_photo_url?: string | null
           delivery_status?: string
           discount_applied?: number | null
+          doku_invoice_id?: string | null
+          doku_invoice_url?: string | null
           free_drink_used?: boolean | null
           free_snack_used?: boolean | null
           hookah_count?: number
@@ -297,8 +299,6 @@ export type Database = {
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
           user_id?: string | null
-          xendit_invoice_id?: string | null
-          xendit_invoice_url?: string | null
         }
         Relationships: []
       }

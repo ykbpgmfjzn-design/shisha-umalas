@@ -230,7 +230,7 @@ serve(async (req) => {
       const { error: updateError } = await supabase
         .from("purchases")
         .update({
-          xendit_invoice_id: invoiceNumber,
+          doku_invoice_id: invoiceNumber,
           notes: updatedNotes,
           payment_status: "pending_3ds"
         })
@@ -259,7 +259,7 @@ serve(async (req) => {
       const { error: updateError } = await supabase
         .from("purchases")
         .update({
-          xendit_invoice_id: invoiceNumber,
+          doku_invoice_id: invoiceNumber,
           payment_status: "paid",
           paid_at: new Date().toISOString()
         })

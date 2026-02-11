@@ -106,7 +106,7 @@ const OrderConfirmationContent = () => {
     const fetchOrderDetails = async () => {
       const { data } = await supabase
         .from("purchases")
-        .select("payment_status, notes, amount, hookah_count, xendit_invoice_url")
+        .select("payment_status, notes, amount, hookah_count, doku_invoice_url")
         .eq("id", orderId)
         .maybeSingle();
       
@@ -131,8 +131,8 @@ const OrderConfirmationContent = () => {
         }
         
         // Save DOKU invoice URL if available (for "Continue Payment" feature)
-        if (data.xendit_invoice_url) {
-          setDokuInvoiceUrl(data.xendit_invoice_url as string);
+        if (data.doku_invoice_url) {
+          setDokuInvoiceUrl(data.doku_invoice_url as string);
         }
       }
     };
