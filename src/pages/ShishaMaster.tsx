@@ -97,7 +97,7 @@ function ShishaMasterContent() {
               </TabsTrigger>
               <TabsTrigger value="training" className="gap-1.5 px-2 py-2 text-xs sm:text-sm">
                 <BookOpen className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">{t("shishaMaster.training.title") || "Training"}</span>
+                <span className="hidden sm:inline">SOP</span>
               </TabsTrigger>
             </TabsList>
 
