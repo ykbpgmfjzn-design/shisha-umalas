@@ -10,6 +10,7 @@ interface UpdateStatusRequest {
   orderId: string;
   statusType: 'payment' | 'delivery'; // Which status changed
   newStatus: string;
+  source?: string; // e.g. 'doku_webhook', 'web_admin'
 }
 
 serve(async (req) => {
@@ -31,11 +32,13 @@ serve(async (req) => {
     
     console.log('Broadcasting status update for order:', data.orderId, 'type:', data.statusType, 'status:', data.newStatus);
 
-    // Log activity for status change from web admin
+    const sourceLabel = data.source || 'web_admin';
+    
+    // Log activity for status change
     const activityType = data.statusType === 'payment' ? 'payment' : 'order';
     const activityAction = data.statusType === 'payment'
-      ? `Payment status changed to ${data.newStatus} via web admin`
-      : `Delivery status changed to ${data.newStatus} via web admin`;
+      ? `Payment status changed to ${data.newStatus} via ${sourceLabel}`
+      : `Delivery status changed to ${data.newStatus} via ${sourceLabel}`;
 
     await supabase.rpc('log_activity', {
       _activity_type: activityType,
@@ -44,7 +47,7 @@ serve(async (req) => {
         order_id: data.orderId,
         field: data.statusType === 'payment' ? 'payment_status' : 'delivery_status',
         new_value: data.newStatus,
-        source: 'web_admin'
+        source: sourceLabel
       }
     });
 
@@ -102,10 +105,92 @@ serve(async (req) => {
       ? `Payment → ${paymentLabel}`
       : `Delivery → ${deliveryLabel}`;
 
-    // Build the status update message
+    // Build inline keyboard based on current status
+    const buildInlineKeyboard = () => {
+      const keyboard: any[][] = [];
+      
+      if (deliveryStatus !== 'cancelled') {
+        // Payment buttons
+        if (paymentStatus !== 'paid') {
+          keyboard.push([{ text: "💳 Mark Paid", callback_data: `mark_paid:${data.orderId}` }]);
+        } else {
+          keyboard.push([{ text: "⏳ Mark Unpaid", callback_data: `mark_unpaid:${data.orderId}` }]);
+        }
+        
+        // Delivery buttons
+        if (deliveryStatus === 'pending') {
+          keyboard.push([{ text: "👨‍🍳 Start Preparing", callback_data: `start_preparing:${data.orderId}` }]);
+        }
+        if (deliveryStatus !== 'delivered') {
+          const row = [];
+          if (deliveryStatus === 'preparing') {
+            row.push({ text: "✅ Mark Delivered", callback_data: `mark_delivered:${data.orderId}` });
+          }
+          row.push({ text: "❌ Cancel Order", callback_data: `cancel_order:${data.orderId}` });
+          if (row.length > 0) keyboard.push(row);
+        }
+      }
+      
+      return keyboard;
+    };
+
+    const inlineKeyboard = buildInlineKeyboard();
+
+    // === 1. Try to EDIT the original order message ===
+    if (order.telegram_chat_id && order.telegram_message_id) {
+      try {
+        // Reconstruct the original message with updated status
+        const itemsFromNotes = order.notes || '';
+        const profile = order.profiles;
+        const customerName = profile?.full_name || profile?.email || 'Guest';
+        const roomInfo = profile?.room_number ? `🏨 *Room Number:* ${profile.room_number}` : '';
+        const phone = profile?.phone || '';
+        const phoneInfo = phone ? `📱 *WhatsApp:* [${phone}](https://wa.me/${phone.replace(/[^0-9]/g, '')})` : '';
+
+        const editedMessage = `🔔 *New Order!*
+
+📋 *Order ID:* \`${data.orderId.slice(0, 8)}\`
+${roomInfo ? roomInfo + '\n' : ''}${customerName !== 'Guest' ? `📧 *Email:* ${profile?.email || ''}\n` : ''}${phoneInfo ? phoneInfo + '\n' : ''}
+🚬 *Hookahs:* ${order.hookah_count}
+
+📝 *Items:*
+${itemsFromNotes}
+
+💰 *Amount:* ${order.amount?.toLocaleString() || '0'} IDR
+
+⏰ *Time:* ${new Date(order.created_at).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
+
+${paymentEmoji} *Payment:* ${paymentLabel}
+${deliveryEmoji} *Delivery:* ${deliveryLabel}`;
+
+        const editResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: order.telegram_chat_id,
+            message_id: order.telegram_message_id,
+            text: editedMessage,
+            parse_mode: 'Markdown',
+            reply_markup: inlineKeyboard.length > 0 ? { inline_keyboard: inlineKeyboard } : undefined,
+          }),
+        });
+
+        if (editResponse.ok) {
+          console.log('Successfully edited original Telegram message');
+        } else {
+          const editError = await editResponse.json();
+          console.error('Failed to edit original message:', editError);
+        }
+      } catch (editErr) {
+        console.error('Error editing original message:', editErr);
+      }
+    }
+
+    // === 2. Broadcast status update to ALL subscribers ===
     const profile = order.profiles;
     const customerName = profile?.full_name || profile?.email || 'Guest';
     const roomInfo = profile?.room_number ? `🏠 Room: ${profile.room_number}\n` : '';
+    const sourceText = sourceLabel === 'doku_webhook' ? 'DOKU payment' : 'web app';
     
     const message = `📢 *STATUS UPDATE*\n\n` +
       `🆔 Order: \`${data.orderId.slice(0, 8)}\`\n` +
@@ -117,39 +202,18 @@ serve(async (req) => {
       `${paymentEmoji} Payment: *${paymentLabel}*\n` +
       `${deliveryEmoji} Delivery: *${deliveryLabel}*\n` +
       `━━━━━━━━━━━━━━━\n\n` +
-      `📱 _Updated via web app_`;
-
-    // Build inline keyboard based on current status
-    const inlineKeyboard: any[][] = [];
-    
-    // Payment buttons (if not delivered/cancelled)
-    if (deliveryStatus !== 'delivered' && deliveryStatus !== 'cancelled') {
-      if (paymentStatus !== 'paid') {
-        inlineKeyboard.push([{ text: "💳 Mark Paid", callback_data: `pay_${data.orderId}` }]);
-      } else {
-        inlineKeyboard.push([{ text: "💸 Mark Unpaid", callback_data: `unpay_${data.orderId}` }]);
-      }
-    }
-    
-    // Delivery buttons
-    if (deliveryStatus === 'pending') {
-      inlineKeyboard.push([{ text: "👨‍🍳 Start Preparing", callback_data: `prepare_${data.orderId}` }]);
-      inlineKeyboard.push([
-        { text: "✅ Delivered", callback_data: `deliver_${data.orderId}` },
-        { text: "❌ Cancel", callback_data: `cancel_${data.orderId}` }
-      ]);
-    } else if (deliveryStatus === 'preparing') {
-      inlineKeyboard.push([
-        { text: "✅ Delivered", callback_data: `deliver_${data.orderId}` },
-        { text: "❌ Cancel", callback_data: `cancel_${data.orderId}` }
-      ]);
-    }
+      `📱 _Updated via ${sourceText}_`;
 
     // Broadcast to all subscribers
     console.log(`Broadcasting to ${subscribers.length} subscribers`);
     
     const broadcastResults = await Promise.allSettled(
       subscribers.map(async (sub) => {
+        // Skip the chat where we already edited the original message
+        if (sub.chat_id === order.telegram_chat_id) {
+          return sub.chat_id; // Already handled via edit
+        }
+
         const response = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
