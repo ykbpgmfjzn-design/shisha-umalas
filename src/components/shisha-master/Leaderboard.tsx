@@ -29,7 +29,7 @@ export default function Leaderboard() {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["shisha_master", "admin", "owner"]);
+        .eq("role", "shisha_master");
 
       if (!roles || roles.length === 0) {
         setLoading(false);
