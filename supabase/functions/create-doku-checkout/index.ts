@@ -209,17 +209,21 @@ serve(async (req) => {
       .single();
     
     const originalNotes = currentPurchase?.notes || "";
-    const updatedNotes = originalNotes 
-      ? `${originalNotes}\nDOKU Invoice: ${invoiceNumber}`
-      : `DOKU Invoice: ${invoiceNumber}`;
+    // Store DOKU invoice info in a separate section after "---" to avoid corrupting item names
+    const notesBase = originalNotes.split("\n---\n")[0];
+    const existingExtra = originalNotes.includes("\n---\n") ? originalNotes.split("\n---\n").slice(1).join("\n---\n") : "";
+    const dokuInfo = `DOKU Invoice: ${invoiceNumber}`;
+    const extraParts = [existingExtra, dokuInfo].filter(Boolean).join("\n");
+    const updatedNotes = extraParts ? `${notesBase}\n---\n${extraParts}` : notesBase;
 
-    // Update purchase with DOKU info
+    // Update purchase with DOKU info and set payment method
     const { error: updateError } = await supabase
       .from("purchases")
       .update({
-        xendit_invoice_id: tokenId || invoiceNumber, // Reusing column for DOKU token
-        xendit_invoice_url: paymentUrl, // Reusing column for DOKU URL
-        notes: updatedNotes
+        xendit_invoice_id: tokenId || invoiceNumber,
+        xendit_invoice_url: paymentUrl,
+        notes: updatedNotes,
+        payment_method: "doku",
       })
       .eq("id", purchaseId);
 
