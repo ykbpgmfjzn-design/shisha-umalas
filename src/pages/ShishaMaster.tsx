@@ -74,33 +74,38 @@ function ShishaMasterContent() {
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-5 mx-auto">
-            <TabsTrigger value="active" className="gap-2">
-              <Wind className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("shishaMaster.orders.active") || "Active"}</span>
-              {activeOrdersCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {activeOrdersCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="new-order" className="gap-2">
-              <PlusCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("shishaMaster.newOrder") || "New"}</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2">
-              <History className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("shishaMaster.orders.history") || "History"}</span>
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard" className="gap-2">
-              <Trophy className="h-4 w-4" />
-              <span className="hidden sm:inline">Leaders</span>
-            </TabsTrigger>
-            <TabsTrigger value="training" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("shishaMaster.training.title") || "Training"}</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-3 max-w-2xl mx-auto">
+            <TabsList className="grid flex-1 grid-cols-4">
+              <TabsTrigger value="active" className="gap-1.5 px-3">
+                <Wind className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("shishaMaster.orders.active") || "Active"}</span>
+                {activeOrdersCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {activeOrdersCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="new-order" className="gap-1.5 px-3">
+                <PlusCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("shishaMaster.newOrder") || "New"}</span>
+              </TabsTrigger>
+              <TabsTrigger value="history" className="gap-1.5 px-3">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("shishaMaster.orders.history") || "History"}</span>
+              </TabsTrigger>
+              <TabsTrigger value="training" className="gap-1.5 px-3">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("shishaMaster.training.title") || "Training"}</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsList className="shrink-0 bg-primary/15 border border-primary/30">
+              <TabsTrigger value="leaderboard" className="gap-1.5 px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Trophy className="h-4 w-4" />
+                <span className="hidden sm:inline">Leaders</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="active">
             <OrdersList showHistory={false} />
