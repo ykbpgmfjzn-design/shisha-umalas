@@ -602,26 +602,26 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     ? "ring-2 ring-primary shadow-lg shadow-primary/30" 
                     : ""
                 }`}>
-                  <CardContent className="p-4 space-y-4">
-                    {/* Header row: Timer, Order info, Status badges */}
-                    <div className="flex items-start gap-4">
+                  <CardContent className="p-4 space-y-3">
+                    {/* Header row: Timer + Order info + Status */}
+                    <div className="flex items-center gap-3">
                       {/* Timer */}
-                      <div className={`w-14 h-14 rounded-xl ${bgClass} flex items-center justify-center shrink-0`}>
-                        <span className={`text-sm font-mono font-bold ${colorClass}`}>
+                      <div className={`w-12 h-12 rounded-lg ${bgClass} flex items-center justify-center shrink-0`}>
+                        <span className={`text-xs font-mono font-bold ${colorClass}`}>
                           {formatTimer(order.created_at)}
                         </span>
                       </div>
                       
                       {/* Order details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <Wind className="h-4 w-4 text-primary shrink-0" />
-                          <span className="font-semibold">{order.hookah_count}x Hookah</span>
+                          <span className="font-semibold text-sm">{order.hookah_count}x</span>
                           {order.amount && (
-                            <span className="text-muted-foreground text-sm">• Rp {order.amount.toLocaleString()}</span>
+                            <span className="text-muted-foreground text-sm">Rp {order.amount.toLocaleString()}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {orderTime}
@@ -634,16 +634,16 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                       </div>
                       
                       {/* Status badges */}
-                      <div className="flex flex-col gap-1.5 shrink-0">
+                      <div className="flex flex-col gap-1 shrink-0">
                         <Badge 
                           variant={isPaid ? "default" : "secondary"}
-                          className="text-xs justify-center"
+                          className="text-[10px] px-1.5 py-0.5 justify-center"
                         >
-                          {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
+                          {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Unpaid")}
                         </Badge>
                         <Badge 
                           variant="outline"
-                          className={`text-xs justify-center ${isPreparing ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""}`}
+                          className={`text-[10px] px-1.5 py-0.5 justify-center ${isPreparing ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : ""}`}
                         >
                           {isPreparing ? (t("shishaMaster.orders.preparing") || "Preparing") : (t("shishaMaster.orders.waiting") || "Waiting")}
                         </Badge>
@@ -663,107 +663,88 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                     </div>
 
                     {/* Customer info */}
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm truncate">
                       {order.customer_photo_url ? (
                         <div className="relative group shrink-0">
-                          <img loading="lazy" src={order.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                          <img loading="lazy" src={order.customer_photo_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
                           <button
-                            className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => {
                               setReplacingPhotoOrderId(order.id);
                               photoInputRef.current?.click();
                             }}
                           >
-                            {replacingPhotoOrderId === order.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                            {replacingPhotoOrderId === order.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Camera className="h-2.5 w-2.5" />}
                           </button>
                           <button
-                            className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => setDeletePhotoOrderId(order.id)}
                           >
-                            <X className="h-2.5 w-2.5" />
+                            <X className="h-2 w-2" />
                           </button>
                         </div>
                       ) : (
                         <button
-                          className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors"
+                          className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors"
                           onClick={() => {
                             setReplacingPhotoOrderId(order.id);
                             photoInputRef.current?.click();
                           }}
                         >
-                          {replacingPhotoOrderId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
+                          {replacingPhotoOrderId === order.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5 text-muted-foreground" />}
                         </button>
                       )}
-                      <span>{order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}</span>
+                      <span className="truncate text-sm">{order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}</span>
+                      {order.profile?.room_number && (
+                        <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+                          <Home className="h-3 w-3 mr-0.5" />
+                          {order.profile.room_number}
+                        </Badge>
+                      )}
                     </div>
-                    
-                    {/* Room - highlighted */}
-                    {order.profile?.room_number && (
-                      <div className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg border border-primary/20">
-                        <Home className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-primary">{t("admin.room") || "Room"}: {order.profile.room_number}</span>
-                      </div>
-                    )}
                     
                     {/* Notes */}
                     {order.notes && (
-                      <div className="flex items-start gap-2 p-2.5 bg-muted rounded-lg">
-                        <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <span className="text-sm">{order.notes}</span>
+                      <div className="flex items-start gap-2 p-2 bg-muted rounded-lg">
+                        <MessageSquare className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                        <span className="text-xs break-all">{order.notes}</span>
                       </div>
                     )}
 
-                    {/* Action buttons - compact layout */}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {!isPaid && (
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleMarkPaid(order.id)}
-                        >
-                          <CreditCard className="h-4 w-4 mr-1.5" />
-                          {t("shishaMaster.orders.markPaid") || "Mark Paid"}
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-1.5 pt-1">
+                      {!isPaid ? (
+                        <Button variant="outline" size="sm" className="text-xs px-2" onClick={() => handleMarkPaid(order.id)}>
+                          <CreditCard className="h-3.5 w-3.5 mr-1" />
+                          Paid
+                        </Button>
+                      ) : <div />}
+                      
+                      {!isPreparing ? (
+                        <Button variant="outline" size="sm" className="text-xs px-2" onClick={() => handleMarkPreparing(order.id)}>
+                          <ChefHat className="h-3.5 w-3.5 mr-1" />
+                          Prepare
+                        </Button>
+                      ) : (
+                        <Button size="sm" className="text-xs px-2 col-span-1" onClick={() => handleMarkDelivered(order.id)}>
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          Delivered
                         </Button>
                       )}
                       
-                      {!isPreparing && (
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleMarkPreparing(order.id)}
-                        >
-                          <ChefHat className="h-4 w-4 mr-1.5" />
-                          {t("shishaMaster.orders.startPreparing") || "Start Preparing"}
-                        </Button>
-                      )}
-                      
-                      <Button 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleMarkDelivered(order.id)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1.5" />
-                        {t("shishaMaster.orders.markDelivered") || "Mark Delivered"}
+                      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditSheet(order)}>
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-9 w-9 shrink-0"
-                        onClick={() => openEditSheet(order)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-9 w-9 shrink-0"
-                        onClick={() => openCancelDialog(order.id)}
-                      >
-                        <XCircle className="h-4 w-4" />
+                      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openCancelDialog(order.id)}>
+                        <XCircle className="h-3.5 w-3.5" />
                       </Button>
                     </div>
+                    {!isPreparing && (
+                      <Button size="sm" className="w-full text-xs" onClick={() => handleMarkDelivered(order.id)}>
+                        <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                        {t("shishaMaster.orders.markDelivered") || "Mark Delivered"}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
