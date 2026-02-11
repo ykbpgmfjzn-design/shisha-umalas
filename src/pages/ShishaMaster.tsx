@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Wind, BookOpen, History, PlusCircle } from "lucide-react";
+import { ArrowLeft, Wind, BookOpen, History, PlusCircle, Trophy } from "lucide-react";
 import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/OrdersList";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
+import Leaderboard from "@/components/shisha-master/Leaderboard";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ function ShishaMasterContent() {
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4 mx-auto">
+          <TabsList className="grid w-full max-w-lg grid-cols-5 mx-auto">
             <TabsTrigger value="active" className="gap-2">
               <Wind className="h-4 w-4" />
               <span className="hidden sm:inline">{t("shishaMaster.orders.active") || "Active"}</span>
@@ -91,6 +92,10 @@ function ShishaMasterContent() {
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">{t("shishaMaster.orders.history") || "History"}</span>
             </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="gap-2">
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">Leaders</span>
+            </TabsTrigger>
             <TabsTrigger value="training" className="gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">{t("shishaMaster.training.title") || "Training"}</span>
@@ -107,6 +112,10 @@ function ShishaMasterContent() {
 
           <TabsContent value="history">
             <OrdersList showHistory={true} />
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <Leaderboard />
           </TabsContent>
 
           <TabsContent value="training">
