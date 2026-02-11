@@ -436,148 +436,236 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     );
   }
 
+  // Shared modals/dialogs (must always render)
+  const sharedModals = (
+    <>
+      {/* Cancel Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("shishaMaster.orders.cancelTitle") || "Cancel order?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("shishaMaster.orders.cancelDesc") || "This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Textarea
+              placeholder={t("shishaMaster.orders.cancelReasonPlaceholder") || "Reason (optional)"}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
+              {t("shishaMaster.orders.confirmCancel") || "Confirm Cancel"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Photo Confirmation */}
+      <AlertDialog open={!!deletePhotoOrderId} onOpenChange={(open) => !open && setDeletePhotoOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("shishaMaster.orders.deletePhotoTitle") || "Delete photo?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("shishaMaster.orders.deletePhotoDesc") || "The customer photo will be permanently removed from this order."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (deletePhotoOrderId) handleDeletePhoto(deletePhotoOrderId);
+                setDeletePhotoOrderId(null);
+              }}
+            >
+              {t("shishaMaster.orders.confirmDelete") || "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{t("shishaMaster.form.editOrder") || "Edit Order"}</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <ManualOrderForm
+              editOrder={editingOrder}
+              onEditComplete={() => {
+                setEditSheetOpen(false);
+                setEditingOrder(null);
+                fetchOrders();
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+
+      {/* Hidden file input for photo replacement */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleReplacePhoto}
+      />
+    </>
+  );
+
   // History view - simple cards with date filter
   if (showHistory) {
     return (
-      <div className="space-y-3">
-        {/* Date range filter */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("gap-2", filterDateFrom && "border-primary text-primary")}>
-                  <CalendarIcon className="h-4 w-4" />
-                  {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : t("shishaMaster.orders.fromDate") || "From"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
-                <Calendar
-                  mode="single"
-                  selected={filterDateFrom}
-                  onSelect={(date) => {
-                    setFilterDateFrom(date);
-                    if (date && filterDateTo && date > filterDateTo) {
-                      setFilterDateTo(date);
-                    }
-                  }}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            <span className="text-muted-foreground text-sm">—</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("gap-2", filterDateTo && "border-primary text-primary")}>
-                  <CalendarIcon className="h-4 w-4" />
-                  {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : t("shishaMaster.orders.toDate") || "To"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
-                <Calendar
-                  mode="single"
-                  selected={filterDateTo}
-                  onSelect={(date) => {
-                    setFilterDateTo(date);
-                    if (date && filterDateFrom && date < filterDateFrom) {
+      <>
+        <div className="space-y-3">
+          {/* Date range filter */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-2", filterDateFrom && "border-primary text-primary")}>
+                    <CalendarIcon className="h-4 w-4" />
+                    {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : t("shishaMaster.orders.fromDate") || "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
+                  <Calendar
+                    mode="single"
+                    selected={filterDateFrom}
+                    onSelect={(date) => {
                       setFilterDateFrom(date);
-                    }
-                  }}
-                  disabled={(date) => filterDateFrom ? date < filterDateFrom : false}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            {(filterDateFrom || filterDateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setFilterDateFrom(undefined); setFilterDateTo(undefined); }} className="gap-1 text-muted-foreground">
-                <X className="h-3.5 w-3.5" />
-                Reset
-              </Button>
-            )}
+                      if (date && filterDateTo && date > filterDateTo) {
+                        setFilterDateTo(date);
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground text-sm">—</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-2", filterDateTo && "border-primary text-primary")}>
+                    <CalendarIcon className="h-4 w-4" />
+                    {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : t("shishaMaster.orders.toDate") || "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
+                  <Calendar
+                    mode="single"
+                    selected={filterDateTo}
+                    onSelect={(date) => {
+                      setFilterDateTo(date);
+                      if (date && filterDateFrom && date < filterDateFrom) {
+                        setFilterDateFrom(date);
+                      }
+                    }}
+                    disabled={(date) => filterDateFrom ? date < filterDateFrom : false}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {(filterDateFrom || filterDateTo) && (
+                <Button variant="ghost" size="sm" onClick={() => { setFilterDateFrom(undefined); setFilterDateTo(undefined); }} className="gap-1 text-muted-foreground">
+                  <X className="h-3.5 w-3.5" />
+                  Reset
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground ml-auto">
+                {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount")}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground ml-auto">
-              {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount")}
-            </span>
-          </div>
-        </div>
 
-        {filteredHistoryOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Wind className="h-12 w-12 mb-3 opacity-30" />
-            <p>{t("shishaMaster.orders.noOrdersForDate") || "No orders for this date"}</p>
-          </div>
-        ) : (
-        <div className="grid gap-3">
-        {filteredHistoryOrders.map((order) => {
-          const isDelivered = order.delivery_status === "delivered";
-          const isPaid = order.payment_status?.toLowerCase() === "paid";
-          
-          return (
-            <Card key={order.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
-                      {order.customer_photo_url ? (
-                        <img loading="lazy" src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
-                      ) : isDelivered ? (
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-destructive" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {order.hookah_count}x Hookah
-                        {order.amount && <span className="text-muted-foreground ml-2">• Rp {order.amount.toLocaleString()}</span>}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}
-                        {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className="flex gap-1.5 justify-end mb-1 flex-wrap">
-                        <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
-                          {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
-                        </Badge>
-                        <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
-                          {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
-                        </Badge>
-                        {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
-                          <Badge variant="outline" className="text-xs">
-                            {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
-                              : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
-                              : (order as any).payment_method === "doku" ? "🔗 DOKU"
-                              : (order as any).payment_method}
-                          </Badge>
+          {filteredHistoryOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Wind className="h-12 w-12 mb-3 opacity-30" />
+              <p>{t("shishaMaster.orders.noOrdersForDate") || "No orders for this date"}</p>
+            </div>
+          ) : (
+          <div className="grid gap-3">
+          {filteredHistoryOrders.map((order) => {
+            const isDelivered = order.delivery_status === "delivered";
+            const isPaid = order.payment_status?.toLowerCase() === "paid";
+            
+            return (
+              <Card key={order.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
+                        {order.customer_photo_url ? (
+                          <img loading="lazy" src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
+                        ) : isDelivered ? (
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-destructive" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
-                      </p>
+                      <div>
+                        <p className="font-medium">
+                          {order.hookah_count}x Hookah
+                          {order.amount && <span className="text-muted-foreground ml-2">• Rp {order.amount.toLocaleString()}</span>}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}
+                          {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
+                        </p>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => openEditSheet(order)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="flex gap-1.5 justify-end mb-1 flex-wrap">
+                          <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
+                            {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
+                          </Badge>
+                          <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
+                            {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
+                          </Badge>
+                          {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
+                            <Badge variant="outline" className="text-xs">
+                              {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
+                                : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
+                                : (order as any).payment_method === "doku" ? "🔗 DOKU"
+                                : (order as any).payment_method}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => openEditSheet(order)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })}
+          </div>
+          )}
         </div>
-        )}
-      </div>
+        {sharedModals}
+      </>
     );
   }
 
@@ -775,84 +863,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
         </AnimatePresence>
       </div>
 
-      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("shishaMaster.orders.cancelOrderTitle") || "Cancel Order"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("shishaMaster.orders.cancelOrderDesc") || "Please provide a reason for cancelling this order."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder={t("shishaMaster.orders.cancelReasonPlaceholder") || "Enter cancellation reason..."}
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              rows={3}
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
-              {t("shishaMaster.orders.confirmCancel") || "Confirm Cancel"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Photo Confirmation */}
-      <AlertDialog open={!!deletePhotoOrderId} onOpenChange={(open) => !open && setDeletePhotoOrderId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("shishaMaster.orders.deletePhotoTitle") || "Delete photo?"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("shishaMaster.orders.deletePhotoDesc") || "The customer photo will be permanently removed from this order."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("admin.cancel") || "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                if (deletePhotoOrderId) handleDeletePhoto(deletePhotoOrderId);
-                setDeletePhotoOrderId(null);
-              }}
-            >
-              {t("shishaMaster.orders.confirmDelete") || "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{t("shishaMaster.form.editOrder") || "Edit Order"}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            <ManualOrderForm
-              editOrder={editingOrder}
-              onEditComplete={() => {
-                setEditSheetOpen(false);
-                setEditingOrder(null);
-                fetchOrders();
-              }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
-
-      {/* Hidden file input for photo replacement */}
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleReplacePhoto}
-      />
+      {sharedModals}
     </>
   );
 }
