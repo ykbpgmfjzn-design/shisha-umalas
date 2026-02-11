@@ -3,10 +3,13 @@ import PhotoLightbox from "@/components/PhotoLightbox";
 import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
-  Hash, Calendar, Coffee, Cookie, Building2, User,
-  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays
+  Hash, Calendar as CalendarIcon, Coffee, Cookie, Building2, User,
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays, X
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -51,8 +54,8 @@ const OrdersTable = ({
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [updating, setUpdating] = useState<string | null>(null);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
@@ -117,6 +120,7 @@ const OrdersTable = ({
         toDate.setHours(23, 59, 59, 999);
         if (orderDate > toDate) return false;
       }
+
 
       if (paymentFilter === "unpaid_delivered") {
         const isPaid = order.payment_status?.toLowerCase() === "paid";
@@ -239,22 +243,46 @@ const OrdersTable = ({
         {showFilters && (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-muted-foreground" />
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-[130px] bg-background/50 text-xs"
-                placeholder="From"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 bg-background/50 text-xs h-9">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    {dateFrom ? format(dateFrom, "dd/MM/yy") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
               <span className="text-muted-foreground text-xs">—</span>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-[130px] bg-background/50 text-xs"
-                placeholder="To"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 bg-background/50 text-xs h-9">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    {dateTo ? format(dateTo, "dd/MM/yy") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              {(dateFrom || dateTo) && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -386,7 +414,7 @@ const OrdersTable = ({
 
                   <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
+                      <CalendarIcon className="w-3 h-3" />
                       {formatDate(order.created_at)}
                     </div>
                     {order.free_drink_used && (
