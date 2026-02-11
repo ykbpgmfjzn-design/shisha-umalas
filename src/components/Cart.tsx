@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, Trash2, CreditCard, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -10,7 +11,7 @@ import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 
 const Cart = () => {
-  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
+  const { items, removeItem, updateQuantity, updateCustomNote, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -115,7 +116,11 @@ const Cart = () => {
       const currentHookahCount = currentItems
         .filter((item: any) => item.itemType === "hookah")
         .reduce((sum: number, item: any) => sum + item.quantity, 0);
-      const orderNotes = currentItems.map((item: any) => `${item.quantity}x ${item.name}`).join(", ");
+      const orderNotes = currentItems.map((item: any) => {
+        let note = `${item.quantity}x ${item.name}`;
+        if (item.customNote) note += ` (${item.customNote})`;
+        return note;
+      }).join(", ");
       
       console.log('[Cart] Submitting order:', { currentTotalPrice, currentHookahCount, orderNotes });
       
@@ -276,6 +281,20 @@ const Cart = () => {
                               <span className="text-xs text-accent uppercase tracking-wider">
                                 {item.itemType}
                               </span>
+                            )}
+                            {item.id === "custom" && (
+                              <div className="mt-2">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                                  <Pencil className="w-3 h-3" />
+                                  <span>{t("cart.customFlavors")}</span>
+                                </div>
+                                <Input
+                                  value={item.customNote || ""}
+                                  onChange={(e) => updateCustomNote(item.id, e.target.value)}
+                                  placeholder={t("cart.customFlavorsPlaceholder")}
+                                  className="h-8 text-sm bg-background/50"
+                                />
+                              </div>
                             )}
                           </div>
                           <button
