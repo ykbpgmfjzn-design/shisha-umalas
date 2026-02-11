@@ -299,7 +299,7 @@ const UsersTable = ({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  {!isWalkin && (
+                  {!isWalkin && filterMode !== "staff" && (
                     <div className="flex items-center gap-1 text-golden">
                       <Crown className="w-4 h-4" />
                       <span className="text-sm font-bold">{profile.loyalty_level}</span>

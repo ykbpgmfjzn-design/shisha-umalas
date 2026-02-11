@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Crown, Building2, Users, Plus, Hash, Calendar,
-  Coffee, Cookie, Shield, Pencil, Save, X, Loader2, Trash2
+  Coffee, Cookie, Shield, Pencil, Save, X, Loader2, Trash2, Wind
 } from "lucide-react";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
@@ -35,12 +35,13 @@ interface UserDetailsProps {
   purchases: PurchaseWithProfile[];
   isAdmin: boolean;
   userRoles?: UserRole[];
+  viewMode?: "staff" | "customers";
   onAddPurchase: () => void;
   onUserUpdated?: () => void;
   onUserDeleted?: () => void;
 }
 
-const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, onUserUpdated, onUserDeleted }: UserDetailsProps) => {
+const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAddPurchase, onUserUpdated, onUserDeleted }: UserDetailsProps) => {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -166,10 +167,9 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, 
           </div>
           {!editing && (
             <p className="text-sm text-muted-foreground">
-              {user.full_name || "No name"} • 
-              {user.guest_type === "special" 
-                ? ` Room ${user.room_number}` 
-                : " Guest"}
+              {viewMode === "staff"
+                ? (user.full_name || "No name")
+                : `${user.full_name || "No name"} • ${user.guest_type === "special" ? ` Room ${user.room_number}` : " Guest"}`}
               {user.phone && ` • ${user.phone}`}
             </p>
           )}
@@ -178,13 +178,25 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, 
           {!editing ? (
             <>
               <div className="text-right">
-                <div className="flex items-center gap-2 text-golden">
-                  <Crown className="w-5 h-5" />
-                  <span className="text-2xl font-bold">Lvl {user.loyalty_level}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {user.total_hookahs_ordered} hookahs
-                </p>
+                {viewMode === "staff" ? (
+                  <>
+                    <div className="flex items-center gap-2 text-golden">
+                      <Wind className="w-5 h-5" />
+                      <span className="text-2xl font-bold">{purchases.length}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">delivered</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-golden">
+                      <Crown className="w-5 h-5" />
+                      <span className="text-2xl font-bold">Lvl {user.loyalty_level}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {user.total_hookahs_ordered} hookahs
+                    </p>
+                  </>
+                )}
               </div>
               <Button
                 size="sm"
@@ -258,38 +270,40 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, 
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Room</label>
-              <Input
-                value={editForm.room_number}
-                onChange={(e) => setEditForm(f => ({ ...f, room_number: e.target.value }))}
-                placeholder="Room #"
-                className="bg-background/50"
-              />
+          {viewMode !== "staff" && (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Room</label>
+                <Input
+                  value={editForm.room_number}
+                  onChange={(e) => setEditForm(f => ({ ...f, room_number: e.target.value }))}
+                  placeholder="Room #"
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Loyalty Lvl</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={editForm.loyalty_level}
+                  onChange={(e) => setEditForm(f => ({ ...f, loyalty_level: parseInt(e.target.value) || 1 }))}
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Total Hookahs</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.total_hookahs_ordered}
+                  onChange={(e) => setEditForm(f => ({ ...f, total_hookahs_ordered: parseInt(e.target.value) || 0 }))}
+                  className="bg-background/50"
+                />
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Loyalty Lvl</label>
-              <Input
-                type="number"
-                min={1}
-                max={10}
-                value={editForm.loyalty_level}
-                onChange={(e) => setEditForm(f => ({ ...f, loyalty_level: parseInt(e.target.value) || 1 }))}
-                className="bg-background/50"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Total Hookahs</label>
-              <Input
-                type="number"
-                min={0}
-                value={editForm.total_hookahs_ordered}
-                onChange={(e) => setEditForm(f => ({ ...f, total_hookahs_ordered: parseInt(e.target.value) || 0 }))}
-                className="bg-background/50"
-              />
-            </div>
-          </div>
+          )}
           {isStaff && (
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Staff Display Name</label>
@@ -304,68 +318,72 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, 
         </div>
       )}
 
-      <Button
-        onClick={onAddPurchase}
-        className="w-full mb-6 bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Add Purchase
-      </Button>
+      {viewMode !== "staff" && (
+        <>
+          <Button
+            onClick={onAddPurchase}
+            className="w-full mb-6 bg-gradient-to-r from-golden to-sunset hover:from-sunset hover:to-golden"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Purchase
+          </Button>
 
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
-        <h3 className="font-medium text-sm text-muted-foreground mb-3">
-          Order History ({purchases.length})
-        </h3>
-        
-        {purchases.map((purchase) => (
-          <div key={purchase.id} className="p-4 rounded-xl bg-muted/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                {purchase.customer_photo_url ? (
-                  <img loading="lazy" src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(purchase.customer_photo_url)} />
-                ) : (
-                  <Hash className="w-4 h-4 text-muted-foreground" />
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
+            <h3 className="font-medium text-sm text-muted-foreground mb-3">
+              Order History ({purchases.length})
+            </h3>
+            
+            {purchases.map((purchase) => (
+              <div key={purchase.id} className="p-4 rounded-xl bg-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {purchase.customer_photo_url ? (
+                      <img loading="lazy" src={purchase.customer_photo_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0 cursor-pointer" onClick={() => setLightboxPhoto(purchase.customer_photo_url)} />
+                    ) : (
+                      <Hash className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="font-medium">{purchase.hookah_count} hookah(s)</span>
+                  </div>
+                  {purchase.amount && (
+                    <span className="text-golden font-medium">
+                      IDR {purchase.amount.toLocaleString('id-ID')}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {formatDate(purchase.created_at)}
+                  </div>
+                  {purchase.free_drink_used && (
+                    <div className="flex items-center gap-1 text-golden">
+                      <Coffee className="w-3 h-3" />
+                      Drink
+                    </div>
+                  )}
+                  {purchase.free_snack_used && (
+                    <div className="flex items-center gap-1 text-golden">
+                      <Cookie className="w-3 h-3" />
+                      Snack
+                    </div>
+                  )}
+                </div>
+                {purchase.notes && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {purchase.notes}
+                  </p>
                 )}
-                <span className="font-medium">{purchase.hookah_count} hookah(s)</span>
               </div>
-              {purchase.amount && (
-                <span className="text-golden font-medium">
-                  IDR {purchase.amount.toLocaleString('id-ID')}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {formatDate(purchase.created_at)}
-              </div>
-              {purchase.free_drink_used && (
-                <div className="flex items-center gap-1 text-golden">
-                  <Coffee className="w-3 h-3" />
-                  Drink
-                </div>
-              )}
-              {purchase.free_snack_used && (
-                <div className="flex items-center gap-1 text-golden">
-                  <Cookie className="w-3 h-3" />
-                  Snack
-                </div>
-              )}
-            </div>
-            {purchase.notes && (
-              <p className="text-xs text-muted-foreground mt-2">
-                {purchase.notes}
+            ))}
+
+            {purchases.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                No orders
               </p>
             )}
           </div>
-        ))}
-
-        {purchases.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">
-            No orders
-          </p>
-        )}
-      </div>
+        </>
+      )}
     </motion.div>
     <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
     
