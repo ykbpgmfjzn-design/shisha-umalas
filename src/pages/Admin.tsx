@@ -574,6 +574,7 @@ const AdminContent = () => {
               <UsersTable
                 profiles={profiles}
                 userRoles={allUserRoles}
+                purchases={allPurchases}
                 onSelectUser={setSelectedUser}
                 selectedUserId={selectedUser?.id}
                 onToggleAdmin={handleToggleAdmin}
