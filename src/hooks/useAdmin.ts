@@ -23,6 +23,7 @@ export interface PurchaseWithProfile {
   free_snack_used: boolean | null;
   notes: string | null;
   created_at: string;
+  created_by: string | null;
   payment_status: string | null;
   delivery_status: string;
   paid_at: string | null;

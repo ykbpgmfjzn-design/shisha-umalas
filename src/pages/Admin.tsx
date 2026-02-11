@@ -555,9 +555,10 @@ const AdminContent = () => {
               
               <UserDetails
                 user={selectedUser}
-                purchases={userPurchases}
+                purchases={selectedUser ? allPurchases.filter(p => p.created_by === selectedUser.id) : []}
                 isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
                 userRoles={allUserRoles}
+                viewMode="staff"
                 onAddPurchase={() => setShowAddPurchase(true)}
                 onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
                 onUserDeleted={() => {
