@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Plus, LogOut, PlusCircle,
-  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3, UtensilsCrossed, BookOpen, Trophy
+  LayoutDashboard, ClipboardList, Users, Coffee, Cookie, MessageSquare, Activity, Calendar, BarChart3, UtensilsCrossed, BookOpen, Trophy, Wind
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -373,6 +373,15 @@ const AdminContent = () => {
                 <span className="hidden sm:inline">Logs</span>
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/shisha-master?from=admin")}
+              className="border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Wind className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Shisha Master</span>
+            </Button>
             <div className="flex items-center gap-2 text-golden">
               <Shield className="w-5 h-5" />
               <span className="font-medium hidden sm:inline">Admin Panel</span>
