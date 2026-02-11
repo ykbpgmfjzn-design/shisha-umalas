@@ -21,7 +21,10 @@ const WhatsAppChat = () => {
   }, [t]);
 
   const isHidden = HIDDEN_ROUTES.some(route => location.pathname.startsWith(route));
-  if (isHidden) return null;
+
+  if (isHidden) {
+    return null;
+  }
 
   const handleSendMessage = () => {
     if (message.trim()) {
