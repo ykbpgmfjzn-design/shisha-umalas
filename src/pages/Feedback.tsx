@@ -207,7 +207,7 @@ const Feedback = () => {
                   onMouseLeave={() => setHoverRating(0)}
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.1 }}
-                  className="p-1"
+                  className="p-3"
                 >
                   <Star
                     className={`w-10 h-10 transition-colors ${

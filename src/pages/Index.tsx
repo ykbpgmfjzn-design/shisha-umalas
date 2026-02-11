@@ -29,8 +29,8 @@ const Index = () => {
     <main className="min-h-screen bg-background pb-20">
       <LanguageSelector />
       <HeroSection />
-      <MenuSection />
       <PublicReviews />
+      <MenuSection />
       <FooterSection />
       <Cart />
       <BottomNavigation />

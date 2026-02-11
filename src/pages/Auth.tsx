@@ -198,6 +198,7 @@ const AuthContent = () => {
               </label>
               <Input
                 type="email"
+                autoComplete="email"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -215,6 +216,7 @@ const AuthContent = () => {
               </label>
               <Input
                 type="password"
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

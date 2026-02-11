@@ -111,6 +111,16 @@ const HeroSection = () => {
           <p className="font-body text-sm md:text-base text-muted-foreground tracking-widest uppercase">
             {t("hero.tagline")}
           </p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+            className="mt-6 inline-flex items-center gap-2 bg-golden/15 backdrop-blur-sm border border-golden/30 px-4 py-2 rounded-full"
+          >
+            <span className="text-golden text-lg">★</span>
+            <span className="text-smoke-light text-sm font-medium">4.8</span>
+            <span className="text-muted-foreground text-xs">from 100+ reviews</span>
+          </motion.div>
         </motion.div>
 
         <motion.div

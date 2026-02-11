@@ -400,6 +400,80 @@ function generateReport() {
 
 // ─── Main ───────────────────────────────────────────────────
 
+// ─── Auto-Fix: type="tel" for phone inputs ────────────────
+function fixPhoneInputTypes() {
+  const files = findFiles(path.join(ROOT, 'src'), '.tsx');
+  for (const file of files) {
+    const rel = path.relative(ROOT, file);
+    let content = readFile(rel);
+    if (!content) continue;
+    // Find <Input ... placeholder="+62" or phone-related without type="tel"
+    const phonePattern = /(<Input\s[^>]*(?:placeholder="[^"]*(?:\+62|phone)[^"]*"|onChange=\{[^}]*Phone[^}]*\})[^>]*)(?<!\btype="tel")(\s*\/>)/gi;
+    let changed = false;
+    content = content.replace(phonePattern, (match, before, after) => {
+      if (match.includes('type="tel"')) return match;
+      changed = true;
+      return before + ' type="tel" autoComplete="tel"' + after;
+    });
+    if (changed) {
+      writeFile(rel, content);
+      report.fixes.push(`Added type="tel" to phone inputs in ${rel}`);
+      changes.push(rel);
+    }
+  }
+}
+
+// ─── Auto-Fix: autocomplete attributes for auth forms ──────
+function fixAutoComplete() {
+  const authFile = 'src/pages/Auth.tsx';
+  let content = readFile(authFile);
+  if (!content) return;
+  let changed = false;
+  // Add autoComplete="email" to email inputs
+  if (content.includes('type="email"') && !content.includes('autoComplete="email"')) {
+    content = content.replace(
+      /(<Input\s[^>]*type="email")/g,
+      '$1\n                autoComplete="email"'
+    );
+    changed = true;
+  }
+  // Add autoComplete to password inputs
+  if (content.includes('type="password"') && !content.includes('autoComplete=')) {
+    content = content.replace(
+      /(<Input\s[^>]*type="password")/g,
+      '$1\n                autoComplete="current-password"'
+    );
+    changed = true;
+  }
+  if (changed) {
+    writeFile(authFile, content);
+    report.fixes.push('Added autocomplete attributes to auth form inputs');
+    changes.push(authFile);
+  }
+}
+
+// ─── Auto-Fix: ensure minimum touch target padding ─────────
+function fixTouchTargets() {
+  const files = findFiles(path.join(ROOT, 'src'), '.tsx');
+  for (const file of files) {
+    const rel = path.relative(ROOT, file);
+    let content = readFile(rel);
+    if (!content) continue;
+    let changed = false;
+    // Replace p-1 with p-3 on interactive elements (buttons)
+    const pattern = /(<(?:motion\.)?button\s[^>]*className="[^"]*)\bp-1\b/g;
+    content = content.replace(pattern, (match, before) => {
+      changed = true;
+      return before + 'p-3';
+    });
+    if (changed) {
+      writeFile(rel, content);
+      report.fixes.push(`Increased touch target padding in ${rel}`);
+      changes.push(rel);
+    }
+  }
+}
+
 function main() {
   console.log('═══════════════════════════════════════════════');
   console.log('   🎯 CRO Audit — shisha.cool');
@@ -415,6 +489,11 @@ function main() {
   auditLazyLoading();
   auditLoadingStates();
   auditPriceClarity();
+
+  // Auto-fix passes
+  fixPhoneInputTypes();
+  fixAutoComplete();
+  fixTouchTargets();
 
   const reportText = generateReport();
   console.log('\n' + reportText);

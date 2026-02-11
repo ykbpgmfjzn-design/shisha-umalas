@@ -33,6 +33,7 @@ const CardPayment = ({
   const { toast } = useToast();
   
   const [status, setStatus] = useState<PaymentStatus>("form");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpMonth, setCardExpMonth] = useState("");
   const [cardExpYear, setCardExpYear] = useState("");
@@ -82,8 +83,9 @@ const CardPayment = ({
     }
 
     setErrorMessage("");
+    setIsSubmitting(true);
     setStatus("processing");
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('create-card-payment', {
         body: {
@@ -127,6 +129,8 @@ const CardPayment = ({
       console.error("Card payment error:", error);
       setErrorMessage(error instanceof Error ? error.message : t("card.paymentFailed"));
       setStatus("failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -238,10 +242,15 @@ const CardPayment = ({
             {/* Submit button */}
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-12 text-lg font-display"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-12 text-lg font-display disabled:opacity-50"
             >
-              <Lock className="w-4 h-4 mr-2" />
-              {t("card.payNow")} IDR {(amount / 1000).toFixed(0)}K
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Lock className="w-4 h-4 mr-2" />
+              )}
+              {isSubmitting ? t("card.processing") : `${t("card.payNow")} IDR ${(amount / 1000).toFixed(0)}K`}
             </Button>
           </motion.form>
         );

@@ -3,9 +3,9 @@ import { ReactNode, useState, useEffect } from "react";
 import { Plus, ChevronDown, ShoppingCart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getMenuDescription } from "@/data/menuTranslations";
+import { supabase } from "@/integrations/supabase/client";
 
 import { ItemType } from "@/hooks/useCart";
 
@@ -30,33 +30,15 @@ const MenuItem = ({ id, name, nameTranslations, descriptionTranslations, dbDescr
   
   // Get localized name: prefer DB translations, then fallback to English
   const displayName = (language !== "en" && nameTranslations?.[language]) || name;
-  
+
   // Get localized description: prefer DB translations, then fallback to menuTranslations.ts, then English DB description
   const description = (language !== "en" && descriptionTranslations?.[language])
     || getMenuDescription(id, language)
     || (language === "en" ? dbDescription : undefined)
     || dbDescription;
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!user) {
-      toast.info(t("menu.loginToOrder"));
-      return;
-    }
-    
     addItem({
       id,
       name,
@@ -129,11 +111,7 @@ const MenuItem = ({ id, name, nameTranslations, descriptionTranslations, dbDescr
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleAddToCart}
-            className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
-              user 
-                ? 'bg-golden/20 hover:bg-golden text-golden hover:text-background' 
-                : 'bg-muted/50 text-muted-foreground cursor-default'
-            }`}
+            className="p-3 rounded-xl transition-all duration-300 flex-shrink-0 bg-golden/20 hover:bg-golden text-golden hover:text-background"
           >
             <Plus className="w-5 h-5" />
           </motion.button>
@@ -268,21 +246,8 @@ interface DbMenuItem {
 
 const MenuSection = () => {
   const { t } = useLanguage();
-  const [user, setUser] = useState<any>(null);
   const [dbItems, setDbItems] = useState<DbMenuItem[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -326,24 +291,14 @@ const MenuSection = () => {
           <div className="w-16 h-px bg-gradient-golden mx-auto mb-6" />
           
           {/* Order instruction */}
-          {user ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 bg-golden/10 text-golden px-4 py-2 rounded-full text-sm"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {t("menu.clickToAdd")}
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 bg-muted/50 text-muted-foreground px-4 py-2 rounded-full text-sm"
-            >
-              {t("menu.loginToOrderHint")}
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 bg-golden/10 text-golden px-4 py-2 rounded-full text-sm"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {t("menu.clickToAdd")}
+          </motion.div>
         </motion.div>
 
         {/* Menu Categories */}
