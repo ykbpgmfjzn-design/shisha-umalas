@@ -282,7 +282,9 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       : periodRev > 0 ? 100 : 0;
 
     // --- Average Revenue Per Customer ---
-    const uniquePaidCustomers = new Set(paid.map(p => p.user_id)).size;
+    // Use user_id or customer_name as unique key (null user_ids with no name each count separately)
+    const getCustomerKey = (p: PurchaseWithProfile) => p.user_id || p.customer_name || `anon_${p.id}`;
+    const uniquePaidCustomers = new Set(paid.map(getCustomerKey)).size;
     const avgRevenuePerCustomer = uniquePaidCustomers > 0 ? periodRev / uniquePaidCustomers : 0;
 
     // --- Avg check (per order) ---
@@ -291,7 +293,8 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     // --- Repeat Customer Rate (within period) ---
     const customerOrderCount = new Map<string, number>();
     for (const p of periodPurchases) {
-      customerOrderCount.set(p.user_id, (customerOrderCount.get(p.user_id) || 0) + 1);
+      const key = getCustomerKey(p);
+      customerOrderCount.set(key, (customerOrderCount.get(key) || 0) + 1);
     }
     const totalCustomers = customerOrderCount.size;
     const repeatCustomers = [...customerOrderCount.values()].filter(c => c > 1).length;
@@ -348,7 +351,8 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     const allPaid = paidOnly(purchases);
     const allCustomerCount = new Map<string, number>();
     for (const p of purchases) {
-      allCustomerCount.set(p.user_id, (allCustomerCount.get(p.user_id) || 0) + 1);
+      const key = getCustomerKey(p);
+      allCustomerCount.set(key, (allCustomerCount.get(key) || 0) + 1);
     }
     const allTotalCustomers = allCustomerCount.size;
     const allAvgCheck = allPaid.length > 0 ? allPaid.reduce((s, p) => s + (p.amount || 0), 0) / allPaid.length : 0;
