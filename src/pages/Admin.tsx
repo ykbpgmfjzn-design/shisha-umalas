@@ -33,6 +33,7 @@ import FeedbackList from "@/components/admin/FeedbackList";
 import ReservationsList from "@/components/admin/ReservationsList";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import MenuEditor from "@/components/admin/MenuEditor";
+import TopCustomers from "@/components/admin/TopCustomers";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -456,6 +457,7 @@ const AdminContent = () => {
               />
               
               <div className="space-y-6">
+                <TopCustomers purchases={allPurchases} />
                 {/* Delivery Settings */}
                 <DeliverySettings t={t} />
                 
