@@ -97,6 +97,21 @@ const UsersTable = ({
     return Array.from(walkinMap.values());
   }, [purchases, filterMode]);
 
+  // Count orders per customer (registered by user_id, walk-in by normalized name)
+  const orderCountMap = useMemo(() => {
+    if (filterMode !== "customers") return new Map<string, number>();
+    const map = new Map<string, number>();
+    for (const p of purchases) {
+      if (p.user_id) {
+        map.set(p.user_id, (map.get(p.user_id) || 0) + 1);
+      } else if (p.customer_name) {
+        const key = `walkin_${normalizeCustomerName(p.customer_name)}`;
+        map.set(key, (map.get(key) || 0) + 1);
+      }
+    }
+    return map;
+  }, [purchases, filterMode]);
+
   const filteredProfiles = useMemo(() => {
     const base = filterMode === "customers"
       ? [
@@ -255,6 +270,9 @@ const UsersTable = ({
                       {isWalkin
                         ? "Walk-in customer"
                         : `${profile.room_number ? `Room ${profile.room_number}` : "Guest"} • ${profile.full_name || "No name"}`}
+                      {filterMode === "customers" && (
+                        <span className="ml-1">• {orderCountMap.get(profile.id) || 0} orders</span>
+                      )}
                     </p>
                     {!isWalkin && roles.filter(r => r !== "user" && r !== "owner").length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
