@@ -30,6 +30,7 @@ interface UsersTableProps {
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
   onAddRole?: (userId: string, role: AppRole) => Promise<void>;
   onRemoveRole?: (userId: string, role: AppRole) => Promise<void>;
+  filterMode?: "staff" | "customers";
   t?: (key: string) => string;
 }
 
@@ -49,6 +50,7 @@ const UsersTable = ({
   onToggleAdmin,
   onAddRole,
   onRemoveRole,
+  filterMode,
   t,
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,11 +64,24 @@ const UsersTable = ({
     return userRoles.some(r => r.user_id === userId && r.role === role);
   };
 
-  const filteredProfiles = profiles.filter(p => 
-    p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.room_number?.includes(searchQuery)
-  );
+  const STAFF_ROLES: AppRole[] = ["admin", "owner", "shisha_master", "accounting"];
+
+  const filteredProfiles = profiles.filter(p => {
+    // Apply role-based filter
+    if (filterMode === "staff") {
+      const roles = getUserRoles(p.id);
+      if (!roles.some(r => STAFF_ROLES.includes(r))) return false;
+    } else if (filterMode === "customers") {
+      const roles = getUserRoles(p.id);
+      if (roles.some(r => STAFF_ROLES.includes(r))) return false;
+    }
+    // Apply search filter
+    return (
+      p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.room_number?.includes(searchQuery)
+    );
+  });
 
   const handleSetRole = async (e: React.MouseEvent, userId: string, newRole: AppRole) => {
     e.stopPropagation();
@@ -134,10 +149,10 @@ const UsersTable = ({
   return (
     <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Users className="w-5 h-5 text-golden" />
-        <h2 className="font-display text-xl">Users</h2>
+        {filterMode === "staff" ? <Shield className="w-5 h-5 text-golden" /> : <Users className="w-5 h-5 text-golden" />}
+        <h2 className="font-display text-xl">{filterMode === "staff" ? "Staff" : filterMode === "customers" ? "Customers" : "Users"}</h2>
         <span className="ml-auto text-sm text-muted-foreground">
-          {profiles.length} total
+          {filteredProfiles.length} total
         </span>
       </div>
 

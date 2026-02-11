@@ -418,9 +418,13 @@ const AdminContent = () => {
                 <Calendar className="w-4 h-4" />
                 <span className="hidden sm:inline">{t("admin.reservations")}</span>
               </TabsTrigger>
-              <TabsTrigger value="users" className="gap-1.5 px-3">
+              <TabsTrigger value="staff" className="gap-1.5 px-3">
+                <Shield className="w-4 h-4" />
+                <span className="hidden sm:inline">Staff</span>
+              </TabsTrigger>
+              <TabsTrigger value="customers" className="gap-1.5 px-3">
                 <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Users</span>
+                <span className="hidden sm:inline">Customers</span>
               </TabsTrigger>
               <TabsTrigger value="feedback" className="gap-1.5 px-3">
                 <MessageSquare className="w-4 h-4" />
@@ -510,8 +514,8 @@ const AdminContent = () => {
             <ReservationsList />
           </TabsContent>
 
-          {/* Users Tab */}
-          <TabsContent value="users">
+          {/* Staff Tab */}
+          <TabsContent value="staff">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <UsersTable
                 profiles={profiles}
@@ -520,6 +524,61 @@ const AdminContent = () => {
                 selectedUserId={selectedUser?.id}
                 onToggleAdmin={handleToggleAdmin}
                 t={t}
+                filterMode="staff"
+                onAddRole={async (userId, role) => {
+                  const { error } = await addUserRole(userId, role);
+                  if (error) {
+                    toast({
+                      variant: "destructive",
+                      title: t("auth.error"),
+                      description: t("admin.roleAdded") + " failed",
+                    });
+                  } else {
+                    toast({ title: t("admin.roleAdded") });
+                    fetchAllUserRoles();
+                  }
+                }}
+                onRemoveRole={async (userId, role) => {
+                  const { error } = await removeUserRole(userId, role);
+                  if (error) {
+                    toast({
+                      variant: "destructive",
+                      title: t("auth.error"),
+                      description: t("admin.roleRemoved") + " failed",
+                    });
+                  } else {
+                    toast({ title: t("admin.roleRemoved") });
+                    fetchAllUserRoles();
+                  }
+                }}
+              />
+              
+              <UserDetails
+                user={selectedUser}
+                purchases={userPurchases}
+                isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                onAddPurchase={() => setShowAddPurchase(true)}
+                onUserUpdated={() => fetchAllProfiles()}
+                onUserDeleted={() => {
+                  setSelectedUser(null);
+                  fetchAllProfiles();
+                  fetchAllUserRoles();
+                }}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Customers Tab */}
+          <TabsContent value="customers">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <UsersTable
+                profiles={profiles}
+                userRoles={allUserRoles}
+                onSelectUser={setSelectedUser}
+                selectedUserId={selectedUser?.id}
+                onToggleAdmin={handleToggleAdmin}
+                t={t}
+                filterMode="customers"
                 onAddRole={async (userId, role) => {
                   const { error } = await addUserRole(userId, role);
                   if (error) {
