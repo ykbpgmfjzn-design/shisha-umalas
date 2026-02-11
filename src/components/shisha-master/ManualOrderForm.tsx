@@ -48,7 +48,19 @@ interface ExistingCustomer {
 interface CartEntry {
   item: MenuItem;
   quantity: number;
+  customPrice?: number;
 }
+
+const CUSTOM_ITEM: MenuItem = {
+  id: '__custom__',
+  name: 'Custom Hookah',
+  price: 0,
+  priceDisplay: 'Custom',
+  strength: 'Custom',
+  itemType: 'hookah',
+  isSignature: false,
+  keywords: ['custom'],
+};
 
 export interface EditOrderData {
   id: string;
@@ -118,10 +130,10 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     fetchMenuItemsFromDb().then(setDbMenuItems);
   }, []);
 
-  // Group menu items by strength
+  // Group menu items by strength (include custom item)
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
-    dbMenuItems.forEach((item) => {
+    [...dbMenuItems, CUSTOM_ITEM].forEach((item) => {
       if (!groups[item.strength]) groups[item.strength] = [];
       groups[item.strength].push(item);
     });
@@ -227,7 +239,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   };
 
   const totalAmount = useMemo(
-    () => cart.reduce((sum, e) => sum + e.item.price * e.quantity, 0),
+    () => cart.reduce((sum, e) => sum + (e.customPrice ?? e.item.price) * e.quantity, 0),
     [cart]
   );
 
@@ -296,7 +308,13 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     setSubmitting(true);
 
     const orderNotes = cart
-      .map((e) => `${e.quantity}x ${e.item.name}`)
+      .map((e) => {
+        const label = `${e.quantity}x ${e.item.name}`;
+        if (e.item.id === '__custom__' && e.customPrice) {
+          return `${label} @${e.customPrice.toLocaleString("id-ID")}`;
+        }
+        return label;
+      })
       .join(", ");
     const fullNotes = notes
       ? `${orderNotes}\n---\n${notes}`
@@ -355,7 +373,15 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     }
   };
 
-  const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra"];
+  const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra", "Custom"];
+
+  const updateCustomPrice = (price: number) => {
+    setCart((prev) =>
+      prev.map((e) =>
+        e.item.id === '__custom__' ? { ...e, customPrice: price } : e
+      )
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -537,35 +563,46 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               </CardHeader>
               <CardContent className="space-y-2">
                 {cart.map((entry) => (
-                  <div
-                    key={entry.item.id}
-                    className="flex items-center justify-between py-1.5"
-                  >
-                    <span className="text-sm">{entry.item.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateCartQty(entry.item.id, -1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-6 text-center text-sm font-medium">
-                        {entry.quantity}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateCartQty(entry.item.id, 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground w-20 text-right">
-                        {(entry.item.price * entry.quantity).toLocaleString("id-ID")}
-                      </span>
+                  <div key={entry.item.id} className="space-y-1">
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-sm">{entry.item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateCartQty(entry.item.id, -1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-6 text-center text-sm font-medium">
+                          {entry.quantity}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateCartQty(entry.item.id, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground w-20 text-right">
+                          {((entry.customPrice ?? entry.item.price) * entry.quantity).toLocaleString("id-ID")}
+                        </span>
+                      </div>
                     </div>
+                    {entry.item.id === '__custom__' && (
+                      <div className="flex items-center gap-2 pl-2">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Price (IDR):</Label>
+                        <Input
+                          type="number"
+                          className="h-7 text-sm w-32"
+                          placeholder="0"
+                          value={entry.customPrice || ''}
+                          onChange={(e) => updateCustomPrice(Number(e.target.value))}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div className="pt-2 border-t border-border flex items-center justify-between font-semibold">
