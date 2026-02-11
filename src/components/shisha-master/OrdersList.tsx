@@ -158,49 +158,50 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   };
 
   const fetchOrders = async () => {
-    // Fetch active orders (not delivered and not cancelled)
-    const { data: active, error: activeError } = await supabase
-      .from("purchases")
-      .select("*")
-      .not("delivery_status", "in", '("delivered","cancelled")')
-      .order("created_at", { ascending: true });
+    // Fetch active and history orders in parallel
+    const [activeRes, historyRes] = await Promise.all([
+      supabase
+        .from("purchases")
+        .select("*")
+        .not("delivery_status", "in", '("delivered","cancelled")')
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("purchases")
+        .select("*")
+        .in("delivery_status", ["delivered", "cancelled"])
+        .order("paid_at", { ascending: false })
+        .limit(50),
+    ]);
 
-    // Fetch history (delivered/cancelled) - last 50
-    const { data: history, error: historyError } = await supabase
-      .from("purchases")
-      .select("*")
-      .in("delivery_status", ["delivered", "cancelled"])
-      .order("paid_at", { ascending: false })
-      .limit(50);
-
-    if (activeError || historyError) {
-      console.error("Error fetching orders:", activeError || historyError);
+    if (activeRes.error || historyRes.error) {
+      console.error("Error fetching orders:", activeRes.error || historyRes.error);
+      setLoading(false);
       return;
     }
 
-    // Fetch profiles for active orders
-    const activeWithProfiles: OrderWithProfile[] = await Promise.all(
-      (active || []).map(async (order) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, email, room_number, loyalty_level")
-          .eq("id", order.user_id)
-          .maybeSingle();
-        return { ...order, profile };
-      })
-    );
+    const allOrders = [...(activeRes.data || []), ...(historyRes.data || [])];
 
-    // Fetch profiles for history orders
-    const historyWithProfiles: OrderWithProfile[] = await Promise.all(
-      (history || []).map(async (order) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, email, room_number, loyalty_level")
-          .eq("id", order.user_id)
-          .maybeSingle();
-        return { ...order, profile };
-      })
-    );
+    // Batch fetch all needed profiles in one query
+    const userIds = [...new Set(allOrders.map(o => o.user_id).filter(Boolean))];
+    let profileMap = new Map<string, { full_name: string | null; email: string | null; room_number: string | null; loyalty_level: number }>();
+    
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, room_number, loyalty_level")
+        .in("id", userIds);
+      if (profiles) {
+        profiles.forEach(p => profileMap.set(p.id, p));
+      }
+    }
+
+    const mapOrder = (order: any): OrderWithProfile => ({
+      ...order,
+      profile: order.user_id ? profileMap.get(order.user_id) || null : null,
+    });
+
+    const activeWithProfiles = (activeRes.data || []).map(mapOrder);
+    const historyWithProfiles = (historyRes.data || []).map(mapOrder);
 
     // Track changes for highlight effect
     trackOrderChanges([...activeWithProfiles, ...historyWithProfiles]);
