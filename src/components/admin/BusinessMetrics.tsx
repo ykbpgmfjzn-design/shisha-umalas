@@ -5,6 +5,12 @@ import {
   Star, Percent, Heart, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
   Plus, Trash2, Settings2, Save, X, CalendarDays, History, Target, Landmark, Copy, ChevronLeft, ChevronRight
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -415,7 +421,19 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     total: { label: "Expenses", color: "hsl(var(--destructive))" },
   };
 
+  const CardLabel = ({ text, tip }: { text: string; tip: string }) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <p className="text-xs text-muted-foreground cursor-help">{text}</p>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-[200px]">
+        <p className="text-xs">{tip}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="space-y-6">
       {/* Period Selector */}
       <div className="flex items-center justify-between">
@@ -443,7 +461,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-emerald-400/10">
                   <TrendingUp className="w-4 h-4 text-emerald-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Revenue Growth</p>
+                <CardLabel text="Revenue Growth" tip="Total paid revenue for the selected period compared to the previous period" />
               </div>
               <p className="text-xl font-bold">{formatIDR(metrics.periodRev)}</p>
               <div className="flex items-center gap-2 mt-1">
@@ -463,7 +481,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-golden/10">
                   <DollarSign className="w-4 h-4 text-golden" />
                 </div>
-                <p className="text-xs text-muted-foreground">Avg Revenue / Customer</p>
+                <CardLabel text="Avg Revenue / Customer" tip="Total revenue ÷ unique paying customers. Shows how much each customer spends on average" />
               </div>
               <p className="text-xl font-bold">{formatIDR(metrics.avgRevenuePerCustomer)}</p>
               <div className="mt-2 pt-2 border-t border-border/30">
@@ -481,7 +499,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-purple-400/10">
                   <Heart className="w-4 h-4 text-purple-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Repeat Customers</p>
+                <CardLabel text="Repeat Customers" tip="Percentage of customers who ordered more than once in the period" />
               </div>
               <p className="text-xl font-bold">{metrics.repeatRate.toFixed(1)}%</p>
               <div className="mt-2 pt-2 border-t border-border/30">
@@ -499,7 +517,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-blue-400/10">
                   <ShoppingCart className="w-4 h-4 text-blue-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Orders</p>
+                <CardLabel text="Orders" tip="Total orders in the selected period with growth compared to previous period" />
               </div>
               <p className="text-xl font-bold">{metrics.periodOrders}</p>
               <div className="flex items-center gap-2 mt-1">
@@ -522,7 +540,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-yellow-400/10">
                   <Star className="w-4 h-4 text-yellow-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Avg Rating (CSAT)</p>
+                <CardLabel text="Avg Rating (CSAT)" tip="Average customer satisfaction rating from feedback reviews in the period" />
               </div>
               <p className="text-xl font-bold">{metrics.avgRating > 0 ? `${metrics.avgRating.toFixed(1)} ★` : "—"}</p>
               <p className="text-xs text-muted-foreground mt-1">{metrics.periodFeedbackCount} reviews in period</p>
@@ -542,7 +560,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   <div className="p-2 rounded-lg bg-cyan-400/10">
                     <Percent className="w-4 h-4 text-cyan-400" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Gross Margin</p>
+                  <CardLabel text="Gross Margin" tip="(Current month revenue − monthly expenses) ÷ revenue × 100%. Shows profitability" />
                 </div>
                 <Button
                   variant="ghost"
@@ -584,7 +602,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-pink-400/10">
                   <Users className="w-4 h-4 text-pink-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Customer LTV</p>
+                <CardLabel text="Customer LTV" tip="Avg check × avg orders per customer. Estimates total revenue per customer over their lifetime" />
               </div>
               <p className="text-xl font-bold">{formatIDR(metrics.clv)}</p>
               <p className="text-xs text-muted-foreground mt-1">~{metrics.avgOrdersPerCustomer.toFixed(1)} orders/customer</p>
@@ -604,7 +622,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                   <div className="p-2 rounded-lg bg-orange-400/10">
                     <Landmark className="w-4 h-4 text-orange-400" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Initial Investment</p>
+                  <CardLabel text="Initial Investment" tip="Total capital invested into the business. Used for break-even and ROI calculations" />
                 </div>
                 <Button
                   variant="ghost"
@@ -651,7 +669,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-teal-400/10">
                   <Target className="w-4 h-4 text-teal-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">Break-even Point</p>
+                <CardLabel text="Break-even Point" tip="Estimated months until cumulative profit covers the initial investment" />
               </div>
               {(() => {
                 const monthlyProfit = metrics.grossProfit;
@@ -964,5 +982,6 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
