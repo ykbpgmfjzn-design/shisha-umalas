@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ function ShishaMasterContent() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
   const activeOrdersCount = useActiveOrdersCount();
 
   useEffect(() => {
@@ -73,7 +75,7 @@ function ShishaMasterContent() {
 
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="active" className="space-y-6">
+        <Tabs defaultValue="active" className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 max-w-2xl mx-auto">
             <TabsList className="grid flex-1 grid-cols-4 h-auto">
               <TabsTrigger value="active" className="gap-1.5 px-2 py-2 text-xs sm:text-sm">
@@ -107,25 +109,35 @@ function ShishaMasterContent() {
             </TabsList>
           </div>
 
-          <TabsContent value="active">
-            <OrdersList showHistory={false} />
-          </TabsContent>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <TabsContent value="active" forceMount={activeTab === "active" ? true : undefined} className={activeTab !== "active" ? "hidden" : ""}>
+                <OrdersList showHistory={false} />
+              </TabsContent>
 
-          <TabsContent value="new-order">
-            <ManualOrderForm />
-          </TabsContent>
+              <TabsContent value="new-order" forceMount={activeTab === "new-order" ? true : undefined} className={activeTab !== "new-order" ? "hidden" : ""}>
+                <ManualOrderForm />
+              </TabsContent>
 
-          <TabsContent value="history">
-            <OrdersList showHistory={true} />
-          </TabsContent>
+              <TabsContent value="history" forceMount={activeTab === "history" ? true : undefined} className={activeTab !== "history" ? "hidden" : ""}>
+                <OrdersList showHistory={true} />
+              </TabsContent>
 
-          <TabsContent value="leaderboard">
-            <Leaderboard />
-          </TabsContent>
+              <TabsContent value="leaderboard" forceMount={activeTab === "leaderboard" ? true : undefined} className={activeTab !== "leaderboard" ? "hidden" : ""}>
+                <Leaderboard />
+              </TabsContent>
 
-          <TabsContent value="training">
-            <TrainingMaterials />
-          </TabsContent>
+              <TabsContent value="training" forceMount={activeTab === "training" ? true : undefined} className={activeTab !== "training" ? "hidden" : ""}>
+                <TrainingMaterials />
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
         </Tabs>
       </main>
     </div>
