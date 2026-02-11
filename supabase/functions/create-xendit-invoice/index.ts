@@ -13,13 +13,38 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userId = claimsData.claims.sub;
+
     const xenditSecretKey = Deno.env.get('XENDIT_SECRET_KEY');
     if (!xenditSecretKey) {
       console.error('XENDIT_SECRET_KEY not configured');
       throw new Error('Payment service not configured');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -29,6 +54,27 @@ serve(async (req) => {
 
     if (!purchaseId || !amount) {
       throw new Error('Missing required fields: purchaseId and amount');
+    }
+
+    // Verify purchase exists and belongs to the authenticated user
+    const { data: purchase, error: purchaseError } = await supabase
+      .from('purchases')
+      .select('user_id')
+      .eq('id', purchaseId)
+      .single();
+
+    if (purchaseError || !purchase) {
+      return new Response(JSON.stringify({ error: 'Purchase not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (purchase.user_id !== userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: purchase does not belong to you' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Create external ID with purchase ID for tracking
@@ -81,7 +127,6 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Error updating purchase:', updateError);
-      // Don't throw - invoice was created successfully
     }
 
     return new Response(JSON.stringify({
