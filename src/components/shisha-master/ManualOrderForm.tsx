@@ -936,7 +936,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
         )}
         <Button
           onClick={handleSubmit}
-          disabled={submitting || cart.length === 0}
+          disabled={submitting || (!isEditing && cart.length === 0)}
           className="flex-1 h-12 text-base"
           size="lg"
         >
