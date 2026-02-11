@@ -70,6 +70,7 @@ serve(async (req) => {
 
       if (paymentStatus === "paid") {
         updateData.paid_at = new Date().toISOString();
+        updateData.payment_method = "doku";
       }
 
       const { error: updateError } = await supabase
@@ -84,44 +85,25 @@ serve(async (req) => {
 
       console.log(`Updated purchase ${purchaseId} to status: ${paymentStatus}`);
 
-      // Send Telegram notification ONLY when payment is confirmed
+      // Send Telegram status broadcast when payment is confirmed
       if (paymentStatus === "paid") {
         try {
-          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-          
-          // Fetch purchase details for notification
-          const { data: purchaseData } = await supabase
-            .from("purchases")
-            .select("*, profiles!purchases_user_id_fkey(room_number, email, full_name)")
-            .eq("id", purchaseId)
-            .maybeSingle();
-
-          if (purchaseData) {
-            const profile = purchaseData.profiles as { room_number?: string; email?: string; full_name?: string } | null;
-            
-            await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({
-                orderId: purchaseId,
-                roomNumber: profile?.room_number || "",
-                userEmail: profile?.email || "",
-                hookahCount: purchaseData.hookah_count,
-                totalAmount: purchaseData.amount,
-                items: purchaseData.notes ? purchaseData.notes.split(", ").map((item: string) => {
-                  const match = item.match(/^(\d+)x (.+)$/);
-                  return match ? { name: match[2], quantity: parseInt(match[1]), price: 0 } : { name: item, quantity: 1, price: 0 };
-                }) : [],
-              }),
-            });
-            console.log("Telegram notification sent for paid order");
-          }
+          // Broadcast status update to all Telegram subscribers via update-telegram-status
+          await fetch(`${supabaseUrl}/functions/v1/update-telegram-status`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              orderId: purchaseId,
+              statusType: "payment",
+              newStatus: "paid",
+            }),
+          });
+          console.log("Telegram status broadcast sent for DOKU paid order");
         } catch (telegramError) {
-          console.error("Failed to send Telegram notification:", telegramError);
+          console.error("Failed to send Telegram status broadcast:", telegramError);
           // Don't fail the webhook if notification fails
         }
       }
