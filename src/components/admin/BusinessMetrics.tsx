@@ -503,7 +503,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-purple-400/10">
                   <Heart className="w-4 h-4 text-purple-400" />
                 </div>
-                <CardLabel text="Repeat Customers" tip="Percentage of customers who ordered more than once in the period" />
+                <CardLabel text="Repeat Customers (all-time)" tip="Percentage of customers who ordered more than once across all time" />
               </div>
               <p className="text-xl font-bold">{metrics.repeatRate.toFixed(1)}%</p>
               <div className="mt-2 pt-2 border-t border-border/30">
