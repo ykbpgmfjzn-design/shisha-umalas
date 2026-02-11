@@ -62,6 +62,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.phoneRequired": "Please add your WhatsApp phone number in profile",
     "cart.customFlavors": "Desired flavors",
     "cart.customFlavorsPlaceholder": "e.g. Mint + Grape + Ice",
+    "cart.extraTitle": "Enhance your hookah?",
     
     // Navigation
     "nav.home": "Home",
@@ -575,6 +576,7 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.phoneRequired": "Укажите номер телефона WhatsApp в профиле",
     "cart.customFlavors": "Желаемые вкусы",
     "cart.customFlavorsPlaceholder": "напр. Мята + Виноград + Лёд",
+    "cart.extraTitle": "Дополнить кальян?",
     
     // Navigation
     "nav.home": "Главная",

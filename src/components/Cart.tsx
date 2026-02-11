@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
+import ExtraSuggestions from "@/components/cart/ExtraSuggestions";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, updateCustomNote, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
@@ -328,6 +329,9 @@ const Cart = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Extra suggestions when hookah is in cart */}
+                <ExtraSuggestions />
               </div>
 
               {/* Footer */}
