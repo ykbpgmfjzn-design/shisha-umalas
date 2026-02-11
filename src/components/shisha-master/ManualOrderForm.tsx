@@ -141,7 +141,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id")
-        .in("role", ["shisha_master", "admin", "owner"]);
+        .eq("role", "shisha_master");
       if (!roles || roles.length === 0) return;
       const ids = roles.map(r => r.user_id);
       const { data: profiles } = await supabase
