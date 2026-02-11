@@ -203,8 +203,16 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
 
   // Set selectedCustomer after customers are loaded for edit mode
   useEffect(() => {
-    if (editOrder?.user_id && customers.length > 0) {
+    if (!editOrder || customers.length === 0) return;
+    
+    if (editOrder.user_id) {
       const found = customers.find((c) => c.id === editOrder.user_id);
+      if (found) setSelectedCustomer(found);
+    } else if (editOrder.customer_name) {
+      // Match walk-in customer by name
+      const found = customers.find(
+        (c) => c.id.startsWith("walkin_") && c.full_name === editOrder.customer_name
+      );
       if (found) setSelectedCustomer(found);
     }
   }, [editOrder, customers]);
@@ -514,7 +522,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     <CommandList>
                       <CommandEmpty>{t("shishaMaster.form.notFound")}</CommandEmpty>
                       <CommandGroup>
-                        {filteredCustomers.slice(0, 20).map((c) => (
+                        {filteredCustomers.slice(0, 50).map((c) => (
                           <CommandItem
                             key={c.id}
                             onSelect={() => {
