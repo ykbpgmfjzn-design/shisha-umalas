@@ -12,11 +12,69 @@ serve(async (req) => {
   }
 
   try {
+    // Verify DOKU webhook signature
+    const clientId = Deno.env.get("DOKU_CLIENT_ID");
+    const secretKey = Deno.env.get("DOKU_SECRET_KEY");
+    
+    if (clientId && secretKey) {
+      const signature = req.headers.get("Signature");
+      const requestId = req.headers.get("Request-Id");
+      const requestTimestamp = req.headers.get("Request-Timestamp");
+
+      if (!signature || !requestId || !requestTimestamp) {
+        console.error("Missing DOKU signature headers");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Read body for digest computation
+      const bodyText = await req.text();
+      
+      // Compute digest (SHA-256 of body, base64 encoded)
+      const encoder = new TextEncoder();
+      const bodyData = encoder.encode(bodyText);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", bodyData);
+      const digestBase64 = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+
+      // Build component signature string per DOKU spec
+      const requestTarget = "/doku-webhook"; // notification target path
+      const componentSignature = [
+        `Client-Id:${clientId}`,
+        `Request-Id:${requestId}`,
+        `Request-Timestamp:${requestTimestamp}`,
+        `Request-Target:${requestTarget}`,
+        `Digest:${digestBase64}`
+      ].join("\n");
+
+      // Compute HMAC-SHA256
+      const keyData = encoder.encode(secretKey);
+      const key = await crypto.subtle.importKey(
+        "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      );
+      const signatureData = encoder.encode(componentSignature);
+      const hmac = await crypto.subtle.sign("HMAC", key, signatureData);
+      const expectedSignature = `HMACSHA256=${btoa(String.fromCharCode(...new Uint8Array(hmac)))}`;
+
+      if (signature !== expectedSignature) {
+        console.error("Invalid DOKU webhook signature");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Parse body from already-read text
+      var payload = JSON.parse(bodyText);
+    } else {
+      var payload = await req.json();
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload = await req.json();
     console.log("DOKU webhook received:", JSON.stringify(payload));
 
     // DOKU sends different notification types
