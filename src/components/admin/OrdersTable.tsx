@@ -443,6 +443,11 @@ const OrdersTable = ({
                   <div className="flex gap-2 flex-wrap">
                     {getPaymentBadge(order.payment_status)}
                     {getDeliveryBadge(order.delivery_status)}
+                    {(order as any).payment_method && (order as any).payment_method !== "cash" && (
+                      <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30">
+                        {(order as any).payment_method === "edc_machine" ? "💳 EDC" : "🏦 Transfer"}
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="flex gap-2 flex-wrap">
