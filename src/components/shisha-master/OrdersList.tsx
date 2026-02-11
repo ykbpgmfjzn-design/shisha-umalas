@@ -43,6 +43,7 @@ interface OrderWithProfile {
   user_id: string;
   customer_name: string | null;
   customer_photo_url: string | null;
+  shisha_master_name: string | null;
   profile: {
     full_name: string | null;
     email: string | null;
@@ -181,15 +182,17 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
 
     const allOrders = [...(activeRes.data || []), ...(historyRes.data || [])];
 
-    // Batch fetch all needed profiles in one query
+    // Batch fetch all needed profiles in one query (including shisha masters)
     const userIds = [...new Set(allOrders.map(o => o.user_id).filter(Boolean))];
+    const masterIds = [...new Set(allOrders.map(o => o.shisha_master_id).filter(Boolean))];
+    const allProfileIds = [...new Set([...userIds, ...masterIds])];
     let profileMap = new Map<string, { full_name: string | null; email: string | null; room_number: string | null; loyalty_level: number }>();
     
-    if (userIds.length > 0) {
+    if (allProfileIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, email, room_number, loyalty_level")
-        .in("id", userIds);
+        .in("id", allProfileIds);
       if (profiles) {
         profiles.forEach(p => profileMap.set(p.id, p));
       }
@@ -198,6 +201,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     const mapOrder = (order: any): OrderWithProfile => ({
       ...order,
       profile: order.user_id ? profileMap.get(order.user_id) || null : null,
+      shisha_master_name: order.shisha_master_id ? (profileMap.get(order.shisha_master_id)?.full_name || null) : null,
     });
 
     const activeWithProfiles = (activeRes.data || []).map(mapOrder);
@@ -623,6 +627,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                           {order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}
                           {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
                         </p>
+                        {order.shisha_master_name && (
+                          <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                            <ChefHat className="h-3 w-3 text-primary" />
+                            {order.shisha_master_name}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
