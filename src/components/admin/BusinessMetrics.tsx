@@ -56,7 +56,7 @@ interface ExpenseData {
   history: ExpenseSnapshot[];
 }
 
-type Period = "week" | "month" | "quarter" | "year";
+type Period = "week" | "month" | "this_month" | "last_month" | "quarter" | "year";
 
 interface BusinessMetricsProps {
   purchases: PurchaseWithProfile[];
@@ -64,7 +64,7 @@ interface BusinessMetricsProps {
   totalUsers: number;
 }
 
-function getPeriodRange(period: Period): { start: Date; prevStart: Date; prevEnd: Date; label: string } {
+function getPeriodRange(period: Period): { start: Date; end?: Date; prevStart: Date; prevEnd: Date; label: string } {
   const now = new Date();
   const start = new Date(now);
   const prevStart = new Date(now);
@@ -81,6 +81,20 @@ function getPeriodRange(period: Period): { start: Date; prevStart: Date; prevEnd
       prevEnd.setTime(start.getTime());
       prevStart.setMonth(start.getMonth() - 1);
       return { start, prevStart, prevEnd, label: "Last 30 days" };
+    case "this_month": {
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      return { start: thisMonthStart, prevStart: prevMonthStart, prevEnd: prevMonthEnd, label: monthName };
+    }
+    case "last_month": {
+      const lmStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lmEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      const prevLmStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      const monthName = lmStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      return { start: lmStart, end: lmEnd, prevStart: prevLmStart, prevEnd: new Date(lmStart.getTime() - 1), label: monthName };
+    }
     case "quarter":
       start.setMonth(now.getMonth() - 3);
       prevEnd.setTime(start.getTime());
@@ -258,15 +272,16 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const metrics = useMemo(() => {
     const now = new Date();
     const range = getPeriodRange(period);
-    const { start: periodStart, prevStart, prevEnd } = range;
+    const { start: periodStart, end: periodEnd, prevStart, prevEnd } = range;
 
     // Filter by period
-    const periodPurchases = purchases.filter(p => new Date(p.created_at) >= periodStart);
+    const inPeriod = (d: Date) => d >= periodStart && (!periodEnd || d <= periodEnd);
+    const periodPurchases = purchases.filter(p => inPeriod(new Date(p.created_at)));
     const prevPurchases = purchases.filter(p => {
       const d = new Date(p.created_at);
       return d >= prevStart && d < prevEnd;
     });
-    const periodFeedbacks = feedbacks.filter(f => new Date(f.created_at) >= periodStart);
+    const periodFeedbacks = feedbacks.filter(f => inPeriod(new Date(f.created_at)));
     const prevFeedbacks = feedbacks.filter(f => {
       const d = new Date(f.created_at);
       return d >= prevStart && d < prevEnd;
@@ -450,11 +465,13 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           <span className="text-sm text-muted-foreground">{metrics.periodLabel}</span>
         </div>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <TabsList className="bg-card/60 backdrop-blur-xl">
-            <TabsTrigger value="week" className="text-xs px-3">Week</TabsTrigger>
-            <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
-            <TabsTrigger value="quarter" className="text-xs px-3">Quarter</TabsTrigger>
-            <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
+          <TabsList className="bg-card/60 backdrop-blur-xl flex-wrap h-auto gap-0.5">
+            <TabsTrigger value="week" className="text-xs px-2.5">Week</TabsTrigger>
+            <TabsTrigger value="this_month" className="text-xs px-2.5">This Month</TabsTrigger>
+            <TabsTrigger value="last_month" className="text-xs px-2.5">Last Month</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs px-2.5">30 Days</TabsTrigger>
+            <TabsTrigger value="quarter" className="text-xs px-2.5">Quarter</TabsTrigger>
+            <TabsTrigger value="year" className="text-xs px-2.5">Year</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
