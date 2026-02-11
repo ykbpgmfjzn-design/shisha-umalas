@@ -821,6 +821,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                           {order.profile.room_number}
                         </Badge>
                       )}
+                      {order.shisha_master_name && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <ChefHat className="h-3 w-3 text-primary" />
+                          {order.shisha_master_name}
+                        </span>
+                      )}
                     </div>
                     
                     {/* Notes */}
