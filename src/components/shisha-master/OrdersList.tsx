@@ -390,6 +390,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       amount: order.amount,
       notes: order.notes,
       payment_status: order.payment_status,
+      payment_method: (order as any).payment_method || "cash",
       delivery_status: order.delivery_status,
       created_at: order.created_at,
     });

@@ -245,6 +245,7 @@ export type Database = {
           id: string
           notes: string | null
           paid_at: string | null
+          payment_method: string | null
           payment_status: string | null
           telegram_chat_id: number | null
           telegram_message_id: number | null
@@ -266,6 +267,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
@@ -287,6 +289,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null

@@ -70,6 +70,7 @@ export interface EditOrderData {
   amount: number | null;
   notes: string | null;
   payment_status: string | null;
+  payment_method?: string | null;
   delivery_status: string;
   created_at?: string;
 }
@@ -120,6 +121,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const [customerPhotoUrl, setCustomerPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("pending");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
   const [orderDate, setOrderDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -150,6 +152,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       setCart(parseCartFromNotes(editOrder.notes, dbMenuItems));
       setNotes(parseExtraNotesFromNotes(editOrder.notes));
       setPaymentStatus(editOrder.payment_status || "pending");
+      setPaymentMethod(editOrder.payment_method || "cash");
       setDeliveryStatus(editOrder.delivery_status || "pending");
       setCustomerName(editOrder.customer_name || "");
       // Format created_at for datetime-local input
@@ -258,6 +261,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     setSelectedCustomer(null);
     setCustomerPhotoUrl(null);
     setPaymentStatus("pending");
+    setPaymentMethod("cash");
     setDeliveryStatus("pending");
     setOrderDate("");
   };
@@ -328,6 +332,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       amount: totalAmount,
       notes: fullNotes,
       payment_status: paymentStatus,
+      payment_method: paymentMethod,
       delivery_status: deliveryStatus,
       customer_photo_url: customerPhotoUrl,
       created_by: currentUser?.id || null,
@@ -637,6 +642,21 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   <SelectItem value="paid">✅ {t("shishaMaster.form.paid")}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">💵 Cash</SelectItem>
+                  <SelectItem value="edc_machine">💳 EDC Machine</SelectItem>
+                  <SelectItem value="bank_transfer">🏦 Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Order Date */}
@@ -720,6 +740,8 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
               )}
             </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">{t("shishaMaster.form.delivery")}</Label>
               <Select value={deliveryStatus} onValueChange={setDeliveryStatus}>
