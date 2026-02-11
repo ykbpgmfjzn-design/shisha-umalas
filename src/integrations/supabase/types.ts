@@ -247,6 +247,7 @@ export type Database = {
           paid_at: string | null
           payment_method: string | null
           payment_status: string | null
+          shisha_master_id: string | null
           telegram_chat_id: number | null
           telegram_message_id: number | null
           user_id: string | null
@@ -269,6 +270,7 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          shisha_master_id?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
           user_id?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          shisha_master_id?: string | null
           telegram_chat_id?: number | null
           telegram_message_id?: number | null
           user_id?: string | null

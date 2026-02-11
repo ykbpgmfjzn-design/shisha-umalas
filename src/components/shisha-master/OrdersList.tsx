@@ -391,6 +391,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       notes: order.notes,
       payment_status: order.payment_status,
       payment_method: (order as any).payment_method || "cash",
+      shisha_master_id: (order as any).shisha_master_id || null,
       delivery_status: order.delivery_status,
       created_at: order.created_at,
     });

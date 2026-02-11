@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { motion } from "framer-motion";
 import { 
@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,28 @@ const OrdersTable = ({
   const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
+  const [masterNames, setMasterNames] = useState<Record<string, string>>({});
+
+  // Fetch shisha master names
+  useEffect(() => {
+    const masterIds = [...new Set(orders.map(o => (o as any).shisha_master_id).filter(Boolean))];
+    if (masterIds.length === 0) return;
+    const newIds = masterIds.filter(id => !masterNames[id]);
+    if (newIds.length === 0) return;
+    supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", newIds)
+      .then(({ data }) => {
+        if (data) {
+          setMasterNames(prev => {
+            const updated = { ...prev };
+            data.forEach(p => { updated[p.id] = p.full_name || p.email || "Unknown"; });
+            return updated;
+          });
+        }
+      });
+  }, [orders]);
 
   useEffect(() => {
     const newUpdated = new Set<string>();
@@ -230,6 +253,7 @@ const OrdersTable = ({
       notes: order.notes,
       payment_status: order.payment_status,
       payment_method: (order as any).payment_method || "cash",
+      shisha_master_id: (order as any).shisha_master_id || null,
       delivery_status: order.delivery_status,
       created_at: order.created_at,
     });
@@ -431,6 +455,13 @@ const OrdersTable = ({
                       </div>
                     )}
                   </div>
+
+                  {(order as any).shisha_master_id && masterNames[(order as any).shisha_master_id] && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <ChefHat className="w-3 h-3" />
+                      <span>{masterNames[(order as any).shisha_master_id]}</span>
+                    </div>
+                  )}
 
                   {order.notes && (
                     <p className="text-xs text-muted-foreground mt-2 italic">

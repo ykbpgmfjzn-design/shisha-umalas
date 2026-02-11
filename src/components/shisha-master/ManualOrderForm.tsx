@@ -71,6 +71,7 @@ export interface EditOrderData {
   notes: string | null;
   payment_status: string | null;
   payment_method?: string | null;
+  shisha_master_id?: string | null;
   delivery_status: string;
   created_at?: string;
 }
@@ -123,6 +124,8 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const [paymentStatus, setPaymentStatus] = useState("pending");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
+  const [shishaMasterId, setShishaMasterId] = useState<string | null>(null);
+  const [shishaMasters, setShishaMasters] = useState<{id: string; name: string}[]>([]);
   const [orderDate, setOrderDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(menuItems);
@@ -130,6 +133,34 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   // Load menu items from DB
   useEffect(() => {
     fetchMenuItemsFromDb().then(setDbMenuItems);
+  }, []);
+
+  // Load shisha masters
+  useEffect(() => {
+    const fetchMasters = async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["shisha_master", "admin", "owner"]);
+      if (!roles || roles.length === 0) return;
+      const ids = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      if (profiles) {
+        setShishaMasters(profiles.map(p => ({
+          id: p.id,
+          name: p.full_name || p.email || "Unknown",
+        })));
+      }
+      // Auto-select current user if they are a shisha master
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && ids.includes(user.id) && !editOrder) {
+        setShishaMasterId(user.id);
+      }
+    };
+    fetchMasters();
   }, []);
 
   // Group menu items by strength (include custom item)
@@ -153,6 +184,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       setNotes(parseExtraNotesFromNotes(editOrder.notes));
       setPaymentStatus(editOrder.payment_status || "pending");
       setPaymentMethod(editOrder.payment_method || "cash");
+      setShishaMasterId(editOrder.shisha_master_id || null);
       setDeliveryStatus(editOrder.delivery_status || "pending");
       setCustomerName(editOrder.customer_name || "");
       // Format created_at for datetime-local input
@@ -263,6 +295,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     setPaymentStatus("pending");
     setPaymentMethod("cash");
     setDeliveryStatus("pending");
+    setShishaMasterId(null);
     setOrderDate("");
   };
 
@@ -336,6 +369,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
       delivery_status: deliveryStatus,
       customer_photo_url: customerPhotoUrl,
       created_by: currentUser?.id || null,
+      shisha_master_id: shishaMasterId,
     };
 
     // Set custom order date if provided
@@ -654,6 +688,21 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   <SelectItem value="cash">💵 Cash</SelectItem>
                   <SelectItem value="edc_machine">💳 EDC Machine</SelectItem>
                   <SelectItem value="bank_transfer">🏦 Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">👨‍🍳 Shisha Master</Label>
+              <Select value={shishaMasterId || "none"} onValueChange={(v) => setShishaMasterId(v === "none" ? null : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select master" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Not assigned</SelectItem>
+                  {shishaMasters.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
