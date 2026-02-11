@@ -282,8 +282,13 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
       : periodRev > 0 ? 100 : 0;
 
     // --- Average Revenue Per Customer ---
-    // Use user_id or customer_name as unique key (null user_ids with no name each count separately)
-    const getCustomerKey = (p: PurchaseWithProfile) => p.user_id || p.customer_name || `anon_${p.id}`;
+    // Normalize name same way as TopCustomers: strip Mr./Mrs./Miss prefix, lowercase, trim
+    const normalizeName = (name: string) => name.toLowerCase().replace(/^(mr\.?|mrs\.?|miss)\s*/i, "").trim();
+    const getCustomerKey = (p: PurchaseWithProfile) => {
+      if (p.user_id) return p.user_id;
+      const name = p.profile?.full_name || p.customer_name;
+      return name ? normalizeName(name) : `anon_${p.id}`;
+    };
     const uniquePaidCustomers = new Set(paid.map(getCustomerKey)).size;
     const avgRevenuePerCustomer = uniquePaidCustomers > 0 ? periodRev / uniquePaidCustomers : 0;
 
