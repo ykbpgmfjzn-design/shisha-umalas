@@ -290,9 +290,9 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
     // --- Avg check (per order) ---
     const avgCheck = paid.length > 0 ? periodRev / paid.length : 0;
 
-    // --- Repeat Customer Rate (within period) ---
+    // --- Repeat Customer Rate (all-time, consistent with Top 5 Customers) ---
     const customerOrderCount = new Map<string, number>();
-    for (const p of periodPurchases) {
+    for (const p of purchases) {
       const key = getCustomerKey(p);
       customerOrderCount.set(key, (customerOrderCount.get(key) || 0) + 1);
     }
