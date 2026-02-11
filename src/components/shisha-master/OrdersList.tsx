@@ -546,9 +546,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
                           {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
                         </Badge>
-                        {(order as any).payment_method && (order as any).payment_method !== "cash" && (
+                        {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
                           <Badge variant="outline" className="text-xs">
-                            {(order as any).payment_method === "edc_machine" ? "💳 EDC" : "🏦 Transfer"}
+                            {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
+                              : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
+                              : (order as any).payment_method === "doku" ? "🔗 DOKU"
+                              : (order as any).payment_method}
                           </Badge>
                         )}
                       </div>
@@ -653,12 +656,15 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         >
                           {isPreparing ? (t("shishaMaster.orders.preparing") || "Preparing") : (t("shishaMaster.orders.waiting") || "Waiting")}
                         </Badge>
-                        {(order as any).payment_method && (order as any).payment_method !== "cash" && (
+                        {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
                           <Badge 
                             variant="outline"
                             className="text-[10px] px-1.5 py-0.5 justify-center"
                           >
-                            {(order as any).payment_method === "edc_machine" ? "💳 EDC" : "🏦 Bank"}
+                            {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
+                              : (order as any).payment_method === "bank_transfer" ? "🏦 Bank"
+                              : (order as any).payment_method === "doku" ? "🔗 DOKU"
+                              : (order as any).payment_method}
                           </Badge>
                         )}
                       </div>
