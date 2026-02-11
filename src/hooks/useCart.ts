@@ -12,6 +12,7 @@ export interface CartItem {
   strength?: string;
   isSignature?: boolean;
   itemType: ItemType;
+  customNote?: string;
 }
 
 interface CartContextType {
@@ -19,6 +20,7 @@ interface CartContextType {
   addItem: (item: Omit<CartItem, "quantity">, openCart?: boolean) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateCustomNote: (id: string, note: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -150,6 +152,14 @@ export const useCartState = (): CartContextType => {
     });
   }, []);
 
+  const updateCustomNote = useCallback((id: string, note: string) => {
+    setItems((prev) => {
+      const newItems = prev.map((item) => (item.id === id ? { ...item, customNote: note } : item));
+      localStorage.setItem('shisha-cart', JSON.stringify(newItems));
+      return newItems;
+    });
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
     localStorage.setItem('shisha-cart', JSON.stringify([]));
@@ -166,6 +176,7 @@ export const useCartState = (): CartContextType => {
     addItem,
     removeItem,
     updateQuantity,
+    updateCustomNote,
     clearCart,
     totalItems,
     totalPrice,

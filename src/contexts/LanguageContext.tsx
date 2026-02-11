@@ -60,6 +60,8 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.submit": "Send Order",
     "cart.payment": "Payment",
     "cart.phoneRequired": "Please add your WhatsApp phone number in profile",
+    "cart.customFlavors": "Desired flavors",
+    "cart.customFlavorsPlaceholder": "e.g. Mint + Grape + Ice",
     
     // Navigation
     "nav.home": "Home",
@@ -571,6 +573,8 @@ const translations: Record<Language, Record<string, string>> = {
     "cart.submit": "Отправить заказ",
     "cart.payment": "Оплата",
     "cart.phoneRequired": "Укажите номер телефона WhatsApp в профиле",
+    "cart.customFlavors": "Желаемые вкусы",
+    "cart.customFlavorsPlaceholder": "напр. Мята + Виноград + Лёд",
     
     // Navigation
     "nav.home": "Главная",
