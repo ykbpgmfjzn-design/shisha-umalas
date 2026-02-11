@@ -31,7 +31,7 @@ import {
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Plus, Minus, User, Search, ShoppingCart, Check, Wind, Save, Camera, ImagePlus, X, Loader2, CalendarIcon } from "lucide-react";
-import { menuItems, MenuItem } from "@/data/menuItems";
+import { menuItems, MenuItem, fetchMenuItemsFromDb } from "@/data/menuItems";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -111,16 +111,22 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
   const [orderDate, setOrderDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [dbMenuItems, setDbMenuItems] = useState<MenuItem[]>(menuItems);
+
+  // Load menu items from DB
+  useEffect(() => {
+    fetchMenuItemsFromDb().then(setDbMenuItems);
+  }, []);
 
   // Group menu items by strength
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
-    menuItems.forEach((item) => {
+    dbMenuItems.forEach((item) => {
       if (!groups[item.strength]) groups[item.strength] = [];
       groups[item.strength].push(item);
     });
     return groups;
-  }, []);
+  }, [dbMenuItems]);
 
   useEffect(() => {
     fetchCustomers();
