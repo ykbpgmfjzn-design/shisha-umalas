@@ -157,6 +157,7 @@ serve(async (req) => {
               orderId: purchaseId,
               statusType: "payment",
               newStatus: "paid",
+              source: "doku_webhook",
             }),
           });
           console.log("Telegram status broadcast sent for DOKU paid order");
