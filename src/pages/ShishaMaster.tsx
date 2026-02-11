@@ -111,22 +111,31 @@ function ShishaMasterContent() {
             </TabsList>
           </div>
 
-          {["active", "new-order", "history", "leaderboard", "training"].map((tab) => (
-            <TabsContent key={tab} value={tab} forceMount>
-              <motion.div
-                initial={false}
-                animate={{ opacity: activeTab === tab ? 1 : 0, y: activeTab === tab ? 0 : 8 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className={activeTab !== tab ? "hidden" : ""}
-              >
-                {tab === "active" && <OrdersList showHistory={false} />}
-                {tab === "new-order" && <ManualOrderForm />}
-                {tab === "history" && <OrdersList showHistory={true} />}
-                {tab === "leaderboard" && <Leaderboard />}
-                {tab === "training" && <TrainingMaterials />}
-              </motion.div>
-            </TabsContent>
-          ))}
+          <TabsContent value="active">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <OrdersList showHistory={false} />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="new-order">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <ManualOrderForm />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="history">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <OrdersList showHistory={true} />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="leaderboard">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <Leaderboard />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="training">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <TrainingMaterials />
+            </motion.div>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
