@@ -10,6 +10,7 @@ export interface UserRole {
   id: string;
   user_id: string;
   role: AppRole;
+  display_name?: string | null;
 }
 
 export interface PurchaseWithProfile {

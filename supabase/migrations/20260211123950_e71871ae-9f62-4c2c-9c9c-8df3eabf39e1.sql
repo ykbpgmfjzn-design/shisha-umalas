@@ -1,0 +1,1 @@
+ALTER TABLE public.user_roles ADD COLUMN display_name TEXT;

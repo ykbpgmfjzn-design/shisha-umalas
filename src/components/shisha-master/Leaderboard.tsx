@@ -25,10 +25,10 @@ export default function Leaderboard() {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
 
-      // Get all shisha_master and admin roles
+      // Get all shisha_master roles with display_name
       const { data: roles } = await supabase
         .from("user_roles")
-        .select("user_id, role")
+        .select("user_id, role, display_name")
         .eq("role", "shisha_master");
 
       if (!roles || roles.length === 0) {
@@ -37,6 +37,7 @@ export default function Leaderboard() {
       }
 
       const masterUserIds = [...new Set(roles.map(r => r.user_id))];
+      const displayNameMap = new Map(roles.map(r => [r.user_id, r.display_name]));
 
       // Get profiles for these users
       const { data: profiles } = await supabase
@@ -72,7 +73,7 @@ export default function Leaderboard() {
         const stats = statsMap.get(uid) || { count: 0, revenue: 0 };
         return {
           userId: uid,
-          name: profile?.full_name || profile?.email || "Unknown",
+          name: displayNameMap.get(uid) || profile?.full_name || profile?.email || "Unknown",
           avatarUrl: profile?.avatar_url || null,
           orderCount: stats.count,
           totalRevenue: stats.revenue,

@@ -28,18 +28,19 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Profile } from "@/hooks/useProfile";
-import type { PurchaseWithProfile } from "@/hooks/useAdmin";
+import type { PurchaseWithProfile, UserRole } from "@/hooks/useAdmin";
 
 interface UserDetailsProps {
   user: Profile | null;
   purchases: PurchaseWithProfile[];
   isAdmin: boolean;
+  userRoles?: UserRole[];
   onAddPurchase: () => void;
   onUserUpdated?: () => void;
   onUserDeleted?: () => void;
 }
 
-const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, onUserDeleted }: UserDetailsProps) => {
+const UserDetails = ({ user, purchases, isAdmin, userRoles = [], onAddPurchase, onUserUpdated, onUserDeleted }: UserDetailsProps) => {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,7 +52,11 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, o
     room_number: "",
     loyalty_level: 1,
     total_hookahs_ordered: 0,
+    staff_display_name: "",
   });
+
+  const isStaff = user ? userRoles.some(r => r.user_id === user.id && ["shisha_master", "admin", "owner", "accounting"].includes(r.role)) : false;
+  const staffRole = user ? userRoles.find(r => r.user_id === user.id && r.role === "shisha_master") || userRoles.find(r => r.user_id === user.id) : null;
 
   useEffect(() => {
     if (user) {
@@ -61,10 +66,11 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, o
         room_number: user.room_number || "",
         loyalty_level: user.loyalty_level,
         total_hookahs_ordered: user.total_hookahs_ordered,
+        staff_display_name: staffRole?.display_name || "",
       });
       setEditing(false);
     }
-  }, [user]);
+  }, [user, staffRole?.display_name]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -90,6 +96,14 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, o
         total_hookahs_ordered: editForm.total_hookahs_ordered,
       })
       .eq("id", user.id);
+
+    // Update staff display_name if this is a staff member
+    if (!error && isStaff) {
+      await supabase
+        .from("user_roles")
+        .update({ display_name: editForm.staff_display_name || null })
+        .eq("user_id", user.id);
+    }
 
     setSaving(false);
 
@@ -202,6 +216,7 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, o
                     room_number: user.room_number || "",
                     loyalty_level: user.loyalty_level,
                     total_hookahs_ordered: user.total_hookahs_ordered,
+                    staff_display_name: staffRole?.display_name || "",
                   });
                 }}
                 className="text-muted-foreground"
@@ -275,6 +290,17 @@ const UserDetails = ({ user, purchases, isAdmin, onAddPurchase, onUserUpdated, o
               />
             </div>
           </div>
+          {isStaff && (
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Staff Display Name</label>
+              <Input
+                value={editForm.staff_display_name}
+                onChange={(e) => setEditForm(f => ({ ...f, staff_display_name: e.target.value }))}
+                placeholder="Name shown in orders & leaderboard"
+                className="bg-background/50"
+              />
+            </div>
+          )}
         </div>
       )}
 

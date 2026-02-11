@@ -557,8 +557,9 @@ const AdminContent = () => {
                 user={selectedUser}
                 purchases={userPurchases}
                 isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                userRoles={allUserRoles}
                 onAddPurchase={() => setShowAddPurchase(true)}
-                onUserUpdated={() => fetchAllProfiles()}
+                onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
                 onUserDeleted={() => {
                   setSelectedUser(null);
                   fetchAllProfiles();
@@ -612,8 +613,9 @@ const AdminContent = () => {
                 user={selectedUser}
                 purchases={userPurchases}
                 isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                userRoles={allUserRoles}
                 onAddPurchase={() => setShowAddPurchase(true)}
-                onUserUpdated={() => fetchAllProfiles()}
+                onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
                 onUserDeleted={() => {
                   setSelectedUser(null);
                   fetchAllProfiles();
