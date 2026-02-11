@@ -4,9 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -23,13 +21,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X, CalendarIcon, Filter } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import ManualOrderForm, { type EditOrderData } from "./ManualOrderForm";
 import PhotoLightbox from "@/components/PhotoLightbox";
+import OrdersTable from "@/components/admin/OrdersTable";
+import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
 interface OrderWithProfile {
   id: string;
@@ -71,8 +71,6 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
-  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(new Date());
-  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(new Date());
   const [deletePhotoOrderId, setDeletePhotoOrderId] = useState<string | null>(null);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const photoInputRef = React.useRef<HTMLInputElement>(null);
@@ -403,22 +401,23 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     setEditSheetOpen(true);
   };
 
-  const filteredHistoryOrders = useMemo(() => {
-    if (!filterDateFrom && !filterDateTo) return historyOrders;
-    return historyOrders.filter((order) => {
-      const orderDay = new Date(order.created_at);
-      const orderDateOnly = new Date(orderDay.getFullYear(), orderDay.getMonth(), orderDay.getDate());
-      if (filterDateFrom) {
-        const from = new Date(filterDateFrom.getFullYear(), filterDateFrom.getMonth(), filterDateFrom.getDate());
-        if (orderDateOnly < from) return false;
-      }
-      if (filterDateTo) {
-        const to = new Date(filterDateTo.getFullYear(), filterDateTo.getMonth(), filterDateTo.getDate());
-        if (orderDateOnly > to) return false;
-      }
-      return true;
-    });
-  }, [historyOrders, filterDateFrom, filterDateTo]);
+  // Convert history orders to PurchaseWithProfile format for OrdersTable
+  const historyAsPurchases: PurchaseWithProfile[] = useMemo(() => {
+    return historyOrders.map(order => ({
+      ...order,
+      discount_applied: null,
+      free_drink_used: null,
+      free_snack_used: null,
+      created_by: null,
+      xendit_invoice_url: null,
+      profile: order.profile ? {
+        email: order.profile.email,
+        full_name: order.profile.full_name,
+        room_number: order.profile.room_number,
+        guest_type: "guest" as string,
+      } : undefined,
+    }));
+  }, [historyOrders]);
 
   if (loading) {
     return (
@@ -428,7 +427,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     );
   }
 
-  const orders = showHistory ? filteredHistoryOrders : activeOrders;
+  const orders = showHistory ? historyOrders : activeOrders;
 
   // Empty state (only for active orders, history handles its own)
   if (!showHistory && orders.length === 0) {
@@ -525,160 +524,28 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     </>
   );
 
-  // History view - simple cards with date filter
+  // History view - use shared OrdersTable component (same as admin)
   if (showHistory) {
+    const handleHistoryPaymentUpdate = async (id: string, status: string) => {
+      await handleMarkPaid(id);
+    };
+    const handleHistoryDeliveryUpdate = async (id: string, status: string) => {
+      if (status === "delivered") await handleMarkDelivered(id);
+      else if (status === "preparing") await handleMarkPreparing(id);
+      else if (status === "cancelled") {
+        setSelectedOrderId(id);
+        setCancelDialogOpen(true);
+      }
+    };
     return (
       <>
-        <div className="space-y-3">
-          {/* Date range filter */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("gap-2", filterDateFrom && "border-primary text-primary")}>
-                    <CalendarIcon className="h-4 w-4" />
-                    {filterDateFrom ? format(filterDateFrom, "dd.MM.yyyy") : t("shishaMaster.orders.fromDate") || "From"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
-                  <Calendar
-                    mode="single"
-                    selected={filterDateFrom}
-                    onSelect={(date) => {
-                      setFilterDateFrom(date);
-                      if (date && filterDateTo && date > filterDateTo) {
-                        setFilterDateTo(date);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <span className="text-muted-foreground text-sm">—</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("gap-2", filterDateTo && "border-primary text-primary")}>
-                    <CalendarIcon className="h-4 w-4" />
-                    {filterDateTo ? format(filterDateTo, "dd.MM.yyyy") : t("shishaMaster.orders.toDate") || "To"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
-                  <Calendar
-                    mode="single"
-                    selected={filterDateTo}
-                    onSelect={(date) => {
-                      setFilterDateTo(date);
-                      if (date && filterDateFrom && date < filterDateFrom) {
-                        setFilterDateFrom(date);
-                      }
-                    }}
-                    disabled={(date) => filterDateFrom ? date < filterDateFrom : false}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {(filterDateFrom || filterDateTo) && (
-                <Button variant="ghost" size="sm" onClick={() => { setFilterDateFrom(undefined); setFilterDateTo(undefined); }} className="gap-1 text-muted-foreground">
-                  <X className="h-3.5 w-3.5" />
-                  Reset
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground ml-auto">
-                {filteredHistoryOrders.length} {t("shishaMaster.orders.ordersCount")}
-              </span>
-            </div>
-          </div>
-
-          {filteredHistoryOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Wind className="h-12 w-12 mb-3 opacity-30" />
-              <p>{t("shishaMaster.orders.noOrdersForDate") || "No orders for this date"}</p>
-            </div>
-          ) : (
-          <div className="grid gap-3">
-          {filteredHistoryOrders.map((order) => {
-            const isDelivered = order.delivery_status === "delivered";
-            const isPaid = order.payment_status?.toLowerCase() === "paid";
-            
-            return (
-              <Card key={order.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${isDelivered ? "bg-primary/10" : "bg-destructive/10"}`}>
-                        {order.customer_photo_url ? (
-                          <img loading="lazy" src={order.customer_photo_url} alt="" className="h-5 w-5 rounded-full object-cover cursor-pointer" onClick={() => setLightboxPhoto(order.customer_photo_url)} />
-                        ) : isDelivered ? (
-                          <CheckCircle className="h-5 w-5 text-primary" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-destructive" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {order.hookah_count}x Hookah
-                          {order.amount && <span className="text-muted-foreground ml-2">• Rp {order.amount.toLocaleString()}</span>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.profile?.full_name || order.profile?.email || order.customer_name || (t("admin.guest") || "Guest")}
-                          {order.profile?.room_number && <span> • Room {order.profile.room_number}</span>}
-                        </p>
-                        {order.shisha_master_name && (
-                          <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                            <ChefHat className="h-3 w-3 text-primary" />
-                            {order.shisha_master_name}
-                          </p>
-                        )}
-                        {order.notes && (
-                          <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
-                            {order.notes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="flex gap-1.5 justify-end mb-1 flex-wrap">
-                          <Badge variant={isPaid ? "default" : "secondary"} className="text-xs">
-                            {isPaid ? (t("admin.paid") || "Paid") : (t("admin.pending") || "Pending")}
-                          </Badge>
-                          <Badge variant={isDelivered ? "default" : "destructive"} className="text-xs">
-                            {isDelivered ? (t("history.delivered") || "Delivered") : (t("history.cancelled") || "Cancelled")}
-                          </Badge>
-                          {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
-                            <Badge variant="outline" className="text-xs">
-                              {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
-                                : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
-                                : (order as any).payment_method === "doku" ? "🔗 DOKU"
-                                : (order as any).payment_method}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {order.paid_at && format(new Date(order.paid_at), "dd.MM.yyyy HH:mm")}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => openEditSheet(order)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-          </div>
-          )}
-        </div>
+        <OrdersTable
+          orders={historyAsPurchases}
+          onUpdatePaymentStatus={handleHistoryPaymentUpdate}
+          onUpdateDeliveryStatus={handleHistoryDeliveryUpdate}
+          onOrderEdited={fetchOrders}
+          title="All Orders"
+        />
         {sharedModals}
       </>
     );
