@@ -633,6 +633,11 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                             {order.shisha_master_name}
                           </p>
                         )}
+                        {order.notes && (
+                          <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+                            {order.notes}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
