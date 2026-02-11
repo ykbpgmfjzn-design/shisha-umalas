@@ -383,7 +383,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   };
 
   const openEditSheet = (order: OrderWithProfile) => {
-    setEditingOrder({
+    console.log("[DEBUG] openEditSheet called for order:", order.id, "showHistory:", showHistory);
+    const editData = {
       id: order.id,
       user_id: order.user_id,
       customer_name: order.customer_name,
@@ -395,8 +396,11 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       shisha_master_id: (order as any).shisha_master_id || null,
       delivery_status: order.delivery_status,
       created_at: order.created_at,
-    });
+    };
+    console.log("[DEBUG] editData:", editData);
+    setEditingOrder(editData);
     setEditSheetOpen(true);
+    console.log("[DEBUG] editSheetOpen set to true");
   };
 
   const filteredHistoryOrders = useMemo(() => {
