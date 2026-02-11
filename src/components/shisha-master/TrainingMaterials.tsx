@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  Video, FileText, Plus, Trash2, 
+  Video, FileText, Plus, Trash2, Pencil,
   ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -89,6 +89,7 @@ export default function TrainingMaterials() {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<TrainingMaterial | null>(null);
   const [saving, setSaving] = useState(false);
@@ -145,6 +146,49 @@ export default function TrainingMaterials() {
       fetchMaterials();
     } catch (error: any) {
       toast.error(error.message || "Error adding material");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEdit = (material: TrainingMaterial) => {
+    setSelectedMaterial(material);
+    setForm({
+      title: material.title,
+      description: material.description || "",
+      url: material.file_url,
+      language: material.language,
+      category: material.category || "general",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!selectedMaterial || !form.title || !form.url) {
+      toast.error("Please fill in the title and URL");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("training_materials")
+        .update({
+          title: form.title,
+          description: form.description || null,
+          file_url: form.url,
+          file_type: detectFileType(form.url),
+          language: form.language,
+          category: form.category,
+        })
+        .eq("id", selectedMaterial.id);
+      if (error) throw error;
+      toast.success("Material updated");
+      setEditDialogOpen(false);
+      setSelectedMaterial(null);
+      setForm({ title: "", description: "", url: "", language: "en", category: "general" });
+      fetchMaterials();
+    } catch (error: any) {
+      toast.error(error.message || "Error updating material");
     } finally {
       setSaving(false);
     }
@@ -233,6 +277,16 @@ export default function TrainingMaterials() {
                   <a href={material.file_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                   </a>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => openEdit(material)}
+                >
+                  <Pencil className="h-4 w-4" />
                 </Button>
               )}
               {isAdmin && (
@@ -381,6 +435,74 @@ export default function TrainingMaterials() {
                 <Plus className="h-4 w-4 mr-2" />
               )}
               {saving ? "Saving..." : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) setSelectedMaterial(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Material</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Language</label>
+              <Tabs value={form.language} onValueChange={(v) => setForm({ ...form, language: v })}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="en" className="flex-1">🇬🇧 English</TabsTrigger>
+                  <TabsTrigger value="id" className="flex-1">🇮🇩 Indonesian</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.labelEn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">URL (YouTube, Google Drive, etc.)</label>
+              <Input
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+              />
+              {form.url && getYouTubeId(form.url) && (
+                <p className="text-xs text-primary flex items-center gap-1">
+                  <Play className="h-3 w-3" /> YouTube video detected
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description (optional)</label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEdit} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
+              {saving ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
