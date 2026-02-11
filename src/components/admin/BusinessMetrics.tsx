@@ -793,45 +793,6 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
           </Card>
         </motion.div>
 
-        {/* Rating Trend */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-          <Card className="bg-card/60 backdrop-blur-xl border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-display">Rating Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={ratingChartConfig} className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={metrics.ratingTrend}>
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    />
-                    <YAxis
-                      domain={[0, 5]}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                    />
-                    <ChartTooltip
-                      content={<ChartTooltipContent />}
-                      labelFormatter={(label) => label}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avg"
-                      stroke="hsl(var(--golden))"
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--golden))", r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
 
       {/* Expense History Chart */}
