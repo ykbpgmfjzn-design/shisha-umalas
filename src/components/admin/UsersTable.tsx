@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
   Shield, Users, Search, Crown, Building2, User,
-  Wind, Calculator, ChevronDown, UserCircle
+  Wind, Calculator, ChevronDown, UserCircle, Footprints
 } from "lucide-react";
+import { normalizeCustomerName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import type { Profile } from "@/hooks/useProfile";
-import type { UserRole } from "@/hooks/useAdmin";
+import type { UserRole, PurchaseWithProfile } from "@/hooks/useAdmin";
 import type { Database } from "@/integrations/supabase/types";
 import { logActivity } from "@/hooks/useActivityLog";
 
@@ -25,6 +26,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 interface UsersTableProps {
   profiles: Profile[];
   userRoles: UserRole[];
+  purchases?: PurchaseWithProfile[];
   onSelectUser: (user: Profile) => void;
   selectedUserId?: string;
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
@@ -45,6 +47,7 @@ const ROLE_CONFIG: Record<AppRole, { label: string; icon: typeof Crown; color: s
 const UsersTable = ({ 
   profiles, 
   userRoles, 
+  purchases = [],
   onSelectUser, 
   selectedUserId,
   onToggleAdmin,
@@ -66,22 +69,58 @@ const UsersTable = ({
 
   const STAFF_ROLES: AppRole[] = ["admin", "owner", "shisha_master", "accounting"];
 
-  const filteredProfiles = profiles.filter(p => {
-    // Apply role-based filter
-    if (filterMode === "staff") {
-      const roles = getUserRoles(p.id);
-      if (!roles.some(r => STAFF_ROLES.includes(r))) return false;
-    } else if (filterMode === "customers") {
-      const roles = getUserRoles(p.id);
-      if (roles.some(r => STAFF_ROLES.includes(r))) return false;
+  // Build walk-in pseudo-profiles from purchases with no user_id
+  const walkinProfiles = useMemo(() => {
+    if (filterMode !== "customers") return [];
+    const walkinMap = new Map<string, Profile>();
+    for (const p of purchases) {
+      if (p.user_id) continue; // has a registered account
+      const name = p.customer_name;
+      if (!name) continue;
+      const key = normalizeCustomerName(name);
+      if (walkinMap.has(key)) continue;
+      walkinMap.set(key, {
+        id: `walkin_${key}`,
+        email: null,
+        full_name: name,
+        avatar_url: p.customer_photo_url || null,
+        room_number: null,
+        phone: null,
+        guest_type: "guest",
+        total_hookahs_ordered: 0,
+        loyalty_level: 0,
+        loyalty_points: 0,
+        created_at: p.created_at,
+        updated_at: p.created_at,
+      });
     }
-    // Apply search filter
-    return (
-      p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    return Array.from(walkinMap.values());
+  }, [purchases, filterMode]);
+
+  const filteredProfiles = useMemo(() => {
+    const base = filterMode === "customers"
+      ? [
+          ...profiles.filter(p => {
+            const roles = getUserRoles(p.id);
+            return !roles.some(r => STAFF_ROLES.includes(r));
+          }),
+          ...walkinProfiles,
+        ]
+      : filterMode === "staff"
+        ? profiles.filter(p => {
+            const roles = getUserRoles(p.id);
+            return roles.some(r => STAFF_ROLES.includes(r));
+          })
+        : profiles;
+
+    if (!searchQuery) return base;
+    const q = searchQuery.toLowerCase();
+    return base.filter(p =>
+      p.email?.toLowerCase().includes(q) ||
+      p.full_name?.toLowerCase().includes(q) ||
       p.room_number?.includes(searchQuery)
     );
-  });
+  }, [profiles, walkinProfiles, userRoles, filterMode, searchQuery]);
 
   const handleSetRole = async (e: React.MouseEvent, userId: string, newRole: AppRole) => {
     e.stopPropagation();
@@ -168,8 +207,8 @@ const UsersTable = ({
 
       <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
         {filteredProfiles.map((profile, index) => {
-          const roles = getUserRoles(profile.id);
-          
+          const isWalkin = profile.id.startsWith("walkin_");
+          const roles = isWalkin ? [] : getUserRoles(profile.id);
           return (
             <motion.button
               key={profile.id}
@@ -191,7 +230,11 @@ const UsersTable = ({
                       alt=""
                       className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
                     />
-                  ) : (
+                   ) : isWalkin ? (
+                    <div className="p-2 rounded-full shrink-0 bg-muted">
+                      <Footprints className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                   ) : (
                     <div className={`p-2 rounded-full shrink-0 ${getMainRoleBg(profile.id)}`}>
                       {getMainRoleIcon(profile.id)}
                     </div>
@@ -200,14 +243,20 @@ const UsersTable = ({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm truncate">
-                        {profile.email || "No email"}
+                        {isWalkin ? profile.full_name || "No name" : profile.email || "No email"}
                       </p>
+                      {isWalkin && (
+                        <Badge variant="outline" className="text-xs bg-muted border-border text-muted-foreground">
+                          Walk-in
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {profile.room_number ? `Room ${profile.room_number}` : "Guest"} • 
-                      {profile.full_name || "No name"}
+                      {isWalkin
+                        ? "Walk-in customer"
+                        : `${profile.room_number ? `Room ${profile.room_number}` : "Guest"} • ${profile.full_name || "No name"}`}
                     </p>
-                    {roles.filter(r => r !== "user" && r !== "owner").length > 0 && (
+                    {!isWalkin && roles.filter(r => r !== "user" && r !== "owner").length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {roles.filter(r => r !== "user" && r !== "owner").map(role => {
                           const config = ROLE_CONFIG[role];
@@ -227,12 +276,19 @@ const UsersTable = ({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-1 text-golden">
-                    <Crown className="w-4 h-4" />
-                    <span className="text-sm font-bold">{profile.loyalty_level}</span>
-                  </div>
+                  {!isWalkin && (
+                    <div className="flex items-center gap-1 text-golden">
+                      <Crown className="w-4 h-4" />
+                      <span className="text-sm font-bold">{profile.loyalty_level}</span>
+                    </div>
+                  )}
 
-                  {!isOwner(profile.id) ? (
+                  {isWalkin ? (
+                    <Badge variant="outline" className="text-xs bg-muted border-border text-muted-foreground">
+                      <Footprints className="w-3 h-3 mr-1" />
+                      Walk-in
+                    </Badge>
+                  ) : !isOwner(profile.id) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="outline" className="shrink-0 gap-1">
