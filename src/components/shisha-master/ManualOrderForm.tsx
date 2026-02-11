@@ -522,7 +522,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                     <CommandList>
                       <CommandEmpty>{t("shishaMaster.form.notFound")}</CommandEmpty>
                       <CommandGroup>
-                        {filteredCustomers.slice(0, 50).map((c) => (
+                        {filteredCustomers.map((c) => (
                           <CommandItem
                             key={c.id}
                             onSelect={() => {
