@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Video, FileText, Plus, Trash2, Pencil, Image as ImageIcon,
-  ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play, Upload, X
+  ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play, Upload, X, Eye
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
@@ -101,6 +101,8 @@ export default function TrainingMaterials() {
   const [selectedMaterial, setSelectedMaterial] = useState<TrainingMaterial | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pdfViewUrl, setPdfViewUrl] = useState<string | null>(null);
+  const [pdfViewTitle, setPdfViewTitle] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -310,6 +312,14 @@ export default function TrainingMaterials() {
                     loading="lazy"
                   />
                 </a>
+              ) : material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") ? (
+                <button
+                  onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}
+                  className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  <Eye className="h-5 w-5" />
+                  <span className="text-[10px] uppercase tracking-wider">PDF</span>
+                </button>
               ) : (
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   {getIcon(material.file_type)}
@@ -331,6 +341,11 @@ export default function TrainingMaterials() {
               <span className="text-xs text-muted-foreground hidden sm:inline">
                 {format(new Date(material.created_at), "dd.MM.yy")}
               </span>
+              {!ytId && material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
               {!ytId && (
                 <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                   <a href={material.file_url} target="_blank" rel="noopener noreferrer">
@@ -666,6 +681,26 @@ export default function TrainingMaterials() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* PDF Viewer Dialog */}
+      <Dialog open={!!pdfViewUrl} onOpenChange={(open) => { if (!open) setPdfViewUrl(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0">
+          <DialogHeader className="p-4 pb-2 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4" />
+              {pdfViewTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 px-4 pb-4">
+            {pdfViewUrl && (
+              <iframe
+                src={pdfViewUrl}
+                title={pdfViewTitle}
+                className="w-full h-full rounded-md border border-border"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
