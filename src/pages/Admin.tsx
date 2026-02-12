@@ -415,7 +415,7 @@ const AdminContent = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/accounting")}
+              onClick={() => navigate("/accounting?from=admin")}
               className="border-blue-400/30 text-blue-400 hover:bg-blue-400/10"
             >
               <Calculator className="w-4 h-4 mr-2" />
