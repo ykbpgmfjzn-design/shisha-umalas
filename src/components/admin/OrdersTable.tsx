@@ -43,6 +43,7 @@ interface OrdersTableProps {
 
 type PaymentFilter = "all" | "pending" | "paid" | "unpaid" | "unpaid_delivered";
 type DeliveryFilter = "all" | "pending" | "preparing" | "delivered" | "cancelled";
+type PaymentMethodFilter = "all" | "cash" | "edc_machine" | "bank_transfer" | "qris" | "doku";
 
 const OrdersTable = ({ 
   orders, 
@@ -56,6 +57,7 @@ const OrdersTable = ({
 }: OrdersTableProps) => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -192,6 +194,7 @@ const OrdersTable = ({
         if (paymentFilter === "pending" && order.payment_status !== "pending") return false;
       }
       if (deliveryFilter !== "all" && order.delivery_status !== deliveryFilter) return false;
+      if (paymentMethodFilter !== "all" && (order as any).payment_method !== paymentMethodFilter) return false;
       return true;
     })
     .sort((a, b) => {
@@ -394,6 +397,23 @@ const OrdersTable = ({
                   <SelectItem value="preparing">Preparing</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={paymentMethodFilter} onValueChange={(v) => setPaymentMethodFilter(v as PaymentMethodFilter)}>
+                <SelectTrigger className="w-[110px] sm:w-[140px] bg-background/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                  <SelectItem value="cash">💵 Cash</SelectItem>
+                  <SelectItem value="edc_machine">💳 EDC</SelectItem>
+                  <SelectItem value="bank_transfer">🏦 Transfer</SelectItem>
+                  <SelectItem value="qris">📱 QRIS</SelectItem>
+                  <SelectItem value="doku">🔗 DOKU</SelectItem>
                 </SelectContent>
               </Select>
             </div>
