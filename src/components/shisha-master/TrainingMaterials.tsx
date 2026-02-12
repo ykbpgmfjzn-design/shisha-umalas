@@ -412,23 +412,20 @@ export default function TrainingMaterials() {
               <p>No training materials yet</p>
             </div>
           ) : (
-            <Accordion type="multiple" defaultValue={Object.keys(groupedMaterials)} className="space-y-2">
+            <div className="space-y-6">
               {Object.entries(groupedMaterials).map(([category, items]) => (
-                <AccordionItem key={category} value={category} className="border rounded-lg px-3">
-                  <AccordionTrigger className="py-3 hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{getCategoryLabel(category)}</span>
-                      <Badge variant="secondary" className="text-xs">{items.length}</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pb-1">
-                      {items.map(renderMaterialCard)}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                <div key={category}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{getCategoryLabel(category)}</h3>
+                    <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  <div className="space-y-3">
+                    {items.map(renderMaterialCard)}
+                  </div>
+                </div>
               ))}
-            </Accordion>
+            </div>
           )}
         </CardContent>
       </Card>
