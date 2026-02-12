@@ -289,28 +289,31 @@ export default function TrainingMaterials() {
     const isImage = material.file_type === "image" || isImageUrl(material.file_url);
     return (
       <Card key={material.id} className="overflow-hidden">
-        {ytId && (
-          <div className="aspect-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${ytId}`}
-              title={material.title}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
-        {!ytId && isImage && (
-          <a href={material.file_url} target="_blank" rel="noopener noreferrer">
-            <img
-              src={material.file_url}
-              alt={material.title}
-              className="w-full max-h-64 object-cover"
-              loading="lazy"
-            />
-          </a>
-        )}
         <CardContent className="p-3">
+          <div className="flex gap-3">
+            {/* Compact media preview */}
+            {ytId && (
+              <div className="shrink-0 w-32 sm:w-40 aspect-video rounded-md overflow-hidden bg-muted">
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}`}
+                  title={material.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+            {!ytId && isImage && (
+              <a href={material.file_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                <img
+                  src={material.file_url}
+                  alt={material.title}
+                  className="w-32 sm:w-40 h-20 sm:h-24 object-cover rounded-md"
+                  loading="lazy"
+                />
+              </a>
+            )}
+            <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <Badge variant="outline" className="shrink-0 gap-1">
@@ -361,6 +364,8 @@ export default function TrainingMaterials() {
               {material.description}
             </p>
           )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
