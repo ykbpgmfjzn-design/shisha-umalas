@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
 import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import OrderNotifications from "@/components/OrderNotifications";
+import StaffLanguageSelector from "@/components/StaffLanguageSelector";
 import DashboardStats from "@/components/admin/DashboardStats";
 import BusinessMetrics from "@/components/admin/BusinessMetrics";
 import OrdersTable from "@/components/admin/OrdersTable";
@@ -434,6 +435,7 @@ const AdminContent = () => {
               <Shield className="w-5 h-5" />
               <span className="font-medium hidden sm:inline">Admin Panel</span>
             </div>
+            <StaffLanguageSelector />
             <Button
               variant="ghost"
               size="sm"

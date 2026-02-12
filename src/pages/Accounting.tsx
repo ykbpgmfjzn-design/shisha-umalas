@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
 import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import type { PurchaseWithProfile, DashboardStats } from "@/hooks/useAdmin";
+import StaffLanguageSelector from "@/components/StaffLanguageSelector";
 
 type StatusFilter = "all" | "pending" | "paid" | "cancelled";
 type PaymentMethodFilter = "all" | "cash" | "edc" | "bank_transfer" | "qris" | "doku";
@@ -340,6 +341,7 @@ const AccountingContent = () => {
               <Calculator className="w-5 h-5" />
               <span className="font-medium hidden sm:inline">{t("admin.accounting")}</span>
             </div>
+            <StaffLanguageSelector />
             <Button
               variant="ghost"
               size="sm"
