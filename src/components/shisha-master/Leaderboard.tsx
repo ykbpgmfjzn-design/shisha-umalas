@@ -247,27 +247,32 @@ export default function Leaderboard() {
             onClick={() => setSelectedMaster(leader)}
           >
             <CardContent className="p-5 flex flex-col items-center text-center gap-3">
-              <Crown className="w-6 h-6 text-yellow-400" />
-              <Avatar className="h-20 w-20 ring-2 ring-yellow-400/50 shadow-lg">
-                <AvatarImage src={leader.avatarUrl || undefined} />
-                <AvatarFallback className="bg-yellow-400/20 text-yellow-400 text-2xl font-bold">
-                  {leader.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <Crown className="w-7 h-7 text-yellow-400" />
+              {leader.avatarUrl ? (
+                <img
+                  src={leader.avatarUrl}
+                  alt={leader.name}
+                  className="w-28 h-28 rounded-full object-cover ring-3 ring-yellow-400/50 shadow-xl"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full bg-yellow-400/20 flex items-center justify-center ring-3 ring-yellow-400/50 shadow-xl">
+                  <span className="text-4xl font-bold text-yellow-400">{leader.name.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
               <div>
-                <p className="font-display font-bold text-lg">{leader.name}</p>
+                <p className="font-display font-bold text-xl">{leader.name}</p>
                 <p className="text-xs text-muted-foreground">Current Leader</p>
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-center">
                   <div className="flex items-center gap-1 justify-center">
-                    <Flame className="w-4 h-4 text-yellow-400" />
-                    <span className="text-2xl font-bold">{leader.orderCount}</span>
+                    <Flame className="w-5 h-5 text-yellow-400" />
+                    <span className="text-3xl font-bold">{leader.orderCount}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">orders</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold">IDR {leader.totalRevenue.toLocaleString("id-ID")}</p>
+                  <p className="text-base font-semibold">IDR {leader.totalRevenue.toLocaleString("id-ID")}</p>
                   <p className="text-[10px] text-muted-foreground">revenue</p>
                 </div>
               </div>
@@ -309,12 +314,17 @@ export default function Leaderboard() {
                     </div>
 
                     {/* Avatar */}
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarImage src={master.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                        {master.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    {master.avatarUrl ? (
+                      <img
+                        src={master.avatarUrl}
+                        alt={master.name}
+                        className="h-12 w-12 rounded-full object-cover shrink-0 border border-border"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-bold text-primary">{master.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                    )}
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
