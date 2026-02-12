@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -471,13 +472,25 @@ const AccountingContent = () => {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     {/* Order Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Hash className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">{order.hookah_count} {t("admin.hookahs")}</span>
                         {order.amount && (
                           <span className="text-golden font-medium">
                             IDR {order.amount.toLocaleString('id-ID')}
                           </span>
+                        )}
+                        {order.payment_method && (
+                          <Badge variant="outline" className={cn(
+                            "text-[10px] uppercase",
+                            order.payment_method === "cash" && "border-yellow-500/30 text-yellow-400",
+                            order.payment_method === "qris" && "border-cyan-500/30 text-cyan-400",
+                            order.payment_method === "edc" && "border-purple-500/30 text-purple-400",
+                            order.payment_method === "bank_transfer" && "border-blue-500/30 text-blue-400",
+                            order.payment_method === "doku" && "border-pink-500/30 text-pink-400",
+                          )}>
+                            {order.payment_method === "bank_transfer" ? "Bank" : order.payment_method}
+                          </Badge>
                         )}
                       </div>
                       
