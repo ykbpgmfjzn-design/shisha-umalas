@@ -286,7 +286,7 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
           <div className="flex items-center gap-3">
             <div className="relative group">
               {editForm.avatar_url ? (
-                <img src={editForm.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-border" />
+                <img loading="lazy" src={editForm.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-border" />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border-2 border-border">
                   <Camera className="w-6 h-6 text-muted-foreground" />

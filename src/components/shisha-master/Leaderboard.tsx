@@ -250,7 +250,7 @@ export default function Leaderboard() {
               <Crown className="w-7 h-7 text-yellow-400" />
               {leader.avatarUrl ? (
                 <img
-                  src={leader.avatarUrl}
+                  loading="lazy" src={leader.avatarUrl}
                   alt={leader.name}
                   className="w-28 h-28 rounded-full object-cover ring-3 ring-yellow-400/50 shadow-xl"
                 />
@@ -316,7 +316,7 @@ export default function Leaderboard() {
                     {/* Avatar */}
                     {master.avatarUrl ? (
                       <img
-                        src={master.avatarUrl}
+                        loading="lazy" src={master.avatarUrl}
                         alt={master.name}
                         className="h-12 w-12 rounded-full object-cover shrink-0 border border-border"
                       />

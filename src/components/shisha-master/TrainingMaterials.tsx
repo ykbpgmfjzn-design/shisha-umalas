@@ -506,7 +506,7 @@ export default function TrainingMaterials() {
               )}
               {form.url && isImageUrl(form.url) && (
                 <div className="relative mt-1">
-                  <img src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
+                  <img loading="lazy" src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -625,7 +625,7 @@ export default function TrainingMaterials() {
               )}
               {form.url && isImageUrl(form.url) && (
                 <div className="relative mt-1">
-                  <img src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
+                  <img loading="lazy" src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
                   <Button
                     variant="ghost"
                     size="icon"
