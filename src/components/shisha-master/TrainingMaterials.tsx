@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  Video, FileText, Plus, Trash2, Pencil,
-  ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play
+  Video, FileText, Plus, Trash2, Pencil, Image as ImageIcon,
+  ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play, Upload, X
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
@@ -50,6 +50,8 @@ const CATEGORIES = [
   { value: "safety", labelEn: "Safety", labelId: "Keselamatan" },
   { value: "general", labelEn: "General", labelId: "Umum" },
 ];
+
+const ACCEPTED_FILE_TYPES = ".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx";
 
 interface TrainingMaterial {
   id: string;
@@ -84,6 +86,11 @@ function detectFileType(url: string): string {
   return "link";
 }
 
+function isImageUrl(url: string): boolean {
+  const ext = url.split("?")[0].split(".").pop()?.toLowerCase();
+  return !!ext && ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+}
+
 export default function TrainingMaterials() {
   const { isAdmin } = useUserRoles();
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
@@ -93,7 +100,10 @@ export default function TrainingMaterials() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<TrainingMaterial | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [langTab, setLangTab] = useState("en");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -119,9 +129,35 @@ export default function TrainingMaterials() {
     setLoading(false);
   };
 
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("training-materials")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("training-materials")
+        .getPublicUrl(filePath);
+
+      setForm(prev => ({ ...prev, url: publicUrl }));
+      toast.success("File uploaded!");
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleAdd = async () => {
     if (!form.title || !form.url) {
-      toast.error("Please fill in the title and URL");
+      toast.error("Please fill in the title and provide a URL or upload a file");
       return;
     }
 
@@ -218,6 +254,7 @@ export default function TrainingMaterials() {
     switch (type) {
       case "video": return <Video className="h-4 w-4" />;
       case "document": return <FileText className="h-4 w-4" />;
+      case "image": return <ImageIcon className="h-4 w-4" />;
       default: return <LinkIcon className="h-4 w-4" />;
     }
   };
@@ -246,6 +283,7 @@ export default function TrainingMaterials() {
 
   const renderMaterialCard = (material: TrainingMaterial) => {
     const ytId = getYouTubeId(material.file_url);
+    const isImage = material.file_type === "image" || isImageUrl(material.file_url);
     return (
       <Card key={material.id} className="overflow-hidden">
         {ytId && (
@@ -258,6 +296,16 @@ export default function TrainingMaterials() {
               allowFullScreen
             />
           </div>
+        )}
+        {!ytId && isImage && (
+          <a href={material.file_url} target="_blank" rel="noopener noreferrer">
+            <img
+              src={material.file_url}
+              alt={material.title}
+              className="w-full max-h-64 object-cover"
+              loading="lazy"
+            />
+          </a>
         )}
         <CardContent className="p-3">
           <div className="flex items-center justify-between gap-2">
@@ -402,15 +450,58 @@ export default function TrainingMaterials() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">URL (YouTube, Google Drive, etc.)</label>
-              <Input
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="https://youtube.com/watch?v=..."
+              <label className="text-sm font-medium">Upload File or Enter URL</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="shrink-0"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                  {uploading ? "Uploading..." : "Upload"}
+                </Button>
+                <Input
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  placeholder="https://youtube.com/... or upload a file"
+                  className="flex-1"
+                />
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_FILE_TYPES}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                  e.target.value = "";
+                }}
               />
               {form.url && getYouTubeId(form.url) && (
                 <p className="text-xs text-primary flex items-center gap-1">
                   <Play className="h-3 w-3" /> YouTube video detected — will embed player
+                </p>
+              )}
+              {form.url && isImageUrl(form.url) && (
+                <div className="relative mt-1">
+                  <img src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 bg-background/80"
+                    onClick={() => setForm({ ...form, url: "" })}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {form.url && detectFileType(form.url) === "document" && !getYouTubeId(form.url) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> Document attached
                 </p>
               )}
             </div>
@@ -478,14 +569,58 @@ export default function TrainingMaterials() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">URL (YouTube, Google Drive, etc.)</label>
-              <Input
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
+              <label className="text-sm font-medium">Upload File or Enter URL</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => editFileInputRef.current?.click()}
+                  className="shrink-0"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                  {uploading ? "Uploading..." : "Upload"}
+                </Button>
+                <Input
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  placeholder="https://youtube.com/... or upload a file"
+                  className="flex-1"
+                />
+              </div>
+              <input
+                ref={editFileInputRef}
+                type="file"
+                accept={ACCEPTED_FILE_TYPES}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                  e.target.value = "";
+                }}
               />
               {form.url && getYouTubeId(form.url) && (
                 <p className="text-xs text-primary flex items-center gap-1">
                   <Play className="h-3 w-3" /> YouTube video detected
+                </p>
+              )}
+              {form.url && isImageUrl(form.url) && (
+                <div className="relative mt-1">
+                  <img src={form.url} alt="Preview" className="max-h-32 rounded-md border" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 bg-background/80"
+                    onClick={() => setForm({ ...form, url: "" })}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {form.url && detectFileType(form.url) === "document" && !getYouTubeId(form.url) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> Document attached
                 </p>
               )}
             </div>
