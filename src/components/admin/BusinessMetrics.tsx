@@ -143,6 +143,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
   const [savingExpenses, setSavingExpenses] = useState(false);
   const [initialInvestment, setInitialInvestment] = useState<number>(0);
   const [editInvestment, setEditInvestment] = useState<number>(0);
+  const [breakEvenMode, setBreakEvenMode] = useState<"current" | "average">("average");
   const [editMonth, setEditMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -694,14 +695,50 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                 <div className="p-2 rounded-lg bg-teal-400/10">
                   <Target className="w-4 h-4 text-teal-400" />
                 </div>
-                <CardLabel text="Break-even Point" tip="Estimated months until cumulative profit covers the initial investment" />
+                <CardLabel text="Break-even Point" tip="Estimated months until cumulative profit covers the initial investment. Toggle between current month profit or average across all months." />
+              </div>
+              {/* Mode toggle */}
+              <div className="flex gap-1 mb-3">
+                <button
+                  onClick={() => setBreakEvenMode("current")}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${breakEvenMode === "current" ? "bg-teal-400/20 text-teal-400" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Current mo
+                </button>
+                <button
+                  onClick={() => setBreakEvenMode("average")}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${breakEvenMode === "average" ? "bg-teal-400/20 text-teal-400" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Avg profit
+                </button>
               </div>
               {(() => {
-                const monthlyProfit = metrics.grossProfit;
                 const allPaidTotal = paidOnly(purchases).reduce((s, p) => s + (p.amount || 0), 0);
                 const totalExpensesAllTime = expenseHistory.reduce((s, h) => s + h.total, 0);
                 const totalNetProfit = allPaidTotal - totalExpensesAllTime;
                 const alreadyReached = initialInvestment > 0 && totalNetProfit >= initialInvestment;
+
+                // Calculate average monthly profit from all months with data
+                let avgMonthlyProfit = 0;
+                if (expenseHistory.length > 0) {
+                  // Group paid purchases by month
+                  const revenueByMonth = new Map<string, number>();
+                  for (const p of paidOnly(purchases)) {
+                    const d = new Date(p.created_at);
+                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                    revenueByMonth.set(key, (revenueByMonth.get(key) || 0) + (p.amount || 0));
+                  }
+                  // Calculate profit for each month in expense history
+                  let totalProfit = 0;
+                  for (const snap of expenseHistory) {
+                    const monthRev = revenueByMonth.get(snap.month) || 0;
+                    totalProfit += monthRev - snap.total;
+                  }
+                  avgMonthlyProfit = totalProfit / expenseHistory.length;
+                }
+
+                const monthlyProfit = breakEvenMode === "current" ? metrics.grossProfit : avgMonthlyProfit;
+                const modeLabel = breakEvenMode === "current" ? "Current month" : `Avg (${expenseHistory.length} mo)`;
 
                 if (initialInvestment === 0 || totalMonthlyExpenses === 0) {
                   return (
@@ -741,7 +778,7 @@ export default function BusinessMetrics({ purchases, feedbacks, totalUsers }: Bu
                         Remaining: {formatIDR(remaining)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Monthly profit: {formatIDR(monthlyProfit)}
+                        {modeLabel}: {formatIDR(monthlyProfit)}/mo
                       </p>
                       {monthlyProfit <= 0 && (
                         <p className="text-xs text-destructive">Monthly profit ≤ 0</p>
