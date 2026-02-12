@@ -625,6 +625,11 @@ const AdminContent = () => {
                 onToggleAdmin={handleToggleAdmin}
                 t={t}
                 filterMode="customers"
+                onMerged={() => {
+                  setSelectedUser(null);
+                  fetchAllProfiles();
+                  fetchAllPurchases();
+                }}
                 onAddRole={async (userId, role) => {
                   const { error } = await addUserRole(userId, role);
                   if (error) {
