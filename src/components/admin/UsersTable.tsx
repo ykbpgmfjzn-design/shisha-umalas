@@ -5,6 +5,7 @@ import {
   Wind, Calculator, ChevronDown, UserCircle, Footprints
 } from "lucide-react";
 import { normalizeCustomerName } from "@/lib/utils";
+import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,7 @@ const UsersTable = ({
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
 
   const getUserRoles = (userId: string): AppRole[] => {
     return userRoles.filter(r => r.user_id === userId).map(r => r.role);
@@ -248,7 +250,11 @@ const UsersTable = ({
                     <img
                       loading="lazy" src={profile.avatar_url}
                       alt=""
-                      className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
+                      className="w-9 h-9 rounded-full object-cover border border-border shrink-0 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxPhoto(profile.avatar_url);
+                      }}
                     />
                    ) : isWalkin ? (
                     <div className="p-2 rounded-full shrink-0 bg-muted">
@@ -367,6 +373,7 @@ const UsersTable = ({
           </p>
         )}
       </div>
+      <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
     </div>
   );
 };
