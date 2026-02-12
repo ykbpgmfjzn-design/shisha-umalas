@@ -68,9 +68,33 @@ const Profile = () => {
     }
   }, [isEditing, isEditingPhone]);
 
+  // Redirect staff to their dashboards instead of profile
+  const [staffRedirecting, setStaffRedirecting] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+      return;
+    }
+    if (!loading && user) {
+      const checkStaffRole = async () => {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        const userRoles = roles?.map(r => r.role) || [];
+        if (userRoles.includes("owner") || userRoles.includes("admin")) {
+          setStaffRedirecting(true);
+          navigate("/admin", { replace: true });
+        } else if (userRoles.includes("accounting")) {
+          setStaffRedirecting(true);
+          navigate("/accounting", { replace: true });
+        } else if (userRoles.includes("shisha_master")) {
+          setStaffRedirecting(true);
+          navigate("/shisha-master", { replace: true });
+        }
+      };
+      checkStaffRole();
     }
   }, [user, loading, navigate]);
 

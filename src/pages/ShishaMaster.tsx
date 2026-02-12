@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Wind, BookOpen, History, PlusCircle, Trophy } from "lucide-react";
+import { ArrowLeft, Wind, BookOpen, History, PlusCircle, Trophy, LogOut } from "lucide-react";
 import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/OrdersList";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import Leaderboard from "@/components/shisha-master/Leaderboard";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useLogout } from "@/hooks/useLogout";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function ShishaMasterContent() {
   const fromAdmin = searchParams.get("from") === "admin";
   const { t } = useLanguage();
   const { isAdmin } = useUserRoles();
+  const { logout } = useLogout();
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
@@ -74,6 +76,15 @@ function ShishaMasterContent() {
               <h1 className="text-lg font-semibold">Shisha Master</h1>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
         </div>
       </header>
 
