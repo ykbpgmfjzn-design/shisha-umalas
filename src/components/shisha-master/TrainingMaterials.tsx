@@ -290,10 +290,10 @@ export default function TrainingMaterials() {
     return (
       <Card key={material.id} className="overflow-hidden">
         <CardContent className="p-3">
-          <div className="flex gap-3">
-            {/* Compact media preview */}
-            {ytId && (
-              <div className="shrink-0 w-32 sm:w-40 aspect-video rounded-md overflow-hidden bg-muted">
+          <div className="flex gap-3 items-center">
+            {/* Compact media preview — uniform width for all types */}
+            <div className="shrink-0 w-32 sm:w-40 h-20 sm:h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+              {ytId ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${ytId}`}
                   title={material.title}
@@ -301,18 +301,22 @@ export default function TrainingMaterials() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
-              </div>
-            )}
-            {!ytId && isImage && (
-              <a href={material.file_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                <img
-                  src={material.file_url}
-                  alt={material.title}
-                  className="w-32 sm:w-40 h-20 sm:h-24 object-cover rounded-md"
-                  loading="lazy"
-                />
-              </a>
-            )}
+              ) : isImage ? (
+                <a href={material.file_url} target="_blank" rel="noopener noreferrer" className="w-full h-full">
+                  <img
+                    src={material.file_url}
+                    alt={material.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </a>
+              ) : (
+                <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                  {getIcon(material.file_type)}
+                  <span className="text-[10px] uppercase tracking-wider">{material.file_type}</span>
+                </div>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
