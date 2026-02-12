@@ -2,8 +2,11 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Flame, Crown, Medal } from "lucide-react";
+import { Trophy, Flame, Crown, Medal, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
+import { startOfMonth, subMonths, format } from "date-fns";
+
+type PeriodFilter = "current" | "previous";
 
 interface MasterStats {
   userId: string;
@@ -17,6 +20,7 @@ export default function Leaderboard() {
   const [masters, setMasters] = useState<MasterStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [period, setPeriod] = useState<PeriodFilter>("current");
 
   useEffect(() => {
     const load = async () => {
@@ -49,11 +53,22 @@ export default function Leaderboard() {
         (profiles || []).map(p => [p.id, p])
       );
 
+      // Date filter
+      const now = new Date();
+      const fromDate = period === "current"
+        ? startOfMonth(now)
+        : startOfMonth(subMonths(now, 1));
+      const toDate = period === "current"
+        ? now
+        : startOfMonth(now);
+
       // Get orders where master is either created_by OR shisha_master_id
       const { data: purchases } = await supabase
         .from("purchases")
-        .select("created_by, shisha_master_id, amount, payment_status")
-        .or(`created_by.in.(${masterUserIds.join(",")}),shisha_master_id.in.(${masterUserIds.join(",")})`);
+        .select("created_by, shisha_master_id, amount, payment_status, created_at")
+        .or(`created_by.in.(${masterUserIds.join(",")}),shisha_master_id.in.(${masterUserIds.join(",")})`)
+        .gte("created_at", fromDate.toISOString())
+        .lt("created_at", toDate.toISOString());
 
       // Aggregate stats — count each order once per master
       const statsMap = new Map<string, { count: number; revenue: number }>();
@@ -102,7 +117,7 @@ export default function Leaderboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [period]);
 
   const rankIcons = [
     <Crown className="w-5 h-5 text-yellow-400" />,
@@ -129,12 +144,33 @@ export default function Leaderboard() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-6 h-6 text-primary" />
           <h2 className="text-xl font-display font-bold">Leaderboard</h2>
         </div>
-        <p className="text-sm text-muted-foreground">Total orders created by each master</p>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPeriod("previous")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              period === "previous"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {format(startOfMonth(subMonths(new Date(), 1)), "MMMM yyyy")}
+          </button>
+          <button
+            onClick={() => setPeriod("current")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              period === "current"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {format(new Date(), "MMMM yyyy")}
+          </button>
+        </div>
       </div>
 
       {/* Leaderboard List */}
