@@ -13,6 +13,7 @@ import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import Leaderboard from "@/components/shisha-master/Leaderboard";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useLogout } from "@/hooks/useLogout";
+import StaffLanguageSelector from "@/components/StaffLanguageSelector";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ function ShishaMasterContent() {
               <h1 className="text-lg font-semibold">Shisha Master</h1>
             </div>
           </div>
+          <StaffLanguageSelector />
           <Button
             variant="ghost"
             size="sm"
