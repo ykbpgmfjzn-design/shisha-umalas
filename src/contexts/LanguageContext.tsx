@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, useRef, ReactNode, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Language = "en" | "ru" | "id" | "uk" | "fr" | "hi" | "zh";
 
@@ -2641,18 +2642,47 @@ export const LanguageContext = createContext<LanguageContextType | undefined>(un
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(getStoredLanguage);
+  const dbSyncRef = useRef(false);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    // Save to DB if logged in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("profiles").update({ preferred_language: lang }).eq("id", user.id).then(() => {});
+      }
+    });
   };
 
-  // Load language from localStorage on mount
+  // Load language from DB on auth change
   useEffect(() => {
-    const stored = getStoredLanguage();
-    if (stored !== language) {
-      setLanguageState(stored);
-    }
+    const loadFromDb = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from("profiles").select("preferred_language").eq("id", user.id).maybeSingle();
+        if (data?.preferred_language && ["en", "ru", "id", "uk", "fr", "hi", "zh"].includes(data.preferred_language)) {
+          setLanguageState(data.preferred_language as Language);
+          localStorage.setItem(LANGUAGE_STORAGE_KEY, data.preferred_language);
+        }
+      }
+      dbSyncRef.current = true;
+    };
+
+    loadFromDb();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        supabase.from("profiles").select("preferred_language").eq("id", session.user.id).maybeSingle().then(({ data }) => {
+          if (data?.preferred_language && ["en", "ru", "id", "uk", "fr", "hi", "zh"].includes(data.preferred_language)) {
+            setLanguageState(data.preferred_language as Language);
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, data.preferred_language);
+          }
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const t = (key: string): string => {
