@@ -49,22 +49,28 @@ export default function Leaderboard() {
         (profiles || []).map(p => [p.id, p])
       );
 
-      // Get orders grouped by created_by for these masters
+      // Get orders where master is either created_by OR shisha_master_id
       const { data: purchases } = await supabase
         .from("purchases")
-        .select("created_by, amount, payment_status")
-        .in("created_by", masterUserIds);
+        .select("created_by, shisha_master_id, amount, payment_status")
+        .or(`created_by.in.(${masterUserIds.join(",")}),shisha_master_id.in.(${masterUserIds.join(",")})`);
 
-      // Aggregate stats
+      // Aggregate stats — count each order once per master
       const statsMap = new Map<string, { count: number; revenue: number }>();
       for (const p of purchases || []) {
-        if (!p.created_by) continue;
-        const existing = statsMap.get(p.created_by) || { count: 0, revenue: 0 };
-        existing.count += 1;
-        if (p.payment_status?.toLowerCase() === "paid") {
-          existing.revenue += Number(p.amount) || 0;
+        // Determine which master(s) this order belongs to
+        const relevantIds = new Set<string>();
+        if (p.created_by && masterUserIds.includes(p.created_by)) relevantIds.add(p.created_by);
+        if (p.shisha_master_id && masterUserIds.includes(p.shisha_master_id)) relevantIds.add(p.shisha_master_id);
+
+        for (const uid of relevantIds) {
+          const existing = statsMap.get(uid) || { count: 0, revenue: 0 };
+          existing.count += 1;
+          if (p.payment_status?.toLowerCase() === "paid") {
+            existing.revenue += Number(p.amount) || 0;
+          }
+          statsMap.set(uid, existing);
         }
-        statsMap.set(p.created_by, existing);
       }
 
       // Build leaderboard - include all masters, even with 0 orders
