@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Flame, Crown, Medal, CalendarDays } from "lucide-react";
+import { Trophy, Flame, Crown, Medal, CalendarDays, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { startOfMonth, startOfDay, subMonths, format } from "date-fns";
+import LeaderboardOrderDetails from "./LeaderboardOrderDetails";
 
 type PeriodFilter = "today" | "current" | "previous";
 
@@ -21,6 +22,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodFilter>("current");
+  const [selectedMaster, setSelectedMaster] = useState<MasterStats | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -139,11 +141,31 @@ export default function Leaderboard() {
     return "bg-muted/30";
   };
 
+  // Compute date range for detail view
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    if (period === "today") return { from: startOfDay(now), to: now };
+    if (period === "current") return { from: startOfMonth(now), to: now };
+    return { from: startOfMonth(subMonths(now, 1)), to: startOfMonth(now) };
+  }, [period]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
+    );
+  }
+
+  if (selectedMaster) {
+    return (
+      <LeaderboardOrderDetails
+        masterName={selectedMaster.name}
+        masterUserId={selectedMaster.userId}
+        fromDate={dateRange.from}
+        toDate={dateRange.to}
+        onBack={() => setSelectedMaster(null)}
+      />
     );
   }
 
@@ -207,7 +229,10 @@ export default function Leaderboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.08 }}
               >
-                <Card className={`border transition-all ${getRankBg(index, isCurrentUser)}`}>
+                <Card
+                  className={`border transition-all cursor-pointer hover:scale-[1.01] ${getRankBg(index, isCurrentUser)}`}
+                  onClick={() => setSelectedMaster(master)}
+                >
                   <CardContent className="p-4 flex items-center gap-4">
                     {/* Rank */}
                     <div className="w-8 flex items-center justify-center shrink-0">
@@ -239,13 +264,16 @@ export default function Leaderboard() {
                       </p>
                     </div>
 
-                    {/* Orders Count */}
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1">
-                        <Flame className={`w-4 h-4 ${index === 0 ? "text-yellow-400" : "text-muted-foreground"}`} />
-                        <span className="text-xl font-bold">{master.orderCount}</span>
+                    {/* Orders Count + Chevron */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <div className="flex items-center gap-1">
+                          <Flame className={`w-4 h-4 ${index === 0 ? "text-yellow-400" : "text-muted-foreground"}`} />
+                          <span className="text-xl font-bold">{master.orderCount}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">orders</p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">orders</p>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </CardContent>
                 </Card>
