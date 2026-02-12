@@ -564,14 +564,20 @@ const OrdersTable = ({
                   <div className="flex gap-2 flex-wrap">
                     {getPaymentBadge(order.payment_status)}
                     {getDeliveryBadge(order.delivery_status)}
-                    {(order as any).payment_method && !["cash", undefined, null].includes((order as any).payment_method) && (
+                    {(order as any).payment_method && (
                       <Badge className={
                         (order as any).payment_method === "doku" 
                           ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                          : (order as any).payment_method === "cash"
+                          ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                          : (order as any).payment_method === "qris"
+                          ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
                           : "bg-violet-500/20 text-violet-400 border-violet-500/30"
                       }>
-                        {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
+                        {(order as any).payment_method === "cash" ? "💵 Cash"
+                          : (order as any).payment_method === "edc_machine" ? "💳 EDC" 
                           : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
+                          : (order as any).payment_method === "qris" ? "📱 QRIS"
                           : (order as any).payment_method === "doku" ? "🔗 DOKU"
                           : (order as any).payment_method}
                       </Badge>
