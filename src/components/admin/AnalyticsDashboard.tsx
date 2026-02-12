@@ -157,7 +157,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card className="bg-card/60 backdrop-blur-xl border-border/50">
             <CardContent className="p-4">
@@ -216,22 +216,6 @@ export default function AnalyticsDashboard() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card className="bg-card/60 backdrop-blur-xl border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-accent/10">
-                  <Globe className="w-5 h-5 text-accent-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{data?.trafficSources.length || 0}</p>
-                  <p className="text-sm text-muted-foreground">Sources</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">Traffic channels</p>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
