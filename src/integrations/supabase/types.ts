@@ -196,6 +196,7 @@ export type Database = {
           loyalty_level: number
           loyalty_points: number
           phone: string | null
+          preferred_language: string | null
           room_number: string | null
           total_hookahs_ordered: number
           updated_at: string
@@ -210,6 +211,7 @@ export type Database = {
           loyalty_level?: number
           loyalty_points?: number
           phone?: string | null
+          preferred_language?: string | null
           room_number?: string | null
           total_hookahs_ordered?: number
           updated_at?: string
@@ -224,6 +226,7 @@ export type Database = {
           loyalty_level?: number
           loyalty_points?: number
           phone?: string | null
+          preferred_language?: string | null
           room_number?: string | null
           total_hookahs_ordered?: number
           updated_at?: string
