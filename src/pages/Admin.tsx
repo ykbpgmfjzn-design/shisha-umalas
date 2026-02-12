@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -26,7 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import Leaderboard from "@/components/shisha-master/Leaderboard";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdmin, type PurchaseWithProfile } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout } from "@/hooks/useLogout";
 import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
@@ -44,6 +44,7 @@ import MenuEditor from "@/components/admin/MenuEditor";
 import TopCustomers from "@/components/admin/TopCustomers";
 import TopShishaFlavors from "@/components/admin/TopShishaFlavors";
 import StrengthDistributionChart from "@/components/admin/StrengthDistributionChart";
+import SalesPeriodFilter, { type SalesPeriod, type DateRange, getDateRangeForPeriod } from "@/components/admin/SalesPeriodFilter";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -55,6 +56,34 @@ interface FeedbackWithUser {
   user_name?: string;
   user_email?: string;
 }
+
+const SalesWidgets = ({ allPurchases }: { allPurchases: PurchaseWithProfile[] }) => {
+  const [salesPeriod, setSalesPeriod] = useState<SalesPeriod>("all");
+  const [salesDateRange, setSalesDateRange] = useState<DateRange>({ from: undefined, to: undefined });
+
+  const filteredPurchases = useMemo(() => {
+    const { from, to } = getDateRangeForPeriod(salesPeriod, salesDateRange);
+    if (!from) return allPurchases;
+    return allPurchases.filter((p) => {
+      const d = new Date(p.created_at);
+      return d >= from && (!to || d <= to);
+    });
+  }, [allPurchases, salesPeriod, salesDateRange]);
+
+  return (
+    <>
+      <SalesPeriodFilter
+        period={salesPeriod}
+        onPeriodChange={setSalesPeriod}
+        dateRange={salesDateRange}
+        onDateRangeChange={setSalesDateRange}
+      />
+      <StrengthDistributionChart purchases={filteredPurchases} />
+      <TopShishaFlavors purchases={filteredPurchases} />
+      <TopCustomers purchases={filteredPurchases} />
+    </>
+  );
+};
 
 const AdminContent = () => {
   const navigate = useNavigate();
@@ -486,9 +515,7 @@ const AdminContent = () => {
               />
               
               <div className="space-y-6">
-                <StrengthDistributionChart purchases={allPurchases} />
-                <TopShishaFlavors purchases={allPurchases} />
-                <TopCustomers purchases={allPurchases} />
+                <SalesWidgets allPurchases={allPurchases} />
                 {/* Delivery Settings */}
                 <DeliverySettings t={t} />
                 
