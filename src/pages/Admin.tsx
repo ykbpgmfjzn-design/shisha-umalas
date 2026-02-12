@@ -481,6 +481,7 @@ const AdminContent = () => {
                 onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
                 showFilters={false}
                 title="Current Orders"
+                isAdmin
               />
               
               <div className="space-y-6">
@@ -497,6 +498,7 @@ const AdminContent = () => {
                   onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
                   showFilters={false}
                   title="Recent Orders"
+                  isAdmin
                 />
               </div>
             </div>
@@ -510,6 +512,7 @@ const AdminContent = () => {
               onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
               onOrderEdited={() => { fetchAllPurchases(); fetchAllProfiles(); }}
               title="All Orders"
+              isAdmin
             />
           </TabsContent>
 

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
   Hash, Calendar as CalendarIcon, Coffee, Cookie, Building2, User,
-  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays, X
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays, X, Wind
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -38,6 +38,7 @@ interface OrdersTableProps {
   onOrderEdited?: () => void;
   showFilters?: boolean;
   title?: string;
+  isAdmin?: boolean;
 }
 
 type PaymentFilter = "all" | "pending" | "paid" | "unpaid" | "unpaid_delivered";
@@ -50,7 +51,8 @@ const OrdersTable = ({
   onUpdateStatus,
   onOrderEdited,
   showFilters = true, 
-  title = "Orders" 
+  title = "Orders",
+  isAdmin = false,
 }: OrdersTableProps) => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
@@ -64,6 +66,40 @@ const OrdersTable = ({
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const prevOrdersRef = useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const [masterNames, setMasterNames] = useState<Record<string, string>>({});
+  const [shishaMasters, setShishaMasters] = useState<{id: string; name: string}[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [assigningMaster, setAssigningMaster] = useState<string | null>(null);
+
+  // Fetch current user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
+
+  // Fetch shisha masters list for dropdown
+  useEffect(() => {
+    const fetchMasters = async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, display_name")
+        .eq("role", "shisha_master");
+      if (!roles || roles.length === 0) return;
+      const ids = roles.map(r => r.user_id);
+      const roleMap = new Map(roles.map(r => [r.user_id, r.display_name]));
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      if (profiles) {
+        setShishaMasters(profiles.map(p => ({
+          id: p.id,
+          name: roleMap.get(p.id) || p.full_name || p.email || "Unknown",
+        })));
+      }
+    };
+    fetchMasters();
+  }, []);
 
   // Fetch shisha master names
   useEffect(() => {
@@ -241,6 +277,27 @@ const OrdersTable = ({
       await onUpdateDeliveryStatus(orderId, newStatus);
     }
     setUpdating(null);
+  };
+
+  const handleAssignMaster = async (orderId: string, masterId: string) => {
+    setAssigningMaster(orderId);
+    const { error } = await supabase
+      .from("purchases")
+      .update({ shisha_master_id: masterId === "none" ? null : masterId })
+      .eq("id", orderId);
+    setAssigningMaster(null);
+    if (error) {
+      toast.error("Failed to assign shisha master");
+    } else {
+      toast.success("Shisha master assigned");
+      onOrderEdited?.();
+    }
+  };
+
+  const canAssignMaster = (order: PurchaseWithProfile) => {
+    if (isAdmin) return true;
+    // Shisha master can only change on orders they created
+    return currentUserId && (order as any).created_by === currentUserId;
   };
 
   const openEditSheet = (order: PurchaseWithProfile) => {
@@ -456,10 +513,36 @@ const OrdersTable = ({
                     )}
                   </div>
 
-                  {(order as any).shisha_master_id && masterNames[(order as any).shisha_master_id] && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <ChefHat className="w-3 h-3" />
-                      <span>{masterNames[(order as any).shisha_master_id]}</span>
+                  {shishaMasters.length > 0 && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Wind className="w-3 h-3 text-muted-foreground shrink-0" />
+                      {canAssignMaster(order) ? (
+                        <Select
+                          value={(order as any).shisha_master_id || "none"}
+                          onValueChange={(v) => handleAssignMaster(order.id, v)}
+                          disabled={assigningMaster === order.id}
+                        >
+                          <SelectTrigger className="h-6 text-xs w-auto min-w-[120px] bg-background/50 border-border/50 px-2 py-0">
+                            <SelectValue placeholder="Assign master" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              <span className="text-muted-foreground">No master</span>
+                            </SelectItem>
+                            {shishaMasters.map((m) => (
+                              <SelectItem key={m.id} value={m.id}>
+                                {m.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {(order as any).shisha_master_id && masterNames[(order as any).shisha_master_id]
+                            ? masterNames[(order as any).shisha_master_id]
+                            : "No master"}
+                        </span>
+                      )}
                     </div>
                   )}
 
