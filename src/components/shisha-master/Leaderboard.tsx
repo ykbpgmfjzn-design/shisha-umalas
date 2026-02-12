@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Flame, Crown, Medal, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
-import { startOfMonth, subMonths, format } from "date-fns";
+import { startOfMonth, startOfDay, subMonths, format } from "date-fns";
 
-type PeriodFilter = "current" | "previous";
+type PeriodFilter = "today" | "current" | "previous";
 
 interface MasterStats {
   userId: string;
@@ -55,12 +55,18 @@ export default function Leaderboard() {
 
       // Date filter
       const now = new Date();
-      const fromDate = period === "current"
-        ? startOfMonth(now)
-        : startOfMonth(subMonths(now, 1));
-      const toDate = period === "current"
-        ? now
-        : startOfMonth(now);
+      let fromDate: Date;
+      let toDate: Date;
+      if (period === "today") {
+        fromDate = startOfDay(now);
+        toDate = now;
+      } else if (period === "current") {
+        fromDate = startOfMonth(now);
+        toDate = now;
+      } else {
+        fromDate = startOfMonth(subMonths(now, 1));
+        toDate = startOfMonth(now);
+      }
 
       // Get orders where master is either created_by OR shisha_master_id
       const { data: purchases } = await supabase
@@ -149,16 +155,16 @@ export default function Leaderboard() {
           <Trophy className="w-6 h-6 text-primary" />
           <h2 className="text-xl font-display font-bold">Leaderboard</h2>
         </div>
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           <button
-            onClick={() => setPeriod("previous")}
+            onClick={() => setPeriod("today")}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              period === "previous"
+              period === "today"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            {format(startOfMonth(subMonths(new Date(), 1)), "MMMM yyyy")}
+            Today
           </button>
           <button
             onClick={() => setPeriod("current")}
@@ -169,6 +175,16 @@ export default function Leaderboard() {
             }`}
           >
             {format(new Date(), "MMMM yyyy")}
+          </button>
+          <button
+            onClick={() => setPeriod("previous")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              period === "previous"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {format(startOfMonth(subMonths(new Date(), 1)), "MMMM yyyy")}
           </button>
         </div>
       </div>
