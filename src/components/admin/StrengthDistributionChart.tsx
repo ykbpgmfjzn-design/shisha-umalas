@@ -9,11 +9,11 @@ interface Props {
 }
 
 const STRENGTH_COLORS: Record<string, string> = {
-  "Ultra Light": "hsl(var(--golden))",
-  "Light": "hsl(var(--sunset))",
-  "Medium": "hsl(var(--primary))",
-  "Bold Strong": "hsl(var(--destructive))",
-  "Extra": "hsl(var(--muted-foreground))",
+  "Ultra Light": "hsl(var(--smoke))",
+  "Light": "hsl(var(--smoke-light))",
+  "Medium": "hsl(var(--golden))",
+  "Bold Strong": "hsl(var(--sunset))",
+  "Extra": "hsl(120 40% 45%)",
 };
 
 function parseStrengthFromNotes(notes: string | null, menuLookup: Map<string, string>): { strength: string; qty: number }[] {
