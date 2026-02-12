@@ -43,6 +43,7 @@ import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import MenuEditor from "@/components/admin/MenuEditor";
 import TopCustomers from "@/components/admin/TopCustomers";
 import TopShishaFlavors from "@/components/admin/TopShishaFlavors";
+import StrengthDistributionChart from "@/components/admin/StrengthDistributionChart";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -485,6 +486,7 @@ const AdminContent = () => {
               />
               
               <div className="space-y-6">
+                <StrengthDistributionChart purchases={allPurchases} />
                 <TopShishaFlavors purchases={allPurchases} />
                 <TopCustomers purchases={allPurchases} />
                 {/* Delivery Settings */}
