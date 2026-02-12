@@ -191,6 +191,8 @@ export default function Leaderboard() {
     );
   }
 
+  const leader = masters.length > 0 ? masters[0] : null;
+
   return (
     <div className="max-w-lg mx-auto space-y-4">
       {/* Header */}
@@ -232,6 +234,47 @@ export default function Leaderboard() {
           </button>
         </div>
       </div>
+
+      {/* Current Leader Hero */}
+      {leader && leader.orderCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card
+            className="border-yellow-400/30 bg-gradient-to-br from-yellow-400/10 via-card to-amber-600/10 overflow-hidden cursor-pointer hover:scale-[1.01] transition-transform"
+            onClick={() => setSelectedMaster(leader)}
+          >
+            <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+              <Crown className="w-6 h-6 text-yellow-400" />
+              <Avatar className="h-20 w-20 ring-2 ring-yellow-400/50 shadow-lg">
+                <AvatarImage src={leader.avatarUrl || undefined} />
+                <AvatarFallback className="bg-yellow-400/20 text-yellow-400 text-2xl font-bold">
+                  {leader.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-display font-bold text-lg">{leader.name}</p>
+                <p className="text-xs text-muted-foreground">Current Leader</p>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <div className="flex items-center gap-1 justify-center">
+                    <Flame className="w-4 h-4 text-yellow-400" />
+                    <span className="text-2xl font-bold">{leader.orderCount}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">orders</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold">IDR {leader.totalRevenue.toLocaleString("id-ID")}</p>
+                  <p className="text-[10px] text-muted-foreground">revenue</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Leaderboard List */}
       <div className="space-y-2">
