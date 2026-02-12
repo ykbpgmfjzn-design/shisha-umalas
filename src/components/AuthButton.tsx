@@ -27,6 +27,8 @@ const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
 
   if (loading || rolesLoading) return null;
 
+  const isStaff = isAdmin || isAccounting || isShishaMaster;
+
   if (user) {
     return (
       <div ref={ref} className="flex items-center gap-2">
@@ -63,15 +65,17 @@ const AuthButton = forwardRef<HTMLDivElement>((_, ref) => {
             {t("auth.shishaMaster")}
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/profile")}
-          className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-        >
-          <Crown className="w-4 h-4 mr-2 text-golden" />
-          {profile?.loyalty_level ? `${t("auth.level")} ${profile.loyalty_level}` : t("auth.profile")}
-        </Button>
+        {!isStaff && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/profile")}
+            className="text-foreground/80 hover:text-foreground hover:bg-foreground/10"
+          >
+            <Crown className="w-4 h-4 mr-2 text-golden" />
+            {profile?.loyalty_level ? `${t("auth.level")} ${profile.loyalty_level}` : t("auth.profile")}
+          </Button>
+        )}
       </div>
     );
   }

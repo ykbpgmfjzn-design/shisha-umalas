@@ -4,22 +4,26 @@ import { Home, CalendarDays, Star, Clock, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useContext } from "react";
 import { LanguageContext } from "@/contexts/LanguageContext";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const context = useContext(LanguageContext);
+  const { isAdmin, isAccounting, isShishaMaster } = useUserRoles();
 
   if (!context) return null;
 
   const { t } = context;
+
+  const isStaff = isAdmin || isAccounting || isShishaMaster;
 
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/" },
     { icon: CalendarDays, label: t("nav.reservation"), path: "/reservation" },
     { icon: Star, label: t("nav.feedback"), path: "/feedback" },
     { icon: Clock, label: t("nav.history"), path: "/order-history" },
-    { icon: User, label: t("nav.profile"), path: "/profile" },
+    ...(!isStaff ? [{ icon: User, label: t("nav.profile"), path: "/profile" }] : []),
   ];
 
   return (
