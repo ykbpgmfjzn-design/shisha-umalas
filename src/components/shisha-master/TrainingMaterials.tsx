@@ -101,7 +101,7 @@ export default function TrainingMaterials() {
   const [selectedMaterial, setSelectedMaterial] = useState<TrainingMaterial | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [langTab, setLangTab] = useState("en");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -267,16 +267,19 @@ export default function TrainingMaterials() {
     );
   }
 
-  const filteredMaterials = materials.filter(m => m.language === langTab);
-
   const getCategoryLabel = (value: string) => {
     const cat = CATEGORIES.find(c => c.value === value);
     if (!cat) return value;
-    return langTab === "id" ? cat.labelId : cat.labelEn;
+    return cat.labelEn;
+  };
+
+  const getLangFlag = (lang: string) => {
+    const flags: Record<string, string> = { en: "🇬🇧", id: "🇮🇩", ru: "🇷🇺", uk: "🇺🇦", fr: "🇫🇷", hi: "🇮🇳", zh: "🇨🇳" };
+    return flags[lang] || lang;
   };
 
   const groupedMaterials = CATEGORIES.reduce<Record<string, TrainingMaterial[]>>((acc, cat) => {
-    const items = filteredMaterials.filter(m => (m.category || "general") === cat.value);
+    const items = materials.filter(m => (m.category || "general") === cat.value);
     if (items.length > 0) acc[cat.value] = items;
     return acc;
   }, {});
@@ -314,6 +317,7 @@ export default function TrainingMaterials() {
                 {getIcon(material.file_type)}
                 <span className="capitalize text-xs">{material.file_type}</span>
               </Badge>
+              <Badge variant="secondary" className="shrink-0 text-xs">{getLangFlag(material.language)}</Badge>
               <h3 className="font-medium text-sm truncate">{material.title}</h3>
             </div>
             <div className="flex items-center gap-1 shrink-0">
@@ -378,14 +382,7 @@ export default function TrainingMaterials() {
           )}
         </CardHeader>
         <CardContent>
-          <Tabs value={langTab} onValueChange={setLangTab} className="mb-4">
-            <TabsList>
-              <TabsTrigger value="en">🇬🇧 English</TabsTrigger>
-              <TabsTrigger value="id">🇮🇩 Indonesian</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {filteredMaterials.length === 0 ? (
+          {materials.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No training materials yet</p>
