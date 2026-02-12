@@ -2,10 +2,11 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
   Shield, Users, Search, Crown, Building2, User,
-  Wind, Calculator, ChevronDown, UserCircle, Footprints
+  Wind, Calculator, ChevronDown, UserCircle, Footprints, Merge
 } from "lucide-react";
 import { normalizeCustomerName } from "@/lib/utils";
 import PhotoLightbox from "@/components/PhotoLightbox";
+import MergeCustomersDialog from "@/components/admin/MergeCustomersDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ interface UsersTableProps {
   onAddRole?: (userId: string, role: AppRole) => Promise<void>;
   onRemoveRole?: (userId: string, role: AppRole) => Promise<void>;
   filterMode?: "staff" | "customers";
+  onMerged?: () => void;
   t?: (key: string) => string;
 }
 
@@ -55,11 +57,14 @@ const UsersTable = ({
   onAddRole,
   onRemoveRole,
   filterMode,
+  onMerged,
   t,
 }: UsersTableProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [mergeSelection, setMergeSelection] = useState<string[]>([]);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
 
   const getUserRoles = (userId: string): AppRole[] => {
     return userRoles.filter(r => r.user_id === userId).map(r => r.role);
@@ -207,6 +212,20 @@ const UsersTable = ({
     return "bg-muted";
   };
 
+  const toggleMergeSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMergeSelection((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  };
+
+  const mergeCustomers = useMemo(
+    () => filteredProfiles.filter((p) => mergeSelection.includes(p.id)),
+    [filteredProfiles, mergeSelection]
+  );
+
   return (
     <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/50 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-6">
@@ -216,6 +235,23 @@ const UsersTable = ({
           {filteredProfiles.length} total
         </span>
       </div>
+
+      {filterMode === "customers" && mergeSelection.length === 2 && (
+        <Button
+          size="sm"
+          className="w-full mb-3 gap-2"
+          onClick={() => setShowMergeDialog(true)}
+        >
+          <Merge className="w-4 h-4" />
+          Merge {mergeSelection.length} customers
+        </Button>
+      )}
+
+      {filterMode === "customers" && mergeSelection.length > 0 && mergeSelection.length < 2 && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Select 1 more customer to merge
+        </p>
+      )}
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -246,6 +282,20 @@ const UsersTable = ({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {filterMode === "customers" && (
+                    <div
+                      onClick={(e) => toggleMergeSelect(profile.id, e)}
+                      className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                        mergeSelection.includes(profile.id)
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                    >
+                      {mergeSelection.includes(profile.id) && (
+                        <span className="text-xs font-bold">✓</span>
+                      )}
+                    </div>
+                  )}
                   {profile.avatar_url ? (
                     <img
                       loading="lazy" src={profile.avatar_url}
@@ -374,6 +424,18 @@ const UsersTable = ({
         )}
       </div>
       <PhotoLightbox src={lightboxPhoto} open={!!lightboxPhoto} onOpenChange={(open) => !open && setLightboxPhoto(null)} />
+      <MergeCustomersDialog
+        open={showMergeDialog}
+        onOpenChange={(open) => {
+          setShowMergeDialog(open);
+          if (!open) setMergeSelection([]);
+        }}
+        customers={mergeCustomers}
+        onMerged={() => {
+          setMergeSelection([]);
+          onMerged?.();
+        }}
+      />
     </div>
   );
 };
