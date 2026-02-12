@@ -16,6 +16,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import Leaderboard from "@/components/shisha-master/Leaderboard";
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
@@ -71,6 +78,7 @@ const AdminContent = () => {
   } = useAdmin();
   const { logout } = useLogout();
 
+  const isMobile = useIsMobile();
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [showAddPurchase, setShowAddPurchase] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -562,20 +570,46 @@ const AdminContent = () => {
                 }}
               />
               
-              <UserDetails
-                user={selectedUser}
-                purchases={selectedUser ? allPurchases.filter(p => p.created_by === selectedUser.id) : []}
-                isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
-                userRoles={allUserRoles}
-                viewMode="staff"
-                onAddPurchase={() => setShowAddPurchase(true)}
-                onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
-                onUserDeleted={() => {
-                  setSelectedUser(null);
-                  fetchAllProfiles();
-                  fetchAllUserRoles();
-                }}
-              />
+              {isMobile ? (
+                <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+                  <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>{selectedUser?.full_name || selectedUser?.email || "User"}</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <UserDetails
+                        user={selectedUser}
+                        purchases={selectedUser ? allPurchases.filter(p => p.created_by === selectedUser.id) : []}
+                        isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                        userRoles={allUserRoles}
+                        viewMode="staff"
+                        onAddPurchase={() => setShowAddPurchase(true)}
+                        onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
+                        onUserDeleted={() => {
+                          setSelectedUser(null);
+                          fetchAllProfiles();
+                          fetchAllUserRoles();
+                        }}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              ) : (
+                <UserDetails
+                  user={selectedUser}
+                  purchases={selectedUser ? allPurchases.filter(p => p.created_by === selectedUser.id) : []}
+                  isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                  userRoles={allUserRoles}
+                  viewMode="staff"
+                  onAddPurchase={() => setShowAddPurchase(true)}
+                  onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
+                  onUserDeleted={() => {
+                    setSelectedUser(null);
+                    fetchAllProfiles();
+                    fetchAllUserRoles();
+                  }}
+                />
+              )}
             </div>
           </TabsContent>
 
@@ -619,19 +653,44 @@ const AdminContent = () => {
                 }}
               />
               
-              <UserDetails
-                user={selectedUser}
-                purchases={userPurchases}
-                isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
-                userRoles={allUserRoles}
-                onAddPurchase={() => setShowAddPurchase(true)}
-                onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
-                onUserDeleted={() => {
-                  setSelectedUser(null);
-                  fetchAllProfiles();
-                  fetchAllUserRoles();
-                }}
-              />
+              {isMobile ? (
+                <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+                  <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>{selectedUser?.full_name || selectedUser?.email || "Customer"}</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <UserDetails
+                        user={selectedUser}
+                        purchases={userPurchases}
+                        isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                        userRoles={allUserRoles}
+                        onAddPurchase={() => setShowAddPurchase(true)}
+                        onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
+                        onUserDeleted={() => {
+                          setSelectedUser(null);
+                          fetchAllProfiles();
+                          fetchAllUserRoles();
+                        }}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              ) : (
+                <UserDetails
+                  user={selectedUser}
+                  purchases={userPurchases}
+                  isAdmin={selectedUser ? isUserAdmin(selectedUser.id) : false}
+                  userRoles={allUserRoles}
+                  onAddPurchase={() => setShowAddPurchase(true)}
+                  onUserUpdated={() => { fetchAllProfiles(); fetchAllUserRoles(); }}
+                  onUserDeleted={() => {
+                    setSelectedUser(null);
+                    fetchAllProfiles();
+                    fetchAllUserRoles();
+                  }}
+                />
+              )}
             </div>
           </TabsContent>
 
