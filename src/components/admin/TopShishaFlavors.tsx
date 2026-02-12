@@ -76,7 +76,6 @@ const TopShishaFlavors = ({ purchases }: TopShishaFlavorsProps) => {
       <div className="flex items-center gap-2 mb-4">
         <Flame className="w-5 h-5 text-golden" />
         <h3 className="font-display text-lg">Top Shisha Flavors</h3>
-        <span className="ml-auto text-xs text-muted-foreground">all time</span>
       </div>
 
       <div className="space-y-3">

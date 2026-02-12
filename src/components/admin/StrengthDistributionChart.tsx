@@ -74,7 +74,6 @@ const StrengthDistributionChart = ({ purchases }: Props) => {
       <div className="flex items-center gap-2 mb-4">
         <Wind className="w-5 h-5 text-golden" />
         <h3 className="font-display text-lg">Sales by Strength</h3>
-        <span className="ml-auto text-xs text-muted-foreground">all time</span>
       </div>
 
       <div className="flex items-center gap-4">
