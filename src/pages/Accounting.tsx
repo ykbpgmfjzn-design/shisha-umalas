@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Calculator, LogOut, Download,
@@ -40,6 +40,8 @@ type PaymentMethodFilter = "all" | "cash" | "edc" | "bank_transfer" | "qris" | "
 
 const AccountingContent = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromAdmin = searchParams.get("from") === "admin";
   const { toast } = useToast();
   const { t } = useLanguage();
   const { logout } = useLogout();
@@ -326,11 +328,11 @@ const AccountingContent = () => {
         <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(fromAdmin ? "/admin" : "/")}
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {t("admin.backToHome")}
+            {fromAdmin ? t("admin.backToAdmin") || "Back to Admin" : t("admin.backToHome")}
           </Button>
           <div className="flex items-center gap-4">
             
