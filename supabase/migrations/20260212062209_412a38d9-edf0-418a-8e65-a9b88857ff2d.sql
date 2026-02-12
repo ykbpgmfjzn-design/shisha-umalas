@@ -1,0 +1,1 @@
+DELETE FROM purchases WHERE id = '07a42ea7-2350-45a7-a204-3e95e8443ab2';
