@@ -42,6 +42,7 @@ import ReservationsList from "@/components/admin/ReservationsList";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import MenuEditor from "@/components/admin/MenuEditor";
 import TopCustomers from "@/components/admin/TopCustomers";
+import TopShishaFlavors from "@/components/admin/TopShishaFlavors";
 import type { Profile } from "@/hooks/useProfile";
 
 interface FeedbackWithUser {
@@ -483,6 +484,7 @@ const AdminContent = () => {
               />
               
               <div className="space-y-6">
+                <TopShishaFlavors purchases={allPurchases} />
                 <TopCustomers purchases={allPurchases} />
                 {/* Delivery Settings */}
                 <DeliverySettings t={t} />
