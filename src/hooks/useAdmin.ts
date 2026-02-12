@@ -27,6 +27,7 @@ export interface PurchaseWithProfile {
   payment_status: string | null;
   delivery_status: string;
   paid_at: string | null;
+  payment_method: string | null;
   doku_invoice_url: string | null;
   customer_name: string | null;
   customer_photo_url: string | null;

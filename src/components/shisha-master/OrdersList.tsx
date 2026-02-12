@@ -45,6 +45,7 @@ interface OrderWithProfile {
   customer_photo_url: string | null;
   shisha_master_name: string | null;
   created_by: string | null;
+  payment_method: string | null;
   created_by_name: string | null;
   profile: {
     full_name: string | null;
@@ -451,6 +452,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       free_drink_used: null,
       free_snack_used: null,
       created_by: null,
+      payment_method: order.payment_method || null,
       doku_invoice_url: null,
       profile: order.profile ? {
         email: order.profile.email,

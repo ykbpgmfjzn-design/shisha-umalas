@@ -35,6 +35,7 @@ import { AdminLanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import type { PurchaseWithProfile, DashboardStats } from "@/hooks/useAdmin";
 
 type StatusFilter = "all" | "pending" | "paid" | "cancelled";
+type PaymentMethodFilter = "all" | "cash" | "edc" | "bank_transfer" | "qris" | "doku";
 
 const AccountingContent = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const AccountingContent = () => {
   });
   
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [updating, setUpdating] = useState<string | null>(null);
   
@@ -159,8 +161,9 @@ const AccountingContent = () => {
 
   const filteredOrders = orders
     .filter(order => {
-      if (statusFilter === "all") return true;
-      return order.payment_status === statusFilter;
+      if (statusFilter !== "all" && order.payment_status !== statusFilter) return false;
+      if (paymentMethodFilter !== "all" && order.payment_method !== paymentMethodFilter) return false;
+      return true;
     })
     .sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
@@ -398,6 +401,23 @@ const AccountingContent = () => {
                     <SelectItem value="pending">{t("admin.filterPending")}</SelectItem>
                     <SelectItem value="paid">{t("admin.filterPaid")}</SelectItem>
                     <SelectItem value="cancelled">{t("admin.filterCancelled")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <Select value={paymentMethodFilter} onValueChange={(v) => setPaymentMethodFilter(v as PaymentMethodFilter)}>
+                  <SelectTrigger className="w-[140px] bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Methods</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="edc">EDC</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="qris">QRIS</SelectItem>
+                    <SelectItem value="doku">DOKU</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
