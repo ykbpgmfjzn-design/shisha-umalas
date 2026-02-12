@@ -21,7 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X } from "lucide-react";
+import { Clock, CheckCircle, XCircle, User, MessageSquare, Home, Wind, Crown, CreditCard, ChefHat, Pencil, Camera, Loader2, X, UserPlus } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,6 +45,7 @@ interface OrderWithProfile {
   customer_photo_url: string | null;
   shisha_master_name: string | null;
   created_by: string | null;
+  created_by_name: string | null;
   profile: {
     full_name: string | null;
     email: string | null;
@@ -202,7 +203,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     // Batch fetch all needed profiles in one query (including shisha masters)
     const userIds = [...new Set(allOrders.map(o => o.user_id).filter(Boolean))];
     const masterIds = [...new Set(allOrders.map(o => o.shisha_master_id).filter(Boolean))];
-    const allProfileIds = [...new Set([...userIds, ...masterIds])];
+    const creatorIds = [...new Set(allOrders.map(o => o.created_by).filter(Boolean))];
+    const allProfileIds = [...new Set([...userIds, ...masterIds, ...creatorIds])];
     let profileMap = new Map<string, { full_name: string | null; email: string | null; room_number: string | null; loyalty_level: number }>();
     
     if (allProfileIds.length > 0) {
@@ -215,10 +217,31 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
       }
     }
 
+    // Fetch display names from user_roles for staff
+    const staffIds = [...new Set([...masterIds, ...creatorIds])];
+    let displayNameMap = new Map<string, string>();
+    if (staffIds.length > 0) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, display_name")
+        .in("user_id", staffIds);
+      if (roles) {
+        roles.forEach(r => {
+          if (r.display_name) displayNameMap.set(r.user_id, r.display_name);
+        });
+      }
+    }
+
+    const getStaffName = (id: string | null) => {
+      if (!id) return null;
+      return displayNameMap.get(id) || profileMap.get(id)?.full_name || profileMap.get(id)?.email || null;
+    };
+
     const mapOrder = (order: any): OrderWithProfile => ({
       ...order,
       profile: order.user_id ? profileMap.get(order.user_id) || null : null,
-      shisha_master_name: order.shisha_master_id ? (profileMap.get(order.shisha_master_id)?.full_name || null) : null,
+      shisha_master_name: getStaffName(order.shisha_master_id),
+      created_by_name: getStaffName(order.created_by),
     });
 
     const activeWithProfiles = (activeRes.data || []).map(mapOrder);
@@ -717,6 +740,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <ChefHat className="h-3 w-3 text-primary" />
                           {order.shisha_master_name}
+                        </span>
+                      )}
+                      {order.created_by_name && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <UserPlus className="h-3 w-3 text-accent" />
+                          {order.created_by_name}
                         </span>
                       )}
                     </div>
