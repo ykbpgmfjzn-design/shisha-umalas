@@ -11,12 +11,14 @@ import OrdersList, { useActiveOrdersCount } from "@/components/shisha-master/Ord
 import TrainingMaterials from "@/components/shisha-master/TrainingMaterials";
 import ManualOrderForm from "@/components/shisha-master/ManualOrderForm";
 import Leaderboard from "@/components/shisha-master/Leaderboard";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 function ShishaMasterContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromAdmin = searchParams.get("from") === "admin";
   const { t } = useLanguage();
+  const { isAdmin } = useUserRoles();
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
@@ -118,7 +120,7 @@ function ShishaMasterContent() {
           </TabsContent>
           <TabsContent value="new-order">
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              <ManualOrderForm />
+              <ManualOrderForm isAdmin={isAdmin} />
             </motion.div>
           </TabsContent>
           <TabsContent value="history">

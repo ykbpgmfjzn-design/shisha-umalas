@@ -80,6 +80,7 @@ interface ManualOrderFormProps {
   onOrderCreated?: () => void;
   editOrder?: EditOrderData | null;
   onEditComplete?: () => void;
+  isAdmin?: boolean;
 }
 
 function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[] {
@@ -111,7 +112,7 @@ function parseExtraNotesFromNotes(notes: string | null): string {
   return parts.length > 1 ? parts.slice(1).join("\n---\n") : "";
 }
 
-export default function ManualOrderForm({ onOrderCreated, editOrder, onEditComplete }: ManualOrderFormProps) {
+export default function ManualOrderForm({ onOrderCreated, editOrder, onEditComplete, isAdmin: isAdminProp }: ManualOrderFormProps) {
   const { t } = useLanguage();
   const isEditing = !!editOrder;
 
@@ -158,10 +159,12 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
           name: roleMap.get(p.id) || p.full_name || p.email || "Unknown",
         })));
       }
-      // Auto-select current user if they are a shisha master
+      // Auto-select current user if they are a shisha master (for new orders or non-admin edit)
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && ids.includes(user.id) && !editOrder) {
-        setShishaMasterId(user.id);
+      if (user && ids.includes(user.id)) {
+        if (!editOrder || !isAdminProp) {
+          setShishaMasterId(user.id);
+        }
       }
     };
     fetchMasters();
@@ -742,17 +745,24 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
 
             <div className="space-y-2">
               <Label className="text-xs">👨‍🍳 Shisha Master</Label>
-              <Select value={shishaMasterId || "none"} onValueChange={(v) => setShishaMasterId(v === "none" ? null : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select master" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Not assigned</SelectItem>
-                  {shishaMasters.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isAdminProp ? (
+                <Select value={shishaMasterId || "none"} onValueChange={(v) => setShishaMasterId(v === "none" ? null : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select master" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Not assigned</SelectItem>
+                    {shishaMasters.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 border border-border text-sm">
+                  <Wind className="h-4 w-4 text-primary" />
+                  <span>{shishaMasters.find(m => m.id === shishaMasterId)?.name || "Auto-assigned"}</span>
+                </div>
+              )}
             </div>
           </div>
 

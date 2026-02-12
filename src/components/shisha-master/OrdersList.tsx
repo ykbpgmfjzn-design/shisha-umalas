@@ -44,6 +44,7 @@ interface OrderWithProfile {
   customer_name: string | null;
   customer_photo_url: string | null;
   shisha_master_name: string | null;
+  created_by: string | null;
   profile: {
     full_name: string | null;
     email: string | null;
@@ -72,6 +73,24 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [replacingPhotoOrderId, setReplacingPhotoOrderId] = useState<string | null>(null);
   const [deletePhotoOrderId, setDeletePhotoOrderId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Fetch current user and role
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setCurrentUserId(user.id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const userRoles = roles?.map(r => r.role) || [];
+      setIsAdmin(userRoles.includes("admin") || userRoles.includes("owner"));
+    };
+    fetchCurrentUser();
+  }, []);
   const prevOrdersRef = React.useRef<Map<string, { payment_status: string | null; delivery_status: string }>>(new Map());
   const photoInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -500,6 +519,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
           <div className="mt-4">
             <ManualOrderForm
               editOrder={editingOrder}
+              isAdmin={isAdmin}
               onEditComplete={() => {
                 setEditSheetOpen(false);
                 setEditingOrder(null);
@@ -730,12 +750,16 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                         </Button>
                       )}
                       
-                      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditSheet(order)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openCancelDialog(order.id)}>
-                        <XCircle className="h-3.5 w-3.5" />
-                      </Button>
+                      {(isAdmin || order.created_by === currentUserId) && (
+                        <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditSheet(order)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {(isAdmin || order.created_by === currentUserId) && (
+                        <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openCancelDialog(order.id)}>
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                     {!isPreparing && (
                       <Button size="sm" className="w-full text-xs" onClick={() => handleMarkDelivered(order.id)}>
