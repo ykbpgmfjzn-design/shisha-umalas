@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Crown, Building2, Users, Plus, Hash, Calendar,
-  Coffee, Cookie, Shield, Pencil, Save, X, Loader2, Trash2, Wind
+  Coffee, Cookie, Shield, Pencil, Save, X, Loader2, Trash2, Wind, Camera
 } from "lucide-react";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,8 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     phone: "",
@@ -54,6 +56,7 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
     loyalty_level: 1,
     total_hookahs_ordered: 0,
     staff_display_name: "",
+    avatar_url: null as string | null,
   });
 
   const isStaff = user ? userRoles.some(r => r.user_id === user.id && ["shisha_master", "admin", "owner", "accounting"].includes(r.role)) : false;
@@ -68,6 +71,7 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
         loyalty_level: user.loyalty_level,
         total_hookahs_ordered: user.total_hookahs_ordered,
         staff_display_name: staffRole?.display_name || "",
+        avatar_url: user.avatar_url || null,
       });
       setEditing(false);
     }
@@ -83,6 +87,32 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
     });
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAvatar(true);
+    try {
+      const { compressImage } = await import("@/lib/compressImage");
+      const compressed = await compressImage(file);
+      const fileExt = compressed.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, compressed, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+      setEditForm(f => ({ ...f, avatar_url: urlData.publicUrl }));
+    } catch (err: any) {
+      console.error("Avatar upload error:", err);
+      toast.error(err.message || "Upload error");
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -95,6 +125,7 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
         room_number: editForm.room_number || null,
         loyalty_level: editForm.loyalty_level,
         total_hookahs_ordered: editForm.total_hookahs_ordered,
+        avatar_url: editForm.avatar_url,
       })
       .eq("id", user.id);
 
@@ -229,6 +260,7 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
                     loyalty_level: user.loyalty_level,
                     total_hookahs_ordered: user.total_hookahs_ordered,
                     staff_display_name: staffRole?.display_name || "",
+                    avatar_url: user.avatar_url || null,
                   });
                 }}
                 className="text-muted-foreground"
@@ -250,6 +282,58 @@ const UserDetails = ({ user, purchases, isAdmin, userRoles = [], viewMode, onAdd
 
       {editing && (
         <div className="space-y-3 mb-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+          {/* Avatar */}
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              {editForm.avatar_url ? (
+                <img src={editForm.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-border" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+                  <Camera className="w-6 h-6 text-muted-foreground" />
+                </div>
+              )}
+              <button
+                type="button"
+                className="absolute inset-0 rounded-full bg-background/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Camera className="w-3 h-3 mr-1" />}
+                {editForm.avatar_url ? "Change photo" : "Add photo"}
+              </Button>
+              {editForm.avatar_url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-destructive hover:text-destructive"
+                  onClick={() => setEditForm(f => ({ ...f, avatar_url: null }))}
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Remove
+                </Button>
+              )}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Name</label>
