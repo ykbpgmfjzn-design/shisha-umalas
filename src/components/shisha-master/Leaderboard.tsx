@@ -9,6 +9,19 @@ import LeaderboardOrderDetails from "./LeaderboardOrderDetails";
 
 type PeriodFilter = "today" | "current" | "previous";
 
+export interface LeaderboardOrder {
+  id: string;
+  created_by: string | null;
+  shisha_master_id: string | null;
+  amount: number | null;
+  payment_status: string | null;
+  created_at: string;
+  notes: string | null;
+  customer_name: string | null;
+  delivery_status: string;
+  payment_method: string | null;
+}
+
 interface MasterStats {
   userId: string;
   name: string;
@@ -19,6 +32,7 @@ interface MasterStats {
 
 export default function Leaderboard() {
   const [masters, setMasters] = useState<MasterStats[]>([]);
+  const [allOrders, setAllOrders] = useState<LeaderboardOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodFilter>("current");
@@ -73,10 +87,11 @@ export default function Leaderboard() {
       // Get orders where master is either created_by OR shisha_master_id
       const { data: purchases } = await supabase
         .from("purchases")
-        .select("created_by, shisha_master_id, amount, payment_status, created_at")
+        .select("id, created_by, shisha_master_id, amount, payment_status, created_at, notes, customer_name, delivery_status, payment_method")
         .or(`created_by.in.(${masterUserIds.join(",")}),shisha_master_id.in.(${masterUserIds.join(",")})`)
         .gte("created_at", fromDate.toISOString())
-        .lt("created_at", toDate.toISOString());
+        .lt("created_at", toDate.toISOString())
+        .order("created_at", { ascending: false });
 
       // Aggregate stats — count each order once per master
       const statsMap = new Map<string, { count: number; revenue: number }>();
@@ -111,6 +126,7 @@ export default function Leaderboard() {
 
       leaderboard.sort((a, b) => b.orderCount - a.orderCount || b.totalRevenue - a.totalRevenue);
       setMasters(leaderboard);
+      setAllOrders((purchases || []) as LeaderboardOrder[]);
       setLoading(false);
     };
 
@@ -149,6 +165,14 @@ export default function Leaderboard() {
     return { from: startOfMonth(subMonths(now, 1)), to: startOfMonth(now) };
   }, [period]);
 
+  // Filter orders for the selected master
+  const selectedMasterOrders = useMemo(() => {
+    if (!selectedMaster) return [];
+    return allOrders.filter(
+      (o) => o.created_by === selectedMaster.userId || o.shisha_master_id === selectedMaster.userId
+    );
+  }, [selectedMaster, allOrders]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -161,9 +185,7 @@ export default function Leaderboard() {
     return (
       <LeaderboardOrderDetails
         masterName={selectedMaster.name}
-        masterUserId={selectedMaster.userId}
-        fromDate={dateRange.from}
-        toDate={dateRange.to}
+        orders={selectedMasterOrders}
         onBack={() => setSelectedMaster(null)}
       />
     );
