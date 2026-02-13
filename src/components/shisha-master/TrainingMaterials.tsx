@@ -315,13 +315,13 @@ export default function TrainingMaterials() {
               ) : material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") ? (
                 <button
                   onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}
-                  className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors cursor-pointer"
                 >
-                  <Eye className="h-5 w-5" />
-                  <span className="text-[10px] uppercase tracking-wider">PDF</span>
+                  <FileText className="h-7 w-7" />
+                  <span className="text-[10px] uppercase tracking-wider font-medium">Preview PDF</span>
                 </button>
               ) : (
-                <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground w-full h-full">
                   {getIcon(material.file_type)}
                   <span className="text-[10px] uppercase tracking-wider">{material.file_type}</span>
                 </div>
