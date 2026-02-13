@@ -56,7 +56,7 @@ export const ValentineBanner = () => {
 
             {/* Banner image */}
             <img
-              src={valentineBanner}
+              loading="lazy" src={valentineBanner}
               alt="Valentine Series - Shisha Cool"
               className="w-full rounded-2xl shadow-2xl"
             />
