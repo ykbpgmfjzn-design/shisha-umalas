@@ -26,6 +26,7 @@ interface OrderNotification {
   location?: string;
   notes?: string;
   // Feedback fields
+  feedbackId?: string;
   feedbackName?: string;
   feedbackRating?: number;
   feedbackMessage?: string;
@@ -90,6 +91,15 @@ ${data.feedbackPhotoUrl ? `📷 *Photo attached*` : ''}
 ⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
 
 🔗 [Open Review](https://shisha-umalas.lovable.app/feedback)`;
+
+      // Add Approve button if feedback ID is available
+      if (data.feedbackId) {
+        inlineKeyboard = {
+          inline_keyboard: [
+            [{ text: "✅ Approve Review", callback_data: `approve_feedback:${data.feedbackId}` }]
+          ]
+        };
+      }
     } else if (data.type === 'reservation') {
       // Reservation notification in English
       console.log('Sending Telegram notification for reservation');
