@@ -19,6 +19,7 @@ import OrderHistory from "./pages/OrderHistory";
 import Feedback from "./pages/Feedback";
 import ActivityLogs from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
+import Valentine from "./pages/Valentine";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => {
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/activity-logs" element={<ActivityLogs />} />
+                <Route path="/valentine" element={<Valentine />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

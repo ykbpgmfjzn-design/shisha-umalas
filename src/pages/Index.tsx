@@ -8,6 +8,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import BottomNavigation from "@/components/BottomNavigation";
 import Cart from "@/components/Cart";
 import PublicReviews from "@/components/PublicReviews";
+import { ValentineBanner } from "@/components/ValentineBanner";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +28,7 @@ const Index = () => {
 
   return (
     <main className="min-h-screen bg-background pb-20">
+      <ValentineBanner />
       <LanguageSelector />
       <HeroSection />
       <PublicReviews />
