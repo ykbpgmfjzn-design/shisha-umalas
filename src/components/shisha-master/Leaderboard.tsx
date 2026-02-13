@@ -144,11 +144,9 @@ export default function Leaderboard() {
     return () => { supabase.removeChannel(channel); };
   }, [period]);
 
-  // Fire confetti when leader data loads
-  const confettiFired = useState(false);
+  // Fire confetti when leader data loads or period changes
   useEffect(() => {
-    if (!loading && masters.length > 0 && masters[0].orderCount > 0 && !confettiFired[0]) {
-      confettiFired[1](true);
+    if (!loading && masters.length > 0 && masters[0].orderCount > 0) {
       const end = Date.now() + 2000;
       const colors = ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB'];
       (function frame() {
@@ -169,7 +167,7 @@ export default function Leaderboard() {
         if (Date.now() < end) requestAnimationFrame(frame);
       })();
     }
-  }, [loading, masters]);
+  }, [loading, period]);
 
   const rankIcons = [
     <Crown className="w-5 h-5 text-yellow-400" />,
