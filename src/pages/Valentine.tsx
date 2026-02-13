@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { useMemo } from "react";
 import Cart from "@/components/Cart";
 import BottomNavigation from "@/components/BottomNavigation";
-import valentineBanner from "@/assets/valentine-banner.png";
+import shishaLeft from "@/assets/valentine-shisha-left.png";
+import decorRight from "@/assets/valentine-decor-right.png";
 
 const HEART_EMOJIS = ["❤️", "💕", "💗", "🌸", "🩷", "💖", "🌹", "🪻"];
 
@@ -142,25 +143,49 @@ const Valentine = () => {
         </div>
       </div>
 
-      {/* Banner Image */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="px-4 pt-4 max-w-lg mx-auto"
-      >
-        <img
-          src={valentineBanner}
-          alt="Shisha Cool Valentine Series"
-          className="w-full rounded-2xl shadow-xl"
+      {/* Decorative Hero Section */}
+      <div className="relative pt-6 pb-2 max-w-lg mx-auto overflow-hidden">
+        {/* Left decoration - shisha */}
+        <motion.img
+          src={shishaLeft}
+          alt=""
+          aria-hidden
+          className="absolute -left-8 top-0 w-32 h-auto opacity-60 pointer-events-none"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 0.6, x: 0 }}
+          transition={{ duration: 0.8 }}
         />
-      </motion.div>
+        {/* Right decoration - glasses */}
+        <motion.img
+          src={decorRight}
+          alt=""
+          aria-hidden
+          className="absolute -right-8 top-4 w-32 h-auto opacity-60 pointer-events-none"
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 0.6, x: 0 }}
+          transition={{ duration: 0.8 }}
+        />
+
+        {/* Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center relative z-10 px-14"
+        >
+          <p className="text-muted-foreground text-xs tracking-[0.4em] uppercase mb-1">Shisha Cool</p>
+          <h2
+            className="font-display text-4xl md:text-5xl bg-gradient-to-r from-red-700 via-red-500 to-red-700 bg-clip-text text-transparent leading-tight"
+            style={{ textShadow: "none" }}
+          >
+            Valentine<br/>Series
+          </h2>
+          <div className="mt-3 mx-auto w-20 h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
+        </motion.div>
+      </div>
 
       {/* Menu Items */}
-      <div className="px-4 pt-6 pb-4 max-w-lg mx-auto space-y-4">
-        <h2 className="text-center font-display text-xl text-foreground mb-6">
-          Order Your Valentine Hookah
-        </h2>
+      <div className="px-4 pt-4 pb-4 max-w-lg mx-auto space-y-4">
 
         {valentineItems.map((item, index) => (
           <motion.div
