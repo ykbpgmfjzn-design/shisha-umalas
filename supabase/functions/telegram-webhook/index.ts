@@ -134,6 +134,51 @@ serve(async (req) => {
       let statusEmoji = '';
       let statusLabel = '';
 
+      // Handle feedback approval separately
+      if (action === 'approve_feedback') {
+        const feedbackId = orderId; // reusing the variable name
+        const { error: approveError } = await supabase
+          .from('feedback')
+          .update({ is_approved: true })
+          .eq('id', feedbackId);
+
+        let approveResponseText = '✅ Review approved!';
+        if (approveError) {
+          console.error('Feedback approve error:', approveError);
+          approveResponseText = `❌ Error: ${approveError.message}`;
+        }
+
+        await fetch(`https://api.telegram.org/bot${telegramToken}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: callbackQuery.id,
+            text: approveResponseText,
+            show_alert: true,
+          }),
+        });
+
+        // Update message to show it's approved
+        if (!approveError) {
+          const originalMsg = callbackQuery.message?.text || '';
+          const updatedMsg = originalMsg + '\n\n✅ *APPROVED*';
+          await fetch(`https://api.telegram.org/bot${telegramToken}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: callbackQuery.message.chat.id,
+              message_id: callbackQuery.message.message_id,
+              text: updatedMsg,
+              parse_mode: 'Markdown',
+            }),
+          });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       switch (action) {
         // Payment actions (support both naming conventions)
         case 'mark_paid':

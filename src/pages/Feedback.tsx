@@ -100,13 +100,13 @@ const Feedback = () => {
       photoUrl = await uploadPhoto();
     }
 
-    const { error } = await supabase.from("feedback").insert({
+    const { data: insertedFeedback, error } = await supabase.from("feedback").insert({
       user_id: userId,
       rating,
       message: feedback || null,
       name: name.trim(),
       photo_url: photoUrl,
-    });
+    }).select('id').single();
     
     if (error) {
       toast.error("Error submitting feedback");
@@ -117,6 +117,7 @@ const Feedback = () => {
         await supabase.functions.invoke('send-telegram-notification', {
           body: {
             type: 'feedback',
+            feedbackId: insertedFeedback?.id,
             feedbackName: name.trim(),
             feedbackRating: rating,
             feedbackMessage: feedback || null,
