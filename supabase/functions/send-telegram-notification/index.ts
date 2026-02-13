@@ -89,7 +89,7 @@ ${data.feedbackPhotoUrl ? `📷 *Photo attached*` : ''}
 
 ⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })}
 
-🔗 [Open Admin Panel](https://shisha-umalas.lovable.app/admin)`;
+🔗 [Open Review](https://shisha-umalas.lovable.app/feedback)`;
     } else if (data.type === 'reservation') {
       // Reservation notification in English
       console.log('Sending Telegram notification for reservation');
