@@ -53,16 +53,14 @@ const FloatingHearts = () => {
   );
 };
 
+const loveEssenceItems = [
+  { id: "valentine-love-essence-watermelon", name: "Love Essence — Herbaline Watermelon", shortName: "Herbaline Watermelon", price: 280000, priceDisplay: "280K IDR", itemType: "hookah" as const, isSignature: true },
+  { id: "valentine-love-essence-strawberry", name: "Love Essence — Herbaline Strawberry", shortName: "Herbaline Strawberry", price: 280000, priceDisplay: "280K IDR", itemType: "hookah" as const, isSignature: true },
+  { id: "valentine-love-essence-mango", name: "Love Essence — Whiteline Mango", shortName: "Whiteline Mango", price: 280000, priceDisplay: "280K IDR", itemType: "hookah" as const, isSignature: true },
+  { id: "valentine-love-essence-lychee", name: "Love Essence — Whiteline Lychee", shortName: "Whiteline Lychee", price: 280000, priceDisplay: "280K IDR", itemType: "hookah" as const, isSignature: true },
+];
+
 const valentineItems = [
-  {
-    id: "valentine-love-essence",
-    name: "Love Essence",
-    description: "Herbaline Watermelon + Herbaline Strawberry + Whiteline Mango + Whiteline Lychee",
-    price: 280000,
-    priceDisplay: "280K IDR",
-    itemType: "hookah" as const,
-    isSignature: true,
-  },
   {
     id: "valentine-fresh-romance",
     name: "Fresh Romance",
@@ -114,7 +112,7 @@ const Valentine = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const handleAddToCart = (item: typeof valentineItems[0]) => {
+  const handleAddToCart = (item: { id: string; name: string; description?: string; price: number; priceDisplay: string; itemType: "hookah"; isSignature: boolean }) => {
     addItem({
       id: item.id,
       name: item.name,
@@ -186,6 +184,34 @@ const Valentine = () => {
 
       {/* Menu Items */}
       <div className="px-4 pt-4 pb-4 max-w-lg mx-auto space-y-4">
+
+        {/* Love Essence Group */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-card/80 backdrop-blur-sm border border-red-200/30 rounded-2xl p-4 shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Heart className="w-4 h-4 text-red-400 fill-red-400 flex-shrink-0" />
+            <h3 className="font-display text-lg text-foreground">Love Essence</h3>
+            <span className="text-golden font-semibold text-base ml-auto">280K IDR</span>
+          </div>
+          <div className="space-y-2">
+            {loveEssenceItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 pl-6">
+                <span className="text-sm text-muted-foreground">{item.shortName}</span>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleAddToCart(item)}
+                  className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 shadow transition-colors"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                </motion.button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
         {valentineItems.map((item, index) => (
           <motion.div
