@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,6 +6,7 @@ import { Trophy, Flame, Crown, Medal, CalendarDays, ChevronRight } from "lucide-
 import { motion } from "framer-motion";
 import { startOfMonth, startOfDay, subMonths, format } from "date-fns";
 import LeaderboardOrderDetails from "./LeaderboardOrderDetails";
+import confetti from "canvas-confetti";
 
 type PeriodFilter = "today" | "current" | "previous";
 
@@ -142,6 +143,33 @@ export default function Leaderboard() {
 
     return () => { supabase.removeChannel(channel); };
   }, [period]);
+
+  // Fire confetti when leader data loads
+  const confettiFired = useState(false);
+  useEffect(() => {
+    if (!loading && masters.length > 0 && masters[0].orderCount > 0 && !confettiFired[0]) {
+      confettiFired[1](true);
+      const end = Date.now() + 2000;
+      const colors = ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB'];
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors,
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+  }, [loading, masters]);
 
   const rankIcons = [
     <Crown className="w-5 h-5 text-yellow-400" />,
