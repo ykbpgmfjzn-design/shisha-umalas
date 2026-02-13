@@ -41,6 +41,7 @@ import {
   ExternalLink, BookOpen, Loader2, Link as LinkIcon, Play, Upload, X, Eye
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import PdfThumbnail from "@/components/PdfThumbnail";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -315,10 +316,9 @@ export default function TrainingMaterials() {
               ) : material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") ? (
                 <button
                   onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}
-                  className="w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors cursor-pointer"
+                  className="w-full h-full hover:bg-muted/80 transition-colors cursor-pointer overflow-hidden"
                 >
-                  <FileText className="h-7 w-7" />
-                  <span className="text-[10px] uppercase tracking-wider font-medium">Preview PDF</span>
+                  <PdfThumbnail url={material.file_url} className="w-full h-full" />
                 </button>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-1 text-muted-foreground w-full h-full">
