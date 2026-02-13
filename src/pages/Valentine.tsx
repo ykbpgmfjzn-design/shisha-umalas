@@ -3,9 +3,54 @@ import { Heart, ShoppingCart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { useMemo } from "react";
 import Cart from "@/components/Cart";
 import BottomNavigation from "@/components/BottomNavigation";
 import valentineBanner from "@/assets/valentine-banner.png";
+
+const HEART_EMOJIS = ["❤️", "💕", "💗", "🌸", "🩷", "💖", "🌹", "🪻"];
+
+const FloatingHearts = () => {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        id: i,
+        emoji: HEART_EMOJIS[i % HEART_EMOJIS.length],
+        left: `${Math.random() * 100}%`,
+        size: 14 + Math.random() * 16,
+        duration: 6 + Math.random() * 8,
+        delay: Math.random() * 10,
+        swayX: (Math.random() - 0.5) * 60,
+      })),
+    []
+  );
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+      {particles.map((p) => (
+        <motion.span
+          key={p.id}
+          className="absolute select-none"
+          style={{ left: p.left, top: -30, fontSize: p.size }}
+          animate={{
+            y: ["0vh", "105vh"],
+            x: [0, p.swayX, 0],
+            rotate: [0, 360],
+            opacity: [0, 1, 1, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          {p.emoji}
+        </motion.span>
+      ))}
+    </div>
+  );
+};
 
 const valentineItems = [
   {
@@ -82,7 +127,8 @@ const Valentine = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[hsl(350,80%,96%)] via-[hsl(350,60%,94%)] to-background pb-24">
+    <main className="relative min-h-screen bg-gradient-to-b from-[hsl(350,80%,96%)] via-[hsl(350,60%,94%)] to-background pb-24 overflow-hidden">
+      <FloatingHearts />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/30">
         <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
