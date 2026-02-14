@@ -83,10 +83,21 @@ interface ManualOrderFormProps {
   isAdmin?: boolean;
 }
 
+const VALENTINE_ITEMS: MenuItem[] = [
+  { id: "valentine-love-essence-watermelon", name: "Love Essence — Herbaline Watermelon", price: 280000, priceDisplay: "280K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-love-essence-strawberry", name: "Love Essence — Herbaline Strawberry", price: 280000, priceDisplay: "280K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-love-essence-mango", name: "Love Essence — Whiteline Mango", price: 280000, priceDisplay: "280K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-love-essence-lychee", name: "Love Essence — Whiteline Lychee", price: 280000, priceDisplay: "280K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-fresh-romance", name: "Fresh Romance", price: 300000, priceDisplay: "300K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-first-love", name: "First Love", price: 325000, priceDisplay: "325K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-two-hearts", name: "Two Hearts", price: 335000, priceDisplay: "335K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-pink-promise", name: "Pink Promise", price: 450000, priceDisplay: "450K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+  { id: "valentine-forbidden-love", name: "Forbidden Love", price: 475000, priceDisplay: "475K IDR", strength: "Valentine", itemType: "hookah", isSignature: true, keywords: [] },
+];
+
 function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[] {
   if (!notes) return [];
-  // Notes format: "1x Whiteline Vanilla, 2x Berry Kiss\n---\nextra notes"
-  // May also contain suffixes like "DOKU Invoice: INV-xxx" appended to the last item
+  const allItems = [...items, ...VALENTINE_ITEMS];
   const itemsPart = notes.split("\n---\n")[0];
   const entries: CartEntry[] = [];
   const parts = itemsPart.split(", ");
@@ -95,9 +106,8 @@ function parseCartFromNotes(notes: string | null, items: MenuItem[]): CartEntry[
     if (match) {
       const qty = parseInt(match[1], 10);
       let name = match[2].trim();
-      // Strip known suffixes (e.g. "DOKU Invoice: INV-...")
       name = name.replace(/\s*DOKU Invoice:.*$/i, "").trim();
-      const menuItem = items.find((m) => m.name === name);
+      const menuItem = allItems.find((m) => m.name === name);
       if (menuItem) {
         entries.push({ item: menuItem, quantity: qty });
       }
@@ -170,10 +180,10 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     fetchMasters();
   }, []);
 
-  // Group menu items by strength (include custom item)
+  // Group menu items by strength (include custom item + valentine items)
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
-    [...dbMenuItems, CUSTOM_ITEM].forEach((item) => {
+    [...dbMenuItems, ...VALENTINE_ITEMS, CUSTOM_ITEM].forEach((item) => {
       if (!groups[item.strength]) groups[item.strength] = [];
       groups[item.strength].push(item);
     });
@@ -466,7 +476,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
     }
   };
 
-  const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra", "Custom"];
+  const strengthOrder = ["Ultra Light", "Light", "Medium", "Bold Strong", "Extra", "Valentine", "Custom"];
 
   const updateCustomPrice = (price: number) => {
     setCart((prev) =>
