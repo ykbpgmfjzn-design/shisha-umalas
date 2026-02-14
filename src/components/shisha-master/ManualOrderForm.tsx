@@ -601,7 +601,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
             return (
               <div key={strength}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  {strength}
+                  {strength === "Valentine" && <span className="mr-1">❤️</span>}{strength}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {items.map((item) => {
