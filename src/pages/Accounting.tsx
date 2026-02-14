@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -7,6 +7,7 @@ import {
   Calendar, Hash, Building2, User, ExternalLink, Filter,
   ChevronDown, ChevronUp
 } from "lucide-react";
+import SalesPeriodFilter, { type SalesPeriod, type DateRange, getDateRangeForPeriod } from "@/components/admin/SalesPeriodFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,8 @@ const AccountingContent = () => {
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [period, setPeriod] = useState<SalesPeriod>("current");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -163,7 +166,34 @@ const AccountingContent = () => {
     }
   }, [hasAccess, loading, navigate, toast, t]);
 
-  const filteredOrders = orders
+  // Period-filtered orders
+  const periodRange = useMemo(() => getDateRangeForPeriod(period, dateRange), [period, dateRange]);
+
+  const periodOrders = useMemo(() => {
+    return orders.filter(o => {
+      const d = new Date(o.created_at);
+      if (periodRange.from && d < periodRange.from) return false;
+      if (periodRange.to && d > periodRange.to) return false;
+      return true;
+    });
+  }, [orders, periodRange]);
+
+  // Recalculate stats based on period
+  const periodStats = useMemo(() => {
+    const paid = periodOrders.filter(p => p.payment_status?.toLowerCase() === "paid");
+    return {
+      totalOrders: periodOrders.length,
+      pendingOrders: periodOrders.filter(p => p.payment_status === "pending").length,
+      completedOrders: paid.length,
+      todayOrders: 0,
+      totalRevenue: paid.reduce((sum, p) => sum + (p.amount || 0), 0),
+      todayRevenue: 0,
+      totalHookahs: periodOrders.reduce((sum, p) => sum + p.hookah_count, 0),
+      totalUsers: 0,
+    };
+  }, [periodOrders]);
+
+  const filteredOrders = periodOrders
     .filter(order => {
       if (statusFilter !== "all" && order.payment_status !== statusFilter) return false;
       if (paymentMethodFilter !== "all" && order.payment_method !== paymentMethodFilter) return false;
@@ -288,28 +318,28 @@ const AccountingContent = () => {
   const statCards = [
     {
       label: t("admin.totalRevenue"),
-      value: `IDR ${stats.totalRevenue.toLocaleString('id-ID')}`,
+      value: `IDR ${periodStats.totalRevenue.toLocaleString('id-ID')}`,
       icon: DollarSign,
       color: "text-emerald-400",
       bgColor: "bg-emerald-400/10",
     },
     {
-      label: t("admin.todayRevenue"),
-      value: `IDR ${stats.todayRevenue.toLocaleString('id-ID')}`,
+      label: t("admin.totalOrders"),
+      value: periodStats.totalOrders,
       icon: TrendingUp,
       color: "text-golden",
       bgColor: "bg-golden/10",
     },
     {
       label: t("admin.paid"),
-      value: stats.completedOrders,
+      value: periodStats.completedOrders,
       icon: CheckCircle,
       color: "text-green-400",
       bgColor: "bg-green-400/10",
     },
     {
       label: t("admin.pending"),
-      value: stats.pendingOrders,
+      value: periodStats.pendingOrders,
       icon: Clock,
       color: "text-orange-400",
       bgColor: "bg-orange-400/10",
@@ -352,6 +382,16 @@ const AccountingContent = () => {
               <span className="hidden sm:inline">{t("admin.logout")}</span>
             </Button>
           </div>
+        </div>
+
+        {/* Period Filter */}
+        <div className="mb-4">
+          <SalesPeriodFilter
+            period={period}
+            onPeriodChange={setPeriod}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
 
         {/* Stats */}
