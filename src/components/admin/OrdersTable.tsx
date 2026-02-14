@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { logActivity } from "@/hooks/useActivityLog";
 import PhotoLightbox from "@/components/PhotoLightbox";
 import { motion } from "framer-motion";
 import { 
@@ -741,6 +742,7 @@ const OrdersTable = ({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
                 if (!deletingOrderId) return;
+                const orderToDelete = orders.find(o => o.id === deletingOrderId);
                 const { error } = await supabase
                   .from("purchases")
                   .delete()
@@ -749,6 +751,13 @@ const OrdersTable = ({
                   toast.error("Failed to delete order");
                 } else {
                   toast.success("Order deleted");
+                  await logActivity('admin', 'Order deleted', {
+                    purchase_id: deletingOrderId,
+                    hookah_count: orderToDelete?.hookah_count,
+                    amount: orderToDelete?.amount,
+                    customer_name: orderToDelete?.customer_name || orderToDelete?.profile?.full_name,
+                    user_id: orderToDelete?.user_id,
+                  });
                   onOrderEdited?.();
                 }
                 setDeletingOrderId(null);
