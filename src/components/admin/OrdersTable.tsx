@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   Clock, CheckCircle, XCircle, ExternalLink,
   Hash, Calendar as CalendarIcon, Coffee, Cookie, Building2, User,
-  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays, X, Wind
+  ChevronDown, ChevronUp, Filter, Truck, CreditCard, ChefHat, Pencil, CalendarDays, X, Wind, Trash2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,6 +27,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ManualOrderForm, { type EditOrderData } from "@/components/shisha-master/ManualOrderForm";
 import type { PurchaseWithProfile } from "@/hooks/useAdmin";
 
@@ -71,6 +81,7 @@ const OrdersTable = ({
   const [shishaMasters, setShishaMasters] = useState<{id: string; name: string}[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [assigningMaster, setAssigningMaster] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   // Fetch current user
   useEffect(() => {
@@ -677,6 +688,17 @@ const OrdersTable = ({
                     >
                       <Pencil className="w-3 h-3" />
                     </Button>
+                    
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeletingOrderId(order.id)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -704,6 +726,39 @@ const OrdersTable = ({
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!deletingOrderId} onOpenChange={(open) => !open && setDeletingOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deletingOrderId) return;
+                const { error } = await supabase
+                  .from("purchases")
+                  .delete()
+                  .eq("id", deletingOrderId);
+                if (error) {
+                  toast.error("Failed to delete order");
+                } else {
+                  toast.success("Order deleted");
+                  onOrderEdited?.();
+                }
+                setDeletingOrderId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
