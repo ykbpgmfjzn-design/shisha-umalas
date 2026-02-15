@@ -146,15 +146,26 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     fetchSettings();
     fetchOrders();
     
-    // Subscribe to realtime updates
+    // Subscribe to realtime updates with retry
     const channel = supabase
-      .channel('orders-changes')
+      .channel('orders-changes-sm')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'purchases' },
         () => fetchOrders()
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('Realtime channel error, retrying in 5s...');
+          setTimeout(() => {
+            supabase.removeChannel(channel);
+            fetchOrders();
+          }, 5000);
+        }
+      });
+
+    // Fallback polling every 15s in case realtime fails
+    const pollInterval = setInterval(() => fetchOrders(), 15000);
 
     // Update timer every second
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -162,6 +173,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     return () => {
       supabase.removeChannel(channel);
       clearInterval(timer);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -189,8 +201,8 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
         .from("purchases")
         .select("*")
         .in("delivery_status", ["delivered", "cancelled"])
-        .order("paid_at", { ascending: false })
-        .limit(50),
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
     if (activeRes.error || historyRes.error) {
