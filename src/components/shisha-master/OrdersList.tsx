@@ -59,6 +59,8 @@ interface OrdersListProps {
   showHistory?: boolean;
 }
 
+const HISTORY_PAGE_SIZE = 30;
+
 export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const { t } = useLanguage();
   const [activeOrders, setActiveOrders] = useState<OrderWithProfile[]>([]);
@@ -77,6 +79,10 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   const [deletePhotoOrderId, setDeletePhotoOrderId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
 
   // Fetch current user and role
   useEffect(() => {
@@ -189,7 +195,9 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (appendHistory = false) => {
+    const page = appendHistory ? historyPage : 0;
+    
     // Fetch active and history orders in parallel
     const [activeRes, historyRes] = await Promise.all([
       supabase
@@ -202,16 +210,22 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
         .select("*")
         .in("delivery_status", ["delivered", "cancelled"])
         .order("created_at", { ascending: false })
-        .limit(100),
+        .range(page * HISTORY_PAGE_SIZE, (page + 1) * HISTORY_PAGE_SIZE - 1),
     ]);
 
     if (activeRes.error || historyRes.error) {
       console.error("Error fetching orders:", activeRes.error || historyRes.error);
       setLoading(false);
+      setLoadingMore(false);
       return;
     }
 
-    const allOrders = [...(activeRes.data || []), ...(historyRes.data || [])];
+    const historyData = historyRes.data || [];
+    if (historyData.length < HISTORY_PAGE_SIZE) {
+      setHasMoreHistory(false);
+    }
+
+    const allOrders = [...(activeRes.data || []), ...historyData];
 
     // Batch fetch all needed profiles in one query (including shisha masters)
     const userIds = [...new Set(allOrders.map(o => o.user_id).filter(Boolean))];
@@ -258,15 +272,56 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     });
 
     const activeWithProfiles = (activeRes.data || []).map(mapOrder);
-    const historyWithProfiles = (historyRes.data || []).map(mapOrder);
+    const historyWithProfiles = historyData.map(mapOrder);
 
     // Track changes for highlight effect
     trackOrderChanges([...activeWithProfiles, ...historyWithProfiles]);
     
     setActiveOrders(activeWithProfiles);
-    setHistoryOrders(historyWithProfiles);
+    if (appendHistory) {
+      setHistoryOrders(prev => {
+        const existingIds = new Set(prev.map(o => o.id));
+        const newOrders = historyWithProfiles.filter(o => !existingIds.has(o.id));
+        return [...prev, ...newOrders];
+      });
+    } else {
+      setHistoryOrders(historyWithProfiles);
+    }
     setLoading(false);
+    setLoadingMore(false);
   };
+
+  const loadMoreHistory = React.useCallback(() => {
+    if (loadingMore || !hasMoreHistory) return;
+    setLoadingMore(true);
+    setHistoryPage(prev => {
+      const next = prev + 1;
+      // We need to fetch with the new page value
+      return next;
+    });
+  }, [loadingMore, hasMoreHistory]);
+
+  // Fetch more when historyPage changes (after initial load)
+  useEffect(() => {
+    if (historyPage > 0) {
+      fetchOrders(true);
+    }
+  }, [historyPage]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    if (!showHistory || !hasMoreHistory) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMoreHistory();
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showHistory, hasMoreHistory, loadMoreHistory]);
 
   const getTimeRemaining = (createdAt: string) => {
     const orderTime = new Date(createdAt);
@@ -603,6 +658,23 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
           onOrderEdited={fetchOrders}
           title="All Orders"
         />
+        {hasMoreHistory && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
+            {loadingMore ? (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading more...</span>
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={loadMoreHistory} className="text-muted-foreground">
+                Load more
+              </Button>
+            )}
+          </div>
+        )}
+        {!hasMoreHistory && historyOrders.length > HISTORY_PAGE_SIZE && (
+          <p className="text-center text-xs text-muted-foreground py-4">All orders loaded</p>
+        )}
         {sharedModals}
       </>
     );
