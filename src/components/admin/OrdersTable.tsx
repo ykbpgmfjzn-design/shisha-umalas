@@ -452,6 +452,17 @@ const OrdersTable = ({
         )}
       </div>
 
+      {showFilters && filteredOrders.length > 0 && (
+        <div className="flex items-center gap-4 mb-4 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/20">
+          <span className="text-sm text-muted-foreground">
+            {filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""}
+          </span>
+          <span className="text-sm font-semibold text-primary">
+            Total: Rp {filteredOrders.reduce((sum, o) => sum + (o.amount || 0), 0).toLocaleString("id-ID")}
+          </span>
+        </div>
+      )}
+
       <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {filteredOrders.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
