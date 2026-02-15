@@ -291,7 +291,12 @@ const AccountingContent = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `orders-${new Date().toISOString().split("T")[0]}.csv`;
+    const periodSuffix = period === "current" ? "current-month"
+      : period === "previous" ? "previous-month"
+      : period === "custom" && dateRange.from && dateRange.to
+        ? `${dateRange.from.toISOString().split("T")[0]}_${dateRange.to.toISOString().split("T")[0]}`
+        : "all-time";
+    a.download = `orders-${periodSuffix}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
