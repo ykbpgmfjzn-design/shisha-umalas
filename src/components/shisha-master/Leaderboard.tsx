@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Flame, Crown, Medal, CalendarDays, ChevronRight } from "lucide-react";
+import { Trophy, Flame, Crown, Medal, CalendarDays, ChevronRight, Target, Users, PartyPopper } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { startOfMonth, startOfDay, subMonths, format } from "date-fns";
 import LeaderboardOrderDetails from "./LeaderboardOrderDetails";
@@ -306,6 +307,63 @@ export default function Leaderboard() {
           </Card>
         </motion.div>
       )}
+
+      {/* Team Achievement */}
+      {period === "current" && (() => {
+        const TEAM_GOAL = 50_000_000;
+        const BONUS_PER_PERSON = 300_000;
+        const teamRevenue = masters.reduce((sum, m) => sum + m.totalRevenue, 0);
+        const progress = Math.min((teamRevenue / TEAM_GOAL) * 100, 100);
+        const isAchieved = teamRevenue >= TEAM_GOAL;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className={`border overflow-hidden ${isAchieved ? "border-green-500/40 bg-gradient-to-br from-green-500/10 via-card to-emerald-500/10" : "border-primary/20 bg-card/80"}`}>
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  {isAchieved ? (
+                    <PartyPopper className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <Target className="w-5 h-5 text-primary" />
+                  )}
+                  <h3 className="font-display font-bold text-sm">
+                    {isAchieved ? "🎉 Goal Achieved!" : "Team Achievement"}
+                  </h3>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      IDR {teamRevenue.toLocaleString("id-ID")}
+                    </span>
+                    <span className="font-semibold">
+                      IDR {TEAM_GOAL.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-3" />
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    {progress.toFixed(1)}% of monthly goal
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
+                  <Users className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    {isAchieved ? (
+                      <span className="text-green-400 font-semibold">Each team member earns IDR {BONUS_PER_PERSON.toLocaleString("id-ID")} bonus! 🎊</span>
+                    ) : (
+                      <>Reach the goal — every team member gets <span className="font-semibold text-foreground">IDR {BONUS_PER_PERSON.toLocaleString("id-ID")}</span> bonus!</>
+                    )}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Leaderboard List */}
       <div className="space-y-2">
