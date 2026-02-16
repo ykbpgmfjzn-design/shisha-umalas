@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GOOGLE_REVIEW_URL = "https://g.page/r/CWUVTUf3-kd2EAI/review";
+const GOOGLE_REVIEW_URL = "https://g.page/r/CWUVTUf3-kd2EBM/review";
 const FEEDBACK_IMAGE = "https://shisha-umalas.lovable.app/images/feedback-cat.jpeg";
 const SITE_URL = "https://shisha-umalas.lovable.app";
 
