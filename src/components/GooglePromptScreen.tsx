@@ -37,7 +37,7 @@ const GooglePromptScreen = ({ t, onBack }: GooglePromptScreenProps) => {
           {t("feedback.thankYouRedirect")}
         </p>
         <p className="text-golden/70 text-xs">
-          Redirecting in {countdown}s...
+          {t("feedback.redirectingIn").replace("{seconds}", String(countdown))}
         </p>
         <div className="flex flex-col gap-3 pt-4">
           <a
@@ -45,7 +45,7 @@ const GooglePromptScreen = ({ t, onBack }: GooglePromptScreenProps) => {
             className="inline-flex items-center justify-center gap-2 bg-golden text-background font-bold py-3 px-6 rounded-full hover:bg-golden/90 transition-colors"
           >
             <Star className="w-5 h-5 fill-current" />
-            Leave a Google Review
+            {t("feedback.leaveGoogleReview")}
             <ExternalLink className="w-4 h-4" />
           </a>
           <Button
