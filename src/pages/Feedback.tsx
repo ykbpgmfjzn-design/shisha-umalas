@@ -137,7 +137,7 @@ const Feedback = () => {
       if (rating === 5) {
         toast.success(t("feedback.thankYouRedirect"));
         setTimeout(() => {
-          window.open("https://g.page/r/CWUVTUf3-kd2EAI/review", "_blank");
+          window.open("https://g.page/r/CWUVTUf3-kd2EBM/review", "_blank");
         }, 1000);
       } else {
         toast.success(t("feedback.thankYou"));
