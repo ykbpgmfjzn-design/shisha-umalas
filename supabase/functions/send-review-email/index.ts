@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CWUVTUf3-kd2EBM/review";
 const FEEDBACK_IMAGE = "https://shisha-umalas.lovable.app/images/feedback-cat.jpeg";
-const SITE_URL = "https://shisha-umalas.lovable.app";
+const SITE_URL = "https://www.shisha.cool";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
