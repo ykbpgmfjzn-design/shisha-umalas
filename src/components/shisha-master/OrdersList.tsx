@@ -356,10 +356,12 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
   };
 
   const handleMarkDelivered = async (orderId: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("purchases")
       .update({ delivery_status: "delivered", paid_at: new Date().toISOString() })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .select('user_id')
+      .single();
 
     if (error) {
       toast.error(t("shishaMaster.orders.error") || "Error updating order");
@@ -370,6 +372,22 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
     supabase.functions.invoke('update-telegram-status', {
       body: { orderId, statusType: 'delivery', newStatus: 'delivered' },
     }).catch(err => console.error('Telegram broadcast failed:', err));
+
+    // Send review request email
+    if (data?.user_id) {
+      supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', data.user_id)
+        .single()
+        .then(({ data: profile }) => {
+          if (profile?.email) {
+            supabase.functions.invoke('send-review-email', {
+              body: { email: profile.email, customerName: profile.full_name },
+            }).catch(err => console.error('Failed to send review email:', err));
+          }
+        });
+    }
 
     toast.success(t("shishaMaster.orders.delivered") || "Order delivered");
     fetchOrders();
