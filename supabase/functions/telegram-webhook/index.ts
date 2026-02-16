@@ -264,6 +264,7 @@ serve(async (req) => {
           });
 
           // Review email is sent automatically via database trigger (on_delivery_send_review_email)
+        }
       }
 
       // Answer callback query
