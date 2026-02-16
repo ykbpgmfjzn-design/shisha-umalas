@@ -262,7 +262,37 @@ serve(async (req) => {
               source: 'telegram'
             }
           });
-        }
+
+          // Send review request email when delivered
+          if (updateField === 'delivery_status' && updateValue === 'delivered') {
+            const { data: order } = await supabase
+              .from('purchases')
+              .select('user_id')
+              .eq('id', orderId)
+              .single();
+
+            if (order?.user_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('email, full_name')
+                .eq('id', order.user_id)
+                .single();
+
+              if (profile?.email) {
+                const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+                if (RESEND_API_KEY) {
+                  fetch('https://hkgscohedqgxrhmbryww.supabase.co/functions/v1/send-review-email', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+                    },
+                    body: JSON.stringify({ email: profile.email, customerName: profile.full_name }),
+                  }).catch(err => console.error('Failed to send review email:', err));
+                }
+              }
+            }
+          }
       }
 
       // Answer callback query
