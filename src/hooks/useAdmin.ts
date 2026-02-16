@@ -313,6 +313,22 @@ export const useAdmin = () => {
           newStatus: status,
         },
       }).catch(err => console.error('Failed to broadcast Telegram status:', err));
+
+      // Send review request email when delivered
+      if (status === 'delivered' && data.user_id) {
+        supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', data.user_id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile?.email) {
+              supabase.functions.invoke('send-review-email', {
+                body: { email: profile.email, customerName: profile.full_name },
+              }).catch(err => console.error('Failed to send review email:', err));
+            }
+          });
+      }
     }
 
     return { data, error };

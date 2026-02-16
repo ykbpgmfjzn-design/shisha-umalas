@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.translate-menu-item]
 verify_jwt = false
+
+[functions.send-review-email]
+verify_jwt = false
