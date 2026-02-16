@@ -100,14 +100,32 @@ const Feedback = () => {
       photoUrl = await uploadPhoto();
     }
 
-    const { data: insertedFeedback, error } = await supabase.from("feedback").insert({
-      user_id: userId,
-      rating,
-      message: feedback || null,
-      name: name.trim(),
-      photo_url: photoUrl,
-    }).select('id').single();
+    // For anonymous users, skip .select() since RLS won't allow reading back the row
+    let insertedFeedbackId: string | null = null;
+    let insertError: any = null;
+
+    if (userId) {
+      const { data, error: err } = await supabase.from("feedback").insert({
+        user_id: userId,
+        rating,
+        message: feedback || null,
+        name: name.trim(),
+        photo_url: photoUrl,
+      }).select('id').single();
+      insertedFeedbackId = data?.id ?? null;
+      insertError = err;
+    } else {
+      const { error: err } = await supabase.from("feedback").insert({
+        user_id: null,
+        rating,
+        message: feedback || null,
+        name: name.trim(),
+        photo_url: photoUrl,
+      });
+      insertError = err;
+    }
     
+    const error = insertError;
     if (error) {
       toast.error("Error submitting feedback");
       console.error(error);
@@ -117,7 +135,7 @@ const Feedback = () => {
         await supabase.functions.invoke('send-telegram-notification', {
           body: {
             type: 'feedback',
-            feedbackId: insertedFeedback?.id,
+            feedbackId: insertedFeedbackId,
             feedbackName: name.trim(),
             feedbackRating: rating,
             feedbackMessage: feedback || null,
@@ -128,11 +146,14 @@ const Feedback = () => {
         console.error('Failed to send Telegram notification:', telegramError);
       }
 
-      await logActivity('feedback', 'Feedback submitted', {
-        rating,
-        has_message: !!feedback,
-        has_photo: !!photoUrl,
-      });
+      // Only log activity if user is logged in (activity_logs requires auth)
+      if (userId) {
+        await logActivity('feedback', 'Feedback submitted', {
+          rating,
+          has_message: !!feedback,
+          has_photo: !!photoUrl,
+        });
+      }
       
       if (rating === 5) {
         toast.success(t("feedback.thankYouRedirect"));
