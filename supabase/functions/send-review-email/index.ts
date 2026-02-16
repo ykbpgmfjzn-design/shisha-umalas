@@ -95,7 +95,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Shisha Cool <onboarding@resend.dev>",
+        from: "Shisha Cool <noreply@shisha.cool>",
         to: [email],
         subject: "Thank you for choosing Shisha Cool ✨ We'd love your feedback!",
         html,
