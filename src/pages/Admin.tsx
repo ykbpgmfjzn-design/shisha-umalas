@@ -506,12 +506,17 @@ const AdminContent = () => {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
+            <DashboardStats
+              stats={stats}
+              feedbackCount={feedbackStats.count}
+              avgRating={feedbackStats.avgRating}
+            />
+            
             <BusinessMetrics
               purchases={allPurchases}
               feedbacks={allFeedbacks}
               totalUsers={stats.totalUsers}
             />
-            
             
             {/* Current Orders + Settings */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
