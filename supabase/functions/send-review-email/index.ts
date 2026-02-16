@@ -78,7 +78,7 @@ serve(async (req) => {
         <tr><td style="padding:20px 28px 24px;text-align:center;">
           <p style="margin:0;font-size:12px;color:#666;line-height:1.6;">
             Shisha Cool Bali — Premium Hookah Delivery & Lounge<br>
-            <a href="${SITE_URL}" style="color:#d4af37;text-decoration:none;">shisha-umalas.lovable.app</a>
+            <a href="${SITE_URL}" style="color:#d4af37;text-decoration:none;">www.shisha.cool</a>
           </p>
         </td></tr>
 
