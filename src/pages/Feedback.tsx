@@ -158,8 +158,8 @@ const Feedback = () => {
       if (rating === 5) {
         toast.success(t("feedback.thankYouRedirect"));
         setTimeout(() => {
-          window.open("https://g.page/r/CWUVTUf3-kd2EBM/review", "_blank");
-        }, 1000);
+          window.location.href = "https://g.page/r/CWUVTUf3-kd2EBM/review";
+        }, 1500);
       } else {
         toast.success(t("feedback.thankYou"));
       }
