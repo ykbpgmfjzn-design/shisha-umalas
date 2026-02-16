@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, Send, User, Camera, X, Loader2 } from "lucide-react";
+import { Star, Send, User, Camera, X, Loader2, ExternalLink, Home } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ const Feedback = () => {
   const [feedback, setFeedback] = useState("");
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGooglePrompt, setShowGooglePrompt] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -156,10 +157,7 @@ const Feedback = () => {
       }
       
       if (rating === 5) {
-        toast.success(t("feedback.thankYouRedirect"));
-        setTimeout(() => {
-          window.location.href = "https://g.page/r/CWUVTUf3-kd2EBM/review";
-        }, 1500);
+        setShowGooglePrompt(true);
       } else {
         toast.success(t("feedback.thankYou"));
       }
@@ -185,6 +183,49 @@ const Feedback = () => {
     >
       <LanguageSelector />
 
+      {showGooglePrompt ? (
+        <div className="pt-24 px-4 max-w-lg mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-6 py-12"
+          >
+            <div className="text-5xl mb-4">🎉</div>
+            <h2 className="font-display text-2xl text-golden">
+              {t("feedback.thankYou")}
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+              {t("feedback.thankYouRedirect")}
+            </p>
+            <div className="flex flex-col gap-3 pt-4">
+              <a
+                href="https://g.page/r/CWUVTUf3-kd2EBM/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-golden text-background font-bold py-3 px-6 rounded-full hover:bg-golden/90 transition-colors"
+              >
+                <Star className="w-5 h-5 fill-current" />
+                Leave a Google Review
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <Button
+                variant="outline"
+                className="border-golden/30 text-golden hover:bg-golden/10 rounded-full py-3"
+                onClick={() => {
+                  setShowGooglePrompt(false);
+                  setRating(0);
+                  setFeedback("");
+                  setName("");
+                  removePhoto();
+                }}
+              >
+                <Home className="w-4 h-4 mr-2" />
+                {t("nav.home") || "Back to Site"}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      ) : (
       <div className="pt-24 px-4 max-w-lg mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -315,6 +356,7 @@ const Feedback = () => {
           </Button>
         </motion.div>
       </div>
+      )}
 
       <BottomNavigation />
     </main>
