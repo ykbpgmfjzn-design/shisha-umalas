@@ -104,6 +104,8 @@ export default function TrainingMaterials() {
   const [uploading, setUploading] = useState(false);
   const [pdfViewUrl, setPdfViewUrl] = useState<string | null>(null);
   const [pdfViewTitle, setPdfViewTitle] = useState("");
+  const [videoViewUrl, setVideoViewUrl] = useState<string | null>(null);
+  const [videoViewTitle, setVideoViewTitle] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -287,23 +289,50 @@ export default function TrainingMaterials() {
     return acc;
   }, {});
 
+  const openVideo = (material: TrainingMaterial) => {
+    setVideoViewUrl(material.file_url);
+    setVideoViewTitle(material.title);
+  };
+
   const renderMaterialCard = (material: TrainingMaterial) => {
     const ytId = getYouTubeId(material.file_url);
     const isImage = material.file_type === "image" || isImageUrl(material.file_url);
+    const isVideo = material.file_type === "video";
+    const isDirectVideo = !ytId && isVideo;
+    const ext = material.file_url.split("?")[0].split(".").pop()?.toLowerCase();
+    const isNativeVideo = ext && ["mp4", "mov", "webm"].includes(ext);
+
     return (
       <Card key={material.id} className="overflow-hidden">
         <CardContent className="p-3">
-          <div className="flex gap-3 items-center">
-            {/* Compact media preview — uniform width for all types */}
-            <div className="shrink-0 w-32 sm:w-40 h-20 sm:h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+          <div className="flex flex-col gap-2">
+            {/* Media preview — full width */}
+            <div className="w-full aspect-video rounded-md overflow-hidden bg-muted flex items-center justify-center relative">
               {ytId ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${ytId}`}
-                  title={material.title}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <button
+                  onClick={() => openVideo(material)}
+                  className="w-full h-full relative group cursor-pointer"
+                >
+                  <img
+                    src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                    alt={material.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
+                    <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
+                  </div>
+                </button>
+              ) : isNativeVideo ? (
+                <button
+                  onClick={() => openVideo(material)}
+                  className="w-full h-full relative group cursor-pointer bg-black flex items-center justify-center"
+                >
+                  <Video className="h-10 w-10 text-muted-foreground" />
+                  <div className="absolute inset-0 flex items-center justify-center group-hover:bg-black/20 transition-colors">
+                    <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
+                  </div>
+                </button>
               ) : isImage ? (
                 <a href={material.file_url} target="_blank" rel="noopener noreferrer" className="w-full h-full">
                   <img
@@ -327,53 +356,42 @@ export default function TrainingMaterials() {
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <h3 className="font-medium text-sm truncate">{material.title}</h3>
-              <Badge variant="secondary" className="shrink-0 text-xs">{getLangFlag(material.language)}</Badge>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                {format(new Date(material.created_at), "dd.MM.yy")}
-              </span>
-              {!ytId && material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-              )}
-              {!ytId && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href={material.file_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              )}
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => openEdit(material)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              )}
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setSelectedMaterial(material);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+
+            {/* Title + actions row */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h3 className="font-medium text-sm leading-snug line-clamp-2">{material.title}</h3>
+                <Badge variant="secondary" className="shrink-0 text-xs">{getLangFlag(material.language)}</Badge>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                {!ytId && material.file_type === "document" && material.file_url.toLowerCase().includes(".pdf") && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPdfViewUrl(material.file_url); setPdfViewTitle(material.title); }}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                {!ytId && !isNativeVideo && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                    <a href={material.file_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(material)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => { setSelectedMaterial(material); setDeleteDialogOpen(true); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -411,7 +429,7 @@ export default function TrainingMaterials() {
                     <Badge variant="secondary" className="text-xs">{items.length}</Badge>
                     <div className="flex-1 h-px bg-border" />
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {items.map(renderMaterialCard)}
                   </div>
                 </div>
@@ -686,6 +704,35 @@ export default function TrainingMaterials() {
                 className="w-full h-full rounded-md border border-border"
               />
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Video Viewer Dialog */}
+      <Dialog open={!!videoViewUrl} onOpenChange={(open) => { if (!open) setVideoViewUrl(null); }}>
+        <DialogContent className="max-w-3xl w-[95vw] p-0 bg-black border-border/50">
+          <DialogHeader className="p-3 pb-0 shrink-0">
+            <DialogTitle className="text-sm text-white flex items-center gap-2">
+              <Play className="h-4 w-4" />
+              {videoViewTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="w-full aspect-video">
+            {videoViewUrl && getYouTubeId(videoViewUrl) ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${getYouTubeId(videoViewUrl)}?autoplay=1`}
+                title={videoViewTitle}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : videoViewUrl ? (
+              <video
+                src={videoViewUrl}
+                controls
+                autoPlay
+                className="w-full h-full"
+              />
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
