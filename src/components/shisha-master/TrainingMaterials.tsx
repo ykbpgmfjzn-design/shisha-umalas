@@ -330,12 +330,8 @@ export default function TrainingMaterials() {
             <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Badge variant="outline" className="shrink-0 gap-1">
-                {getIcon(material.file_type)}
-                <span className="capitalize text-xs">{material.file_type}</span>
-              </Badge>
-              <Badge variant="secondary" className="shrink-0 text-xs">{getLangFlag(material.language)}</Badge>
               <h3 className="font-medium text-sm truncate">{material.title}</h3>
+              <Badge variant="secondary" className="shrink-0 text-xs">{getLangFlag(material.language)}</Badge>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -378,11 +374,6 @@ export default function TrainingMaterials() {
               )}
             </div>
           </div>
-          {material.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {material.description}
-            </p>
-          )}
             </div>
           </div>
         </CardContent>
