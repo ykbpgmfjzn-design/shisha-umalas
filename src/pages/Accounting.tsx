@@ -327,6 +327,7 @@ const AccountingContent = () => {
       icon: DollarSign,
       color: "text-emerald-400",
       bgColor: "bg-emerald-400/10",
+      filterStatus: "all" as StatusFilter,
     },
     {
       label: t("admin.totalOrders"),
@@ -334,6 +335,7 @@ const AccountingContent = () => {
       icon: TrendingUp,
       color: "text-golden",
       bgColor: "bg-golden/10",
+      filterStatus: "all" as StatusFilter,
     },
     {
       label: t("admin.paid"),
@@ -341,6 +343,7 @@ const AccountingContent = () => {
       icon: CheckCircle,
       color: "text-green-400",
       bgColor: "bg-green-400/10",
+      filterStatus: "paid" as StatusFilter,
     },
     {
       label: t("admin.pending"),
@@ -348,6 +351,7 @@ const AccountingContent = () => {
       icon: Clock,
       color: "text-orange-400",
       bgColor: "bg-orange-400/10",
+      filterStatus: "pending" as StatusFilter,
     },
   ];
 
@@ -407,7 +411,15 @@ const AccountingContent = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-card/60 backdrop-blur-xl rounded-xl border border-border/50 p-3 sm:p-4"
+              onClick={() => {
+                setStatusFilter(stat.filterStatus);
+              }}
+              className={cn(
+                "bg-card/60 backdrop-blur-xl rounded-xl border p-3 sm:p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+                statusFilter === stat.filterStatus && stat.filterStatus !== "all"
+                  ? "border-primary ring-1 ring-primary/30"
+                  : "border-border/50 hover:border-border"
+              )}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className={`p-2 rounded-lg ${stat.bgColor}`}>
