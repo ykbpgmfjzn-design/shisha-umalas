@@ -132,30 +132,43 @@ serve(async (req) => {
       </html>
     `;
 
-    // Log the notification (in production, integrate with email service like Resend, SendGrid, etc.)
-    console.log("Email notification would be sent to:", user_email);
-    console.log("Subject:", subject);
-    console.log("Status:", new_status);
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // For now, we just log - to actually send emails, you'd integrate with:
-    // - Resend (recommended): https://resend.com
-    // - SendGrid
-    // - AWS SES
-    // - Or Supabase Auth email templates
-
-    // Return success
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Notification logged",
-        email: user_email,
-        status: new_status,
-        // In production, this would include the email send result
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Shisha Cool <noreply@shisha.cool>",
+        to: [user_email],
+        subject,
+        html: htmlContent,
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("Resend error:", result);
+      return new Response(
+        JSON.stringify({ error: "Failed to send email", details: result }),
+        { status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Reservation email sent to", user_email, "status:", new_status);
+    return new Response(
+      JSON.stringify({ success: true, id: result.id, email: user_email, status: new_status }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: unknown) {
