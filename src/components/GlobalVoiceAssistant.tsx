@@ -261,19 +261,8 @@ export const GlobalVoiceAssistant = () => {
 
   return (
     <>
-      {!hideVoiceAssistant && (
-        <VoiceAssistantOverlay
-          onStart={handleStartVoice}
-          onDismiss={() => {}}
-        />
-      )}
-      
-      {!hideVoiceAssistant && !isActive && !showVoiceAssistant && (
-        <VoiceAssistantButton
-          isActive={isActive}
-          onClick={handleToggleVoice}
-        />
-      )}
+      {/* Voice Assistant Overlay - DISABLED */}
+      {/* Voice Button - DISABLED */}
       
       {/* Active Panel - ONLY ONE UI element when active */}
       {/* CRITICAL: Use stable condition to prevent flickering */}
