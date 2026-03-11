@@ -38,7 +38,7 @@ interface OrderState {
   itemId?: string;
   stage: OrderStage;
   cartOpened?: boolean;
-  autoCloseTimer?: NodeJS.Timeout;
+  autoCloseTimer?: ReturnType<typeof setTimeout>;
   roomNumber?: string;
   addedToCart?: boolean;
   registrationOffered?: boolean;
