@@ -91,16 +91,16 @@ const valentineItems = [
   {
     id: "valentine-pink-promise",
     name: "Pink Promise",
-    description: "Whiteline Strawberry + Whiteline Vanilla + Whiteline Mint — Strawberry and vanilla deepen the sweetness, swirled gently with a kiss of mint — a promise whispered under candlelight",
+    description: "Whiteline Strawberry + Whiteline Vanilla + Whiteline Mint — Strawberry and vanilla deepen the sweetness, swept gently with a kiss of mint — a promise spun under candlelight",
     price: 450000,
     priceDisplay: "450K IDR",
     itemType: "hookah" as const,
     isSignature: true,
   },
   {
-    id: "valentine-forbidden-love",
-    name: "Forbidden Love",
-    description: "Blackline African Queen + Herbaline Strawberry — Bold African Queen meets sweet strawberry in a passionate, irresistible affair — intense, daring, and unforgettable",
+    id: "valentine-forever-love",
+    name: "Forever Love",
+    description: "Blackline Ajman Queen (sweet strawberry) — A passionate, irresistible affair — intense, daring, unforgettable",
     price: 475000,
     priceDisplay: "475K IDR",
     itemType: "hookah" as const,
@@ -136,7 +136,7 @@ const Valentine = () => {
           </button>
           <h1 className="font-display text-lg text-foreground flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-            Valentine Series
+            Signature Romance
           </h1>
         </div>
       </div>
@@ -176,7 +176,7 @@ const Valentine = () => {
             className="font-display text-4xl md:text-5xl bg-gradient-to-r from-red-700 via-red-500 to-red-700 bg-clip-text text-transparent leading-tight"
             style={{ textShadow: "none" }}
           >
-            Valentine<br/>Series
+            Signature<br/>Romance
           </h2>
           <div className="mt-3 mx-auto w-20 h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
         </motion.div>
