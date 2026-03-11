@@ -176,7 +176,7 @@ const Valentine = () => {
             className="font-display text-4xl md:text-5xl bg-gradient-to-r from-red-700 via-red-500 to-red-700 bg-clip-text text-transparent leading-tight"
             style={{ textShadow: "none" }}
           >
-            Valentine<br/>Series
+            Signature<br/>Romance
           </h2>
           <div className="mt-3 mx-auto w-20 h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
         </motion.div>
