@@ -136,7 +136,7 @@ const Valentine = () => {
           </button>
           <h1 className="font-display text-lg text-foreground flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-            Valentine Series
+            Signature Romance
           </h1>
         </div>
       </div>
