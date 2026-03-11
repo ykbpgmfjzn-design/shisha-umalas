@@ -18,7 +18,7 @@ export const GlobalVoiceAssistant = () => {
   const { language, setLanguage } = useLanguage();
   const { setIsOpen: setCartOpen, items: cartItems, isOpen: isCartOpen } = useCart();
   const location = useLocation();
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasActiveBeforeLogin = useRef(false);
   const orderCompletedRef = useRef(false);
   
