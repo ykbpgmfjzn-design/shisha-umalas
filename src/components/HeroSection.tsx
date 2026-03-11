@@ -125,7 +125,7 @@ const HeroSection = () => {
             whileTap={{ scale: 0.95 }}
           >
             <Heart className="w-4 h-4 text-white fill-white" />
-            <span className="text-white text-sm font-semibold tracking-wide">Valentine Series</span>
+            <span className="text-white text-sm font-semibold tracking-wide">Signature Romance</span>
             <Heart className="w-4 h-4 text-white fill-white" />
           </motion.button>
 
