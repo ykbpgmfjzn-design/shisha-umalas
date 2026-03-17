@@ -1,4 +1,4 @@
-import { Building2, Banknote, Copy, Check } from "lucide-react";
+import { Building2, Banknote, Copy, Check, BedDouble } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -41,6 +41,12 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
           <div className="flex items-center gap-2 text-sm">
             <Banknote className="w-4 h-4 text-green-500 shrink-0" />
             <span className="text-muted-foreground">{t("payment.cash")}</span>
+          </div>
+          
+          {/* Room Deposit */}
+          <div className="flex items-center gap-2 text-sm">
+            <BedDouble className="w-4 h-4 text-blue-400 shrink-0" />
+            <span className="text-muted-foreground">{t("payment.roomDeposit")}</span>
           </div>
         </div>
       </div>
@@ -105,6 +111,17 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             {t("payment.cashDescription")}
+          </p>
+        </div>
+
+        {/* Room Deposit */}
+        <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
+          <div className="flex items-center gap-2">
+            <BedDouble className="w-5 h-5 text-blue-400" />
+            <span className="font-medium text-foreground">{t("payment.roomDeposit")}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t("payment.roomDepositDescription")}
           </p>
         </div>
       </div>
