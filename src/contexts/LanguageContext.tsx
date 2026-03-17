@@ -1327,6 +1327,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "Transfer Bank (IDR)",
     "payment.cash": "Tunai di Resepsionis",
     "payment.cashDescription": "Bayar tunai di meja resepsionis",
+    "payment.roomDeposit": "Deposit Kamar",
+    "payment.roomDepositDescription": "Bayar dari saldo deposit kamar Anda",
     "payment.accountName": "Nama Rekening",
     "payment.bankName": "Bank",
     "payment.accountNumber": "Nomor Rekening",
