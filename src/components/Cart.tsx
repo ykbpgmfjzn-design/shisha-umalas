@@ -340,6 +340,11 @@ const Cart = () => {
               {/* Footer */}
               {items.length > 0 && (
                 <div className="border-t border-border p-6 pb-24 space-y-4">
+                  {isStaff && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400">
+                      <span>👤 Staff mode — room & phone not required</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">{t("cart.total")}</span>
                     <span className="font-display text-2xl text-golden">
