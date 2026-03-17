@@ -2602,6 +2602,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "银行转账 (IDR)",
     "payment.cash": "前台现金支付",
     "payment.cashDescription": "在前台用现金支付",
+    "payment.roomDeposit": "房间押金",
+    "payment.roomDepositDescription": "从您的房间押金余额中扣款",
     "payment.accountName": "账户名称",
     "payment.bankName": "银行",
     "payment.accountNumber": "账号",
