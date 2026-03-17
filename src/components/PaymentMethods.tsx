@@ -113,6 +113,17 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
             {t("payment.cashDescription")}
           </p>
         </div>
+
+        {/* Room Deposit */}
+        <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
+          <div className="flex items-center gap-2">
+            <BedDouble className="w-5 h-5 text-blue-400" />
+            <span className="font-medium text-foreground">{t("payment.roomDeposit")}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t("payment.roomDepositDescription")}
+          </p>
+        </div>
       </div>
     </div>
   );
