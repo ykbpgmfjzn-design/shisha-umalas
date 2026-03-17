@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, Loader2, Copy, Banknote } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, Loader2, Copy, Banknote, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
