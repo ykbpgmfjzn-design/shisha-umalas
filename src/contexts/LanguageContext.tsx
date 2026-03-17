@@ -1663,6 +1663,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "Банківський переказ (IDR)",
     "payment.cash": "Готівкою на ресепшн",
     "payment.cashDescription": "Оплата готівкою на ресепшн",
+    "payment.roomDeposit": "Депозит кімнати",
+    "payment.roomDepositDescription": "Списання з депозиту вашої кімнати",
     "payment.accountName": "Ім'я рахунку",
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер рахунку",
