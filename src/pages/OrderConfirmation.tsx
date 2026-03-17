@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, Loader2, Copy, Banknote } from "lucide-react";
+import { CheckCircle, Clock, Home, Receipt, ArrowLeft, Building2, AlertCircle, X, PartyPopper, Loader2, Copy, Banknote, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
@@ -601,6 +601,19 @@ const OrderConfirmationContent = () => {
                       <div>
                         <span className="font-medium text-foreground">{t("payment.cash")}</span>
                         <p className="text-xs text-muted-foreground">{t("payment.cashDescription")}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Room Deposit */}
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <BedDouble className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">{t("payment.roomDeposit")}</span>
+                        <p className="text-xs text-muted-foreground">{t("payment.roomDepositDescription")}</p>
                       </div>
                     </div>
                   </div>
