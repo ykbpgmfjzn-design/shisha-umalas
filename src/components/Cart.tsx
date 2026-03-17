@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import ExtraSuggestions from "@/components/cart/ExtraSuggestions";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, updateCustomNote, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
