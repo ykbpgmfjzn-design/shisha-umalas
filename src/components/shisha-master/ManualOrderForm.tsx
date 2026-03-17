@@ -750,6 +750,7 @@ export default function ManualOrderForm({ onOrderCreated, editOrder, onEditCompl
                   <SelectItem value="bank_transfer">🏦 Bank Transfer</SelectItem>
                   <SelectItem value="qris">📱 QRIS</SelectItem>
                   <SelectItem value="doku">🔗 DOKU</SelectItem>
+                  <SelectItem value="room_deposit">🛏️ Room Deposit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
