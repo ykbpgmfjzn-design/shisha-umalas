@@ -96,16 +96,16 @@ const Cart = () => {
       return false;
     }
 
-    // Check if room number is set
-    if (!roomNumber) {
+    // Check if room number is set (skip for staff)
+    if (!isStaff && !roomNumber) {
       toast.error(t("cart.roomRequired"));
       navigate("/profile?focus=room&returnToCart=true");
       setIsOpen(false);
       return false;
     }
 
-    // Check if phone number is set
-    if (!phone) {
+    // Check if phone number is set (skip for staff)
+    if (!isStaff && !phone) {
       toast.error(t("cart.phoneRequired"));
       navigate("/profile?focus=phone&returnToCart=true");
       setIsOpen(false);
