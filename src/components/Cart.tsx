@@ -21,6 +21,8 @@ const Cart = () => {
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isAdmin, isShishaMaster, isOwner } = useUserRoles();
+  const isStaff = isAdmin || isShishaMaster || isOwner;
 
   const [autoSubmitTriggered, setAutoSubmitTriggered] = useState(false);
 
