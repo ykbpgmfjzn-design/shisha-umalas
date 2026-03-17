@@ -417,6 +417,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "Bank Transfer (IDR)",
     "payment.cash": "Cash at Reception",
     "payment.cashDescription": "Pay in cash at the reception desk",
+    "payment.roomDeposit": "Room Deposit",
+    "payment.roomDepositDescription": "Charge to your room deposit balance",
     "payment.accountName": "Account Name",
     "payment.bankName": "Bank",
     "payment.accountNumber": "Account Number",
