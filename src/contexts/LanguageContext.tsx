@@ -928,6 +928,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "Банковский перевод (IDR)",
     "payment.cash": "Наличными на ресепшн",
     "payment.cashDescription": "Оплата наличными на ресепшн",
+    "payment.roomDeposit": "Депозит номера",
+    "payment.roomDepositDescription": "Списание с депозита вашего номера",
     "payment.accountName": "Имя счёта",
     "payment.bankName": "Банк",
     "payment.accountNumber": "Номер счёта",
