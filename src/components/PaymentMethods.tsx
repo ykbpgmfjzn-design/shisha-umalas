@@ -1,4 +1,4 @@
-import { Building2, Banknote, Copy, Check } from "lucide-react";
+import { Building2, Banknote, Copy, Check, BedDouble } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
