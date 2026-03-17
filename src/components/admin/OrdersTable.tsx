@@ -616,6 +616,8 @@ const OrdersTable = ({
                           ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
                           : (order as any).payment_method === "qris"
                           ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+                          : (order as any).payment_method === "room_deposit"
+                          ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
                           : "bg-violet-500/20 text-violet-400 border-violet-500/30"
                       }>
                         {(order as any).payment_method === "cash" ? "💵 Cash"
@@ -623,6 +625,7 @@ const OrdersTable = ({
                           : (order as any).payment_method === "bank_transfer" ? "🏦 Transfer"
                           : (order as any).payment_method === "qris" ? "📱 QRIS"
                           : (order as any).payment_method === "doku" ? "🔗 DOKU"
+                          : (order as any).payment_method === "room_deposit" ? "🛏️ Room Deposit"
                           : (order as any).payment_method}
                       </Badge>
                     )}

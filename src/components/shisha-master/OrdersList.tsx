@@ -767,6 +767,7 @@ export default function OrdersList({ showHistory = false }: OrdersListProps) {
                             {(order as any).payment_method === "edc_machine" ? "💳 EDC" 
                               : (order as any).payment_method === "bank_transfer" ? "🏦 Bank"
                               : (order as any).payment_method === "doku" ? "🔗 DOKU"
+                              : (order as any).payment_method === "room_deposit" ? "🛏️ Deposit"
                               : (order as any).payment_method}
                           </Badge>
                         )}

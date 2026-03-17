@@ -550,8 +550,11 @@ const AccountingContent = () => {
                             order.payment_method === "edc" && "border-purple-500/30 text-purple-400",
                             order.payment_method === "bank_transfer" && "border-blue-500/30 text-blue-400",
                             order.payment_method === "doku" && "border-pink-500/30 text-pink-400",
+                            order.payment_method === "room_deposit" && "border-blue-400/30 text-blue-300",
                           )}>
-                            {order.payment_method === "bank_transfer" ? "Bank" : order.payment_method}
+                            {order.payment_method === "bank_transfer" ? "Bank" 
+                              : order.payment_method === "room_deposit" ? "🛏️ Deposit"
+                              : order.payment_method}
                           </Badge>
                         )}
                       </div>
