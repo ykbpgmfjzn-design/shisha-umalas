@@ -42,6 +42,12 @@ const PaymentMethods = ({ className = "", compact = false }: PaymentMethodsProps
             <Banknote className="w-4 h-4 text-green-500 shrink-0" />
             <span className="text-muted-foreground">{t("payment.cash")}</span>
           </div>
+          
+          {/* Room Deposit */}
+          <div className="flex items-center gap-2 text-sm">
+            <BedDouble className="w-4 h-4 text-blue-400 shrink-0" />
+            <span className="text-muted-foreground">{t("payment.roomDeposit")}</span>
+          </div>
         </div>
       </div>
     );
