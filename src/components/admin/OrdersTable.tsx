@@ -426,6 +426,7 @@ const OrdersTable = ({
                   <SelectItem value="bank_transfer">🏦 Transfer</SelectItem>
                   <SelectItem value="qris">📱 QRIS</SelectItem>
                   <SelectItem value="doku">🔗 DOKU</SelectItem>
+                  <SelectItem value="room_deposit">🛏️ Room Deposit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
