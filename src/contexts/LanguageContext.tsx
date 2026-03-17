@@ -2291,6 +2291,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "बैंक ट्रांसफर (IDR)",
     "payment.cash": "रिसेप्शन पर नकद",
     "payment.cashDescription": "रिसेप्शन डेस्क पर नकद भुगतान करें",
+    "payment.roomDeposit": "रूम डिपॉजिट",
+    "payment.roomDepositDescription": "अपने कमरे की जमा राशि से भुगतान करें",
     "payment.accountName": "खाता नाम",
     "payment.bankName": "बैंक",
     "payment.accountNumber": "खाता संख्या",
