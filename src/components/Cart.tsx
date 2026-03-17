@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import ExtraSuggestions from "@/components/cart/ExtraSuggestions";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, updateCustomNote, clearCart, totalItems, totalPrice, hookahCount, isOpen, setIsOpen, setSubmitHandler } = useCart();
@@ -20,6 +21,8 @@ const Cart = () => {
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isAdmin, isShishaMaster, isOwner } = useUserRoles();
+  const isStaff = isAdmin || isShishaMaster || isOwner;
 
   const [autoSubmitTriggered, setAutoSubmitTriggered] = useState(false);
 
@@ -93,16 +96,16 @@ const Cart = () => {
       return false;
     }
 
-    // Check if room number is set
-    if (!roomNumber) {
+    // Check if room number is set (skip for staff)
+    if (!isStaff && !roomNumber) {
       toast.error(t("cart.roomRequired"));
       navigate("/profile?focus=room&returnToCart=true");
       setIsOpen(false);
       return false;
     }
 
-    // Check if phone number is set
-    if (!phone) {
+    // Check if phone number is set (skip for staff)
+    if (!isStaff && !phone) {
       toast.error(t("cart.phoneRequired"));
       navigate("/profile?focus=phone&returnToCart=true");
       setIsOpen(false);
