@@ -1980,6 +1980,8 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.bankTransfer": "Virement bancaire (IDR)",
     "payment.cash": "Espèces à la réception",
     "payment.cashDescription": "Payer en espèces à la réception",
+    "payment.roomDeposit": "Dépôt de chambre",
+    "payment.roomDepositDescription": "Débiter le solde de votre dépôt de chambre",
     "payment.accountName": "Nom du compte",
     "payment.bankName": "Banque",
     "payment.accountNumber": "Numéro de compte",
