@@ -53,8 +53,7 @@ const TopShishaFlavors = ({ purchases }: TopShishaFlavorsProps) => {
     }
 
     return Array.from(map.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+      .sort((a, b) => b.count - a.count);
   }, [purchases]);
 
   const maxCount = flavors[0]?.count || 1;
