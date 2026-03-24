@@ -425,6 +425,15 @@ const AdminContent = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => navigate("/expenses?from=admin")}
+              className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Expenses</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate("/shisha-master?from=admin")}
               className="border-primary/30 text-primary hover:bg-primary/10"
             >
