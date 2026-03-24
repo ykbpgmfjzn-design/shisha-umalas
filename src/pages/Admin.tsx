@@ -510,6 +510,9 @@ const AdminContent = () => {
               stats={stats}
               feedbackCount={feedbackStats.count}
               avgRating={feedbackStats.avgRating}
+              allPurchases={allPurchases}
+              allFeedbacks={allFeedbacks}
+              profiles={profiles.map(p => ({ id: p.id, full_name: p.full_name, email: p.email }))}
             />
             
             <BusinessMetrics
