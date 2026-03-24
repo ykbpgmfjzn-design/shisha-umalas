@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Accounting from "./pages/Accounting";
+import Expenses from "./pages/Expenses";
 import ShishaMaster from "./pages/ShishaMaster";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Reservation from "./pages/Reservation";
