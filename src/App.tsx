@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Accounting from "./pages/Accounting";
+import Expenses from "./pages/Expenses";
 import ShishaMaster from "./pages/ShishaMaster";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Reservation from "./pages/Reservation";
@@ -38,6 +39,7 @@ const App = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/accounting" element={<Accounting />} />
+                <Route path="/expenses" element={<Expenses />} />
                 <Route path="/shisha-master" element={<ShishaMaster />} />
                 <Route path="/order-confirmation" element={<OrderConfirmation />} />
                 <Route path="/reservation" element={<Reservation />} />
