@@ -80,6 +80,7 @@ const ExpensesContent = () => {
   const [period, setPeriod] = useState<SalesPeriod>("current");
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [cardFilter, setCardFilter] = useState<string | null>(null);
 
   const checkAccess = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -182,6 +183,15 @@ const ExpensesContent = () => {
   const assetTotal = expenses.filter(e => e.category === "equipment").reduce((sum, e) => sum + Number(e.amount), 0);
   const operationalTotal = expenses.filter(e => ["tax", "supplies", "charcoal", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
 
+  const displayedExpenses = cardFilter
+    ? expenses.filter(e => {
+        if (cardFilter === "asset") return e.category === "equipment";
+        if (cardFilter === "tobacco") return e.category === "tobacco";
+        if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "other"].includes(e.category);
+        return true;
+      })
+    : expenses;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -232,54 +242,28 @@ const ExpensesContent = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <DollarSign className="h-4 w-4" /> Total Cash Out
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-1">
-                  Rp {totalAmount.toLocaleString()}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Package className="h-4 w-4" /> 🔧 Asset
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-1">
-                  Rp {assetTotal.toLocaleString()}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Package className="h-4 w-4" /> 🍂 Tobacco
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-1">
-                  Rp {tobaccoTotal.toLocaleString()}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <TrendingUp className="h-4 w-4" /> 📋 Operational
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-1">
-                  Rp {operationalTotal.toLocaleString()}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
+          {[
+            { key: null, label: "Total Cash Out", icon: <DollarSign className="h-4 w-4" />, amount: totalAmount },
+            { key: "asset", label: "🔧 Asset", icon: <Package className="h-4 w-4" />, amount: assetTotal },
+            { key: "tobacco", label: "🍂 Tobacco", icon: <Package className="h-4 w-4" />, amount: tobaccoTotal },
+            { key: "operational", label: "📋 Operational", icon: <TrendingUp className="h-4 w-4" />, amount: operationalTotal },
+          ].map((card, i) => (
+            <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <Card
+                className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 ${cardFilter === card.key ? "ring-2 ring-primary" : ""}`}
+                onClick={() => setCardFilter(cardFilter === card.key ? null : card.key)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    {card.icon} {card.label}
+                  </div>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    Rp {card.amount.toLocaleString()}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
 
         {/* Filters */}
@@ -313,14 +297,14 @@ const ExpensesContent = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.length === 0 ? (
+                {displayedExpenses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground py-8">
                       No expenses found for this period
                     </TableCell>
                   </TableRow>
                 ) : (
-                  expenses.map(exp => {
+                  displayedExpenses.map(exp => {
                     const cat = CATEGORIES.find(c => c.value === exp.category);
                     return (
                       <TableRow key={exp.id}>
