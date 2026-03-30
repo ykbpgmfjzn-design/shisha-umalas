@@ -179,6 +179,8 @@ const ExpensesContent = () => {
 
   const totalAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const tobaccoTotal = expenses.filter(e => e.category === "tobacco").reduce((sum, e) => sum + Number(e.amount), 0);
+  const assetTotal = expenses.filter(e => e.category === "equipment").reduce((sum, e) => sum + Number(e.amount), 0);
+  const operationalTotal = expenses.filter(e => ["tax", "supplies", "charcoal", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
 
   if (loading) {
     return (
