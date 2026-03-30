@@ -297,14 +297,14 @@ const ExpensesContent = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.length === 0 ? (
+                {displayedExpenses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground py-8">
                       No expenses found for this period
                     </TableCell>
                   </TableRow>
                 ) : (
-                  expenses.map(exp => {
+                  displayedExpenses.map(exp => {
                     const cat = CATEGORIES.find(c => c.value === exp.category);
                     return (
                       <TableRow key={exp.id}>
