@@ -425,15 +425,6 @@ const AdminContent = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/expenses?from=admin")}
-              className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
-            >
-              <DollarSign className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Expenses</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
               onClick={() => navigate("/shisha-master?from=admin")}
               className="border-primary/30 text-primary hover:bg-primary/10"
             >
@@ -485,6 +476,10 @@ const AdminContent = () => {
               <TabsTrigger value="reservations" className="gap-1.5 px-3">
                 <Calendar className="w-4 h-4" />
                 <span className="hidden sm:inline">{t("admin.reservations")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="expenses" className="gap-1.5 px-3" onClick={(e) => { e.preventDefault(); navigate("/expenses?from=admin"); }}>
+                <DollarSign className="w-4 h-4" />
+                <span className="hidden sm:inline">Expenses</span>
               </TabsTrigger>
               <TabsTrigger value="staff" className="gap-1.5 px-3">
                 <Shield className="w-4 h-4" />
