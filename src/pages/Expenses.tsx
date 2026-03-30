@@ -183,14 +183,13 @@ const ExpensesContent = () => {
   const assetTotal = expenses.filter(e => e.category === "equipment").reduce((sum, e) => sum + Number(e.amount), 0);
   const operationalTotal = expenses.filter(e => ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
 
-  const displayedExpenses = cardFilter
-    ? expenses.filter(e => {
-        if (cardFilter === "asset") return e.category === "equipment";
-        if (cardFilter === "tobacco") return e.category === "tobacco";
-        if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category);
-        return true;
-      })
-    : expenses;
+  const displayedExpenses = expenses.filter(e => {
+    if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
+    if (cardFilter === "asset") return e.category === "equipment";
+    if (cardFilter === "tobacco") return e.category === "tobacco";
+    if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category);
+    return true;
+  });
 
   if (loading) {
     return (
