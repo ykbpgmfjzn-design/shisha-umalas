@@ -211,7 +211,7 @@ const ExpensesContent = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">💰 Expense Tracker</h1>
+              <h1 className="text-2xl font-bold text-foreground">💰 Financial Overview</h1>
               <p className="text-sm text-muted-foreground">Track tobacco & supplies expenses</p>
             </div>
           </div>
