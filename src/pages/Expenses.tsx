@@ -49,6 +49,7 @@ const CATEGORIES = [
   { value: "charcoal", label: "🔥 Charcoal" },
   { value: "equipment", label: "🔧 Equipment" },
   { value: "supplies", label: "📦 Supplies" },
+  { value: "tax", label: "🧾 Tax" },
   { value: "other", label: "📋 Other" },
 ];
 
