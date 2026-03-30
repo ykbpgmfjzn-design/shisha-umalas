@@ -231,7 +231,7 @@ const ExpensesContent = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <Card>
               <CardContent className="p-4">
@@ -248,10 +248,10 @@ const ExpensesContent = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Package className="h-4 w-4" /> Tobacco Only
+                  <Package className="h-4 w-4" /> 🔧 Asset
                 </div>
                 <p className="text-2xl font-bold text-foreground mt-1">
-                  Rp {tobaccoTotal.toLocaleString()}
+                  Rp {assetTotal.toLocaleString()}
                 </p>
               </CardContent>
             </Card>
@@ -260,9 +260,23 @@ const ExpensesContent = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <TrendingUp className="h-4 w-4" /> Entries
+                  <Package className="h-4 w-4" /> 🍂 Tobacco
                 </div>
-                <p className="text-2xl font-bold text-foreground mt-1">{expenses.length}</p>
+                <p className="text-2xl font-bold text-foreground mt-1">
+                  Rp {tobaccoTotal.toLocaleString()}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <TrendingUp className="h-4 w-4" /> 📋 Operational
+                </div>
+                <p className="text-2xl font-bold text-foreground mt-1">
+                  Rp {operationalTotal.toLocaleString()}
+                </p>
               </CardContent>
             </Card>
           </motion.div>
