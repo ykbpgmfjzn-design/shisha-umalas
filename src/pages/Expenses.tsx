@@ -80,6 +80,7 @@ const ExpensesContent = () => {
   const [period, setPeriod] = useState<SalesPeriod>("current");
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [cardFilter, setCardFilter] = useState<string | null>(null);
 
   const checkAccess = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
