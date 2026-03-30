@@ -179,15 +179,15 @@ const ExpensesContent = () => {
   };
 
   const totalAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const tobaccoTotal = expenses.filter(e => e.category === "tobacco").reduce((sum, e) => sum + Number(e.amount), 0);
+  const shishaMaterialTotal = expenses.filter(e => ["tobacco", "supplies"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
   const assetTotal = expenses.filter(e => e.category === "equipment").reduce((sum, e) => sum + Number(e.amount), 0);
-  const operationalTotal = expenses.filter(e => ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
+  const operationalTotal = expenses.filter(e => ["tax", "charcoal", "marketing", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
 
   const displayedExpenses = expenses.filter(e => {
     if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
     if (cardFilter === "asset") return e.category === "equipment";
-    if (cardFilter === "tobacco") return e.category === "tobacco";
-    if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category);
+    if (cardFilter === "shisha_material") return ["tobacco", "supplies"].includes(e.category);
+    if (cardFilter === "operational") return ["tax", "charcoal", "marketing", "other"].includes(e.category);
     return true;
   });
 
@@ -244,7 +244,7 @@ const ExpensesContent = () => {
           {[
             { key: null, label: "Total Cash Out", icon: <DollarSign className="h-4 w-4" />, amount: totalAmount },
             { key: "asset", label: "🔧 Asset", icon: <Package className="h-4 w-4" />, amount: assetTotal },
-            { key: "tobacco", label: "🍂 Tobacco", icon: <Package className="h-4 w-4" />, amount: tobaccoTotal },
+            { key: "shisha_material", label: "🍂 Shisha Material", icon: <Package className="h-4 w-4" />, amount: shishaMaterialTotal },
             { key: "operational", label: "📋 Operational", icon: <TrendingUp className="h-4 w-4" />, amount: operationalTotal },
           ].map((card, i) => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
