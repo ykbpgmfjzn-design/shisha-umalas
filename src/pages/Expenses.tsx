@@ -283,6 +283,18 @@ const ExpensesContent = () => {
           </Select>
         </div>
 
+        {/* Filtered Total */}
+        {(cardFilter || categoryFilter !== "all") && (
+          <div className="flex items-center justify-between px-2">
+            <p className="text-sm text-muted-foreground">
+              Showing {displayedExpenses.length} expense{displayedExpenses.length !== 1 ? "s" : ""}
+            </p>
+            <p className="text-sm font-semibold text-foreground">
+              Total: Rp {displayedExpenses.reduce((sum, e) => sum + Number(e.amount), 0).toLocaleString()}
+            </p>
+          </div>
+        )}
+
         {/* Table */}
         <Card>
           <CardContent className="p-0">
