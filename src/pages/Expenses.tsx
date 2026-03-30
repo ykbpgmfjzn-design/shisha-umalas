@@ -104,7 +104,6 @@ const ExpensesContent = () => {
     const range = getDateRangeForPeriod(period, dateRange);
     if (range.from) query = query.gte("expense_date", range.from.toISOString().split("T")[0]);
     if (range.to) query = query.lte("expense_date", range.to.toISOString().split("T")[0]);
-    if (categoryFilter !== "all") query = query.eq("category", categoryFilter);
 
     const { data, error } = await query;
     if (error) {
@@ -112,7 +111,7 @@ const ExpensesContent = () => {
     } else {
       setExpenses(data || []);
     }
-  }, [period, dateRange, categoryFilter, toast]);
+  }, [period, dateRange, toast]);
 
   useEffect(() => { checkAccess(); }, [checkAccess]);
   useEffect(() => { if (hasAccess) fetchExpenses(); }, [hasAccess, fetchExpenses]);
