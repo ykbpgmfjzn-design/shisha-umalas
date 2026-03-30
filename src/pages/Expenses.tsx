@@ -236,7 +236,7 @@ const ExpensesContent = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <DollarSign className="h-4 w-4" /> Total Expenses
+                  <DollarSign className="h-4 w-4" /> Total Cash Out
                 </div>
                 <p className="text-2xl font-bold text-foreground mt-1">
                   Rp {totalAmount.toLocaleString()}
