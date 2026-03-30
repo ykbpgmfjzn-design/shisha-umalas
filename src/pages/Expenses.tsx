@@ -47,7 +47,7 @@ interface Expense {
 const CATEGORIES = [
   { value: "tobacco", label: "🍂 Tobacco" },
   { value: "charcoal", label: "🔥 Charcoal" },
-  { value: "equipment", label: "🔧 Equipment" },
+  { value: "equipment", label: "🔧 Asset" },
   { value: "supplies", label: "📦 Supplies" },
   { value: "tax", label: "🧾 Tax" },
   { value: "other", label: "📋 Other" },
