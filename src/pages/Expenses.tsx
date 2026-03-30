@@ -104,7 +104,6 @@ const ExpensesContent = () => {
     const range = getDateRangeForPeriod(period, dateRange);
     if (range.from) query = query.gte("expense_date", range.from.toISOString().split("T")[0]);
     if (range.to) query = query.lte("expense_date", range.to.toISOString().split("T")[0]);
-    if (categoryFilter !== "all") query = query.eq("category", categoryFilter);
 
     const { data, error } = await query;
     if (error) {
@@ -112,7 +111,7 @@ const ExpensesContent = () => {
     } else {
       setExpenses(data || []);
     }
-  }, [period, dateRange, categoryFilter, toast]);
+  }, [period, dateRange, toast]);
 
   useEffect(() => { checkAccess(); }, [checkAccess]);
   useEffect(() => { if (hasAccess) fetchExpenses(); }, [hasAccess, fetchExpenses]);
@@ -184,14 +183,13 @@ const ExpensesContent = () => {
   const assetTotal = expenses.filter(e => e.category === "equipment").reduce((sum, e) => sum + Number(e.amount), 0);
   const operationalTotal = expenses.filter(e => ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount), 0);
 
-  const displayedExpenses = cardFilter
-    ? expenses.filter(e => {
-        if (cardFilter === "asset") return e.category === "equipment";
-        if (cardFilter === "tobacco") return e.category === "tobacco";
-        if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category);
-        return true;
-      })
-    : expenses;
+  const displayedExpenses = expenses.filter(e => {
+    if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
+    if (cardFilter === "asset") return e.category === "equipment";
+    if (cardFilter === "tobacco") return e.category === "tobacco";
+    if (cardFilter === "operational") return ["tax", "supplies", "charcoal", "marketing", "other"].includes(e.category);
+    return true;
+  });
 
   if (loading) {
     return (
